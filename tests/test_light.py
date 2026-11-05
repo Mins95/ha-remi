@@ -129,6 +129,7 @@ class TestRemiBackgroundLightEntity:
 async def test_setup_removes_obsolete_lights_and_preserves_background_identity(
     hass, mock_api_client, mock_config_entry_data, custom_name,
 ):
+    """Obsolete light entries are removed; the background light keeps its identity."""
     entry = MockConfigEntry(domain=DOMAIN, data=mock_config_entry_data, title="Test REMI")
     entry.add_to_hass(hass)
     registry = er.async_get(hass)

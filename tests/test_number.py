@@ -149,9 +149,11 @@ class TestRemiBrightnessNumber:
         assert entity.native_max_value == 100
         assert entity.native_step == 1
 
-    def test_brightness_native_value(self, mock_coordinator):
+    @pytest.mark.parametrize("raw", [0, 60, 100])
+    def test_brightness_native_value(self, mock_coordinator, raw):
+        mock_coordinator.remi["luminosity"] = raw
         entity = RemiNumberEntity(mock_coordinator, NUMBER_DESCRIPTIONS[2])
-        assert entity.native_value == 60
+        assert entity.native_value == raw
 
     @pytest.mark.parametrize(
         "raw", [None, True, False, "60", "", [], {}, -1, 101, float("nan"), float("inf")]
@@ -172,6 +174,7 @@ class TestRemiBrightnessNumber:
 async def test_real_setup_removes_legacy_luminosity_entities(
     hass, enable_custom_integrations, mock_api_client, mock_config_entry_data,
 ):
+    """Obsolete luminosity number and sensor entries are removed on load."""
     entry = MockConfigEntry(domain=DOMAIN, data=mock_config_entry_data, title="Test REMI")
     entry.add_to_hass(hass)
     registry = er.async_get(hass)
