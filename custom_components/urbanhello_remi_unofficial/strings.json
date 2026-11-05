@@ -46,13 +46,13 @@
     },
     "number": {
       "volume": { "name": "Volume" },
-      "noise_threshold": { "name": "Noise Alert Threshold" }
+      "noise_threshold": { "name": "Noise Alert Threshold" },
+      "brightness": { "name": "Brightness" }
     },
     "switch": {
       "alarm": { "name": "{name}" }
     },
     "light": {
-      "brightness": { "name": "Brightness" },
       "background_color": { "name": "App Background Color" }
     }
   },

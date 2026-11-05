@@ -13,9 +13,9 @@ This is a community-maintained integration and is **not affiliated with or endor
 - **Sensors**: Room temperature, WiFi signal strength, firmware version, IP address, current face
 - **Binary Sensors**: Online status, alive status, firmware update available
 - **Select**: Clock face (Off / Awake / Sleepy / Semi-Awake / Smiley), clock format (12h / 24h), music mode
-- **Number**: Volume, noise alert threshold
+- **Number**: Volume, noise alert threshold, brightness
 - **Switch**: Per-alarm enable/disable toggles (one switch per alarm)
-- **Lights**: Brightness (dimmable), app background color (RGB)
+- **Lights**: App background color (RGB)
 - **Alarm CRUD**: Create, update and delete alarms via HA services
 
 ---
@@ -69,7 +69,7 @@ This is a community-maintained integration and is **not affiliated with or endor
 | Clock Format | Select | 12h or 24h format |
 | Music Mode | Select | Off / Music / White Noise |
 | Volume | Number | Speaker volume (0–100) |
-| Brightness | Light | Dimmable upper light (off at 0%, maximum at 100%) |
+| Brightness | Number | Upper light brightness (0–100) |
 | Noise Alert Threshold | Number | Noise notification threshold (0–250) |
 | App Background Color | Light | Color associated with the REMI in the official app |
 | Alarm (per alarm) | Switch | Enable/disable individual alarms |
@@ -97,26 +97,22 @@ automations; the app background color is not a replacement for a physical light.
 
 ## Brightness migration
 
-Brightness is now a dimmable `light`, using the same API `luminosity` setting
-(0–100). The old `number` and the incorrectly labelled lux sensor are removed
-from this integration's entity registry entries when it loads. Their automation
-references are not rewritten. No ambient illuminance sensor is provided.
+Brightness is a `number` slider on the REMI brightness scale (0–100), like
+Volume and Noise Alert Threshold. It drives the same API `luminosity` setting
+as before.
 
-Update automations that used `number.*_brightness` (or a renamed brightness
-number) to target the new light entity shown on the REMI device page. Entity IDs
-can differ between installations; the following IDs are examples only.
+Earlier releases exposed that setting as a dimmable `light`, and before that as
+a `number` named "Screen Brightness" next to an incorrectly labelled lux
+sensor. Both obsolete entities are removed from this integration's entity
+registry entries when it loads. Their automation references are not rewritten.
+No ambient illuminance sensor is provided.
+
+Update automations that used `light.*_brightness` to target the number entity
+shown on the REMI device page. Entity IDs can differ between installations; the
+following IDs are examples only.
 
 ```yaml
 # Previously
-service: number.set_value
-target:
-  entity_id: number.example_brightness
-data:
-  value: 40
-```
-
-```yaml
-# Now
 service: light.turn_on
 target:
   entity_id: light.example_brightness
@@ -124,17 +120,27 @@ data:
   brightness_pct: 40
 ```
 
-Use `light.turn_off` to switch the upper light off. An unqualified `light.turn_on`
-uses the current/last nonzero intensity, or 100% when none is known. The last
-nonzero intensity is included in Home Assistant's restore data, so it can also
-be restored after a restart while the light is off. Current nonzero API data takes
-precedence over saved intensity. Missing, invalid or out-of-range API values make
-the new light unavailable instead of inventing a brightness.
+```yaml
+# Now
+service: number.set_value
+target:
+  entity_id: number.example_brightness
+data:
+  value: 40
+```
 
-For state conditions, use the light's `on`/`off` state. For numeric conditions,
-use its `brightness` attribute (0–255), not the old number's 0–100 state. A stored
-reference to the old lux sensor must be removed or replaced with an actual
-ambient light sensor. Historical values are not converted or reinterpreted.
+The number uses the REMI 0–100 scale, so a former `brightness_pct` value maps
+to the same number. `0` switches the upper light off.
+
+The light entity's "last nonzero intensity" behaviour is gone: the number has
+no separate on/off state, so a slider left at `0` stays at `0`. For state
+conditions, use the number's 0–100 state, not the former light's 0–255
+`brightness` attribute. A stored reference to the old lux sensor must be
+removed or replaced with an actual ambient light sensor. Historical values are
+not converted or reinterpreted.
+
+Missing, invalid or out-of-range API values leave the number unknown instead
+of inventing a brightness.
 
 
 ## Alarm Services
