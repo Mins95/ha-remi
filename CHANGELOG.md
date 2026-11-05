@@ -1,3 +1,10 @@
+## [0.2.1](https://github.com/timoa/ha-remi/compare/0.2.0...0.2.1) (2026-11-05)
+
+
+### Bug Fixes
+
+* correct REMI temperature conversion ([deb02dc](https://github.com/timoa/ha-remi/commit/deb02dcd28c8edb65073e97a09129d6f255d6768))
+
 # [0.2.0](https://github.com/timoa/ha-remi/compare/0.1.9...0.2.0) (2026-03-05)
 
 
