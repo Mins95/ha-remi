@@ -55,15 +55,6 @@ SENSOR_DESCRIPTIONS: tuple[RemiSensorEntityDescription, ...] = (
         value_fn=_temperature_value,
     ),
     RemiSensorEntityDescription(
-        key="luminosity",
-        translation_key="luminosity",
-        name="Luminosity",
-        device_class=SensorDeviceClass.ILLUMINANCE,
-        state_class=SensorStateClass.MEASUREMENT,
-        native_unit_of_measurement="lx",
-        value_fn=lambda remi: remi.get("luminosity"),
-    ),
-    RemiSensorEntityDescription(
         key="rssi",
         translation_key="rssi",
         name="WiFi Signal",
