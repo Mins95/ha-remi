@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 from typing import Any
 
 from homeassistant.components.sensor import (
@@ -30,6 +31,18 @@ class RemiSensorEntityDescription(SensorEntityDescription):
     value_fn: Any = None
 
 
+def _temperature_value(remi: dict[str, Any]) -> float | None:
+    """Decode REMI temperature, leaving missing or invalid readings unknown."""
+    raw = remi.get("temp")
+    if type(raw) not in (int, float):
+        return None
+    try:
+        temperature = (raw + 40) / 10
+    except OverflowError:
+        return None
+    return temperature if math.isfinite(temperature) else None
+
+
 SENSOR_DESCRIPTIONS: tuple[RemiSensorEntityDescription, ...] = (
     RemiSensorEntityDescription(
         key="temperature",
@@ -39,7 +52,7 @@ SENSOR_DESCRIPTIONS: tuple[RemiSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         suggested_display_precision=1,
-        value_fn=lambda remi: (remi.get("temp", 0) - 115) / 2,
+        value_fn=_temperature_value,
     ),
     RemiSensorEntityDescription(
         key="luminosity",

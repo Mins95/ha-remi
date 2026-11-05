@@ -16,25 +16,38 @@ def _get_description(key: str):
 class TestTemperatureSensor:
     """Tests for the temperature sensor value function."""
 
-    def test_temperature_formula(self):
+    @pytest.mark.parametrize(
+        ("raw", "expected"),
+        [(170, 21.0), (171, 21.1), (157, 19.7), (157.5, 19.75), (0, 4.0)],
+    )
+    def test_temperature_formula(self, raw, expected):
         desc = _get_description("temperature")
-        assert desc.value_fn({"temp": 157}) == pytest.approx(21.0)
+        assert desc.value_fn({"temp": raw}) == pytest.approx(expected)
 
     def test_temperature_formula_zero(self):
         desc = _get_description("temperature")
-        assert desc.value_fn({"temp": 115}) == pytest.approx(0.0)
+        assert desc.value_fn({"temp": -40}) == pytest.approx(0.0)
 
     def test_temperature_formula_negative(self):
         desc = _get_description("temperature")
-        assert desc.value_fn({"temp": 105}) == pytest.approx(-5.0)
+        assert desc.value_fn({"temp": -90}) == pytest.approx(-5.0)
 
-    def test_temperature_missing_field_defaults_to_zero(self):
+    def test_temperature_missing_field_is_unknown(self):
         desc = _get_description("temperature")
-        assert desc.value_fn({}) == pytest.approx(-57.5)
+        assert desc.value_fn({}) is None
+
+    @pytest.mark.parametrize(
+        "raw",
+        [None, True, False, "170", "invalid", "", [], {},
+         float("nan"), float("inf"), float("-inf"), 10**1000],
+    )
+    def test_temperature_invalid_field_is_unknown(self, raw):
+        desc = _get_description("temperature")
+        assert desc.value_fn({"temp": raw}) is None
 
     def test_temperature_from_mock_data(self):
         desc = _get_description("temperature")
-        assert desc.value_fn(MOCK_REMI_DATA) == pytest.approx(21.0)
+        assert desc.value_fn(MOCK_REMI_DATA) == pytest.approx(19.7)
 
 
 class TestLuminositySensor:
