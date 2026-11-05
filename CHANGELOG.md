@@ -1,3 +1,10 @@
+## [0.2.4](https://github.com/timoa/ha-remi/compare/0.2.3...0.2.4) (2026-11-05)
+
+
+### Bug Fixes
+
+* expose REMI brightness as a dimmable light ([52979e5](https://github.com/timoa/ha-remi/commit/52979e5b1c5eaeec161cb8fd7b63b82c858e1052))
+
 ## [0.2.3](https://github.com/timoa/ha-remi/compare/0.2.2...0.2.3) (2026-11-05)
 
 
