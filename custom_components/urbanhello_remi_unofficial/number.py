@@ -1,6 +1,7 @@
 """Number platform for the UrbanHello Remi integration."""
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import Any
 
@@ -27,6 +28,14 @@ class RemiNumberEntityDescription(NumberEntityDescription):
     value_fn: Any = None
 
 
+def _luminosity_value(remi: dict[str, Any]) -> int | float | None:
+    """Return the REMI brightness level, or None when the API value is unusable."""
+    value = remi.get("luminosity")
+    if type(value) in (int, float) and 0 <= value <= 100 and math.isfinite(value):
+        return value
+    return None
+
+
 NUMBER_DESCRIPTIONS: tuple[RemiNumberEntityDescription, ...] = (
     RemiNumberEntityDescription(
         key="volume",
@@ -51,6 +60,18 @@ NUMBER_DESCRIPTIONS: tuple[RemiNumberEntityDescription, ...] = (
         mode=NumberMode.SLIDER,
         field="noise_notification_threshold",
         value_fn=lambda remi: remi.get("noise_notification_threshold", 0),
+    ),
+    RemiNumberEntityDescription(
+        key="brightness",
+        translation_key="brightness",
+        name="Brightness",
+        icon="mdi:brightness-6",
+        native_min_value=0,
+        native_max_value=100,
+        native_step=1,
+        mode=NumberMode.SLIDER,
+        field="luminosity",
+        value_fn=_luminosity_value,
     ),
 )
 
@@ -83,7 +104,7 @@ class RemiNumberEntity(RemiEntity, NumberEntity):
         self._attr_unique_id = f"{self._remi_id}_{description.key}"
 
     @property
-    def native_value(self) -> float:
+    def native_value(self) -> float | None:
         """Return the current value."""
         return self.entity_description.value_fn(self.coordinator.remi)
 
