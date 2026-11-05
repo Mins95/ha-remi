@@ -1,3 +1,10 @@
+## [0.2.5](https://github.com/timoa/ha-remi/compare/0.2.4...0.2.5) (2026-11-05)
+
+
+### Bug Fixes
+
+* **renovate:** drop invalid "*" from matchPackageNames matcher ([3a2044a](https://github.com/timoa/ha-remi/commit/3a2044a8f0062f1691bc6c12bffc5e80d8791cc1)), closes [#19](https://github.com/timoa/ha-remi/issues/19)
+
 ## [0.2.4](https://github.com/timoa/ha-remi/compare/0.2.3...0.2.4) (2026-11-05)
 
 
