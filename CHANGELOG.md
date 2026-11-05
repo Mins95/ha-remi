@@ -1,3 +1,10 @@
+## [0.2.6](https://github.com/timoa/ha-remi/compare/0.2.5...0.2.6) (2026-11-05)
+
+
+### Bug Fixes
+
+* expose REMI brightness as a slider ([7349f8e](https://github.com/timoa/ha-remi/commit/7349f8edcc4871905464a08b904d1aa84e261fc7))
+
 ## [0.2.5](https://github.com/timoa/ha-remi/compare/0.2.4...0.2.5) (2026-11-05)
 
 
