@@ -54,8 +54,7 @@
       "alarm": { "name": "{name}" }
     },
     "light": {
-      "night_light": { "name": "Night Light" },
-      "background_color": { "name": "Background Color" }
+      "background_color": { "name": "App Background Color" }
     }
   },
   "services": {

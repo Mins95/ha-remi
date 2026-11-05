@@ -15,7 +15,7 @@ This is a community-maintained integration and is **not affiliated with or endor
 - **Select**: Clock face (Off / Awake / Sleepy / Semi-Awake / Smiley), clock format (12h / 24h), music mode
 - **Number**: Volume, brightness, noise alert threshold
 - **Switch**: Per-alarm enable/disable toggles (one switch per alarm)
-- **Lights**: Night light (RGB), background color (RGB)
+- **Lights**: App background color (RGB)
 - **Alarm CRUD**: Create, update and delete alarms via HA services
 
 ---
@@ -72,11 +72,28 @@ This is a community-maintained integration and is **not affiliated with or endor
 | Volume | Number | Speaker volume (0–100) |
 | Brightness | Number | Brightness (0–100) |
 | Noise Alert Threshold | Number | Noise notification threshold (0–100) |
-| Night Light | Light | RGB night light color |
-| Background Color | Light | RGB background LED color |
+| App Background Color | Light | Color associated with the REMI in the official app |
 | Alarm (per alarm) | Switch | Enable/disable individual alarms |
 
 ---
+
+## RGB entity changes
+
+`App Background Color` changes the color associated with a REMI in the official
+UrbanHello app. It remains an RGB `light` with the same unique ID, existing
+entity ID and commands. Existing automations continue to target the same entity;
+a user-defined display name is preserved by Home Assistant.
+
+The former RGB `Night Light` entity has been removed. Commands to `lightnight`
+had no observable physical effect on two tested REMIs running firmware 329 and
+332. The field was initially absent on one device and appeared after RGB write
+experiments. These observations do not establish hardware support on other
+models. This integration no longer writes `lightnight` and does not delete or
+reset existing values on UrbanHello's servers.
+
+On load, the obsolete Night Light entity is removed from this integration's
+entity registry entries. Remove references to it from dashboards, scripts and
+automations; the app background color is not a replacement for a physical light.
 
 ## Alarm Services
 

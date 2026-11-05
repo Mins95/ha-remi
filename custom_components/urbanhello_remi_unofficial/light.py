@@ -10,9 +10,10 @@ from homeassistant.components.light import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import CONF_REMI_ID, DOMAIN
 from .coordinator import RemiDataUpdateCoordinator
 from .entity import RemiEntity
 
@@ -24,9 +25,17 @@ async def async_setup_entry(
 ) -> None:
     """Set up Remi light entities from a config entry."""
     coordinator: RemiDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    registry = er.async_get(hass)
+    legacy_unique_id = f"{entry.data[CONF_REMI_ID]}_night_light"
+    for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
+        if (
+            entity.platform == DOMAIN
+            and entity.domain == "light"
+            and entity.unique_id == legacy_unique_id
+        ):
+            registry.async_remove(entity.entity_id)
     async_add_entities(
         [
-            RemiNightLightEntity(coordinator),
             RemiBackgroundLightEntity(coordinator),
         ]
     )
@@ -82,22 +91,10 @@ class RemiRgbLightEntity(RemiEntity, LightEntity):
         await self.coordinator.async_request_refresh()
 
 
-class RemiNightLightEntity(RemiRgbLightEntity):
-    """Night light entity for the Remi."""
-
-    _attr_name = "Night Light"
-    _attr_icon = "mdi:weather-night"
-    _field = "lightnight"
-
-    def __init__(self, coordinator: RemiDataUpdateCoordinator) -> None:
-        super().__init__(coordinator)
-        self._attr_unique_id = f"{self._remi_id}_night_light"
-
-
 class RemiBackgroundLightEntity(RemiRgbLightEntity):
-    """Background color light entity for the Remi."""
+    """Color associated with the Remi in the official app."""
 
-    _attr_name = "Background Color"
+    _attr_name = "App Background Color"
     _attr_icon = "mdi:palette"
     _field = "background_color"
 
