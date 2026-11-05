@@ -1,3 +1,10 @@
+## [0.2.3](https://github.com/timoa/ha-remi/compare/0.2.2...0.2.3) (2026-11-05)
+
+
+### Bug Fixes
+
+* remove ineffective RGB night light and clarify app color ([2729ffd](https://github.com/timoa/ha-remi/commit/2729ffdf579c7a09d037938d0413ffb65418ad09))
+
 ## [0.2.2](https://github.com/timoa/ha-remi/compare/0.2.1...0.2.2) (2026-11-05)
 
 
