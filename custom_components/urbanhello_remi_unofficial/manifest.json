@@ -1,6 +1,9 @@
 {
   "domain": "urbanhello_remi_unofficial",
   "name": "Remi",
+  "categories": [
+    "health_wellbeing"
+  ],
   "codeowners": [
     "@timoa"
   ],
