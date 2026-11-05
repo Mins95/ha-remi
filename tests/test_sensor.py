@@ -50,20 +50,8 @@ class TestTemperatureSensor:
         assert desc.value_fn(MOCK_REMI_DATA) == pytest.approx(19.7)
 
 
-class TestLuminositySensor:
-    """Tests for the luminosity sensor value function."""
-
-    def test_luminosity_returns_value(self):
-        desc = _get_description("luminosity")
-        assert desc.value_fn({"luminosity": 42}) == 42
-
-    def test_luminosity_returns_none_when_missing(self):
-        desc = _get_description("luminosity")
-        assert desc.value_fn({}) is None
-
-    def test_luminosity_from_mock_data(self):
-        desc = _get_description("luminosity")
-        assert desc.value_fn(MOCK_REMI_DATA) == 42
+def test_luminosity_is_not_exposed_as_illuminance():
+    assert all(description.key != "luminosity" for description in SENSOR_DESCRIPTIONS)
 
 
 class TestRssiSensor:

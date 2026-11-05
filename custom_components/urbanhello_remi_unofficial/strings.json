@@ -29,7 +29,6 @@
   "entity": {
     "sensor": {
       "temperature": { "name": "Temperature" },
-      "luminosity": { "name": "Luminosity" },
       "rssi": { "name": "WiFi Signal" },
       "firmware_version": { "name": "Firmware Version" },
       "ip_address": { "name": "IP Address" },
@@ -47,13 +46,13 @@
     },
     "number": {
       "volume": { "name": "Volume" },
-      "luminosity": { "name": "Screen Brightness" },
       "noise_threshold": { "name": "Noise Alert Threshold" }
     },
     "switch": {
       "alarm": { "name": "{name}" }
     },
     "light": {
+      "brightness": { "name": "Brightness" },
       "background_color": { "name": "App Background Color" }
     }
   },
