@@ -29,7 +29,6 @@
       "separateMinorPatch": true,
       "minimumReleaseAge": "15 days",
       "matchPackageNames": [
-        "*",
         "!renovate/renovate"
       ]
     }
