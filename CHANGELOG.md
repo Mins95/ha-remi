@@ -1,3 +1,10 @@
+## [0.2.2](https://github.com/timoa/ha-remi/compare/0.2.1...0.2.2) (2026-11-05)
+
+
+### Bug Fixes
+
+* allow REMI noise alert thresholds up to 250 ([4ec29cd](https://github.com/timoa/ha-remi/commit/4ec29cd67519879d7cafe187f163a565dbea63f2))
+
 ## [0.2.1](https://github.com/timoa/ha-remi/compare/0.2.0...0.2.1) (2026-11-05)
 
 
