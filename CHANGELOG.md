@@ -1,3 +1,10 @@
+## [0.2.7](https://github.com/timoa/ha-remi/compare/0.2.6...0.2.7) (2026-11-05)
+
+
+### Bug Fixes
+
+* **hacs:** declare the integration category ([2181824](https://github.com/timoa/ha-remi/commit/2181824caba61bd31f977e9b45afbd8662c5e5d2))
+
 ## [0.2.6](https://github.com/timoa/ha-remi/compare/0.2.5...0.2.6) (2026-11-05)
 
 
