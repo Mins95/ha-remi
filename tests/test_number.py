@@ -118,20 +118,26 @@ class TestRemiNumberEntity:
         entity = RemiNumberEntity(mock_coordinator, NUMBER_DESCRIPTIONS[2])
         assert entity.entity_description.name == "Noise Alert Threshold"
         assert entity.icon == "mdi:microphone"
+        assert entity.native_min_value == 0
+        assert entity.native_max_value == 250
+        assert entity.native_step == 1
 
-    def test_noise_threshold_native_value(self, mock_coordinator):
+    @pytest.mark.parametrize("value", [0, 30, 101, 250])
+    def test_noise_threshold_native_value(self, mock_coordinator, value):
+        mock_coordinator.remi["noise_notification_threshold"] = value
         entity = RemiNumberEntity(mock_coordinator, NUMBER_DESCRIPTIONS[2])
-        assert entity.native_value == 30
+        assert entity.native_value == value
 
     def test_noise_threshold_default_value_when_missing(self, mock_coordinator):
         mock_coordinator.remi.pop("noise_notification_threshold")
         entity = RemiNumberEntity(mock_coordinator, NUMBER_DESCRIPTIONS[2])
         assert entity.native_value == 0
 
-    async def test_noise_threshold_set_value(self, mock_coordinator):
+    @pytest.mark.parametrize("value", [0, 45, 100, 101, 250])
+    async def test_noise_threshold_set_value(self, mock_coordinator, value):
         entity = RemiNumberEntity(mock_coordinator, NUMBER_DESCRIPTIONS[2])
-        await entity.async_set_native_value(45)
+        await entity.async_set_native_value(value)
 
         mock_coordinator.client.update_remi.assert_awaited_once_with(
-            {"noise_notification_threshold": 45}
+            {"noise_notification_threshold": value}
         )
