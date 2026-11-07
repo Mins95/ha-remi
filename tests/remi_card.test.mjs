@@ -186,3 +186,205 @@ test("display scales remain separate and current states are localized only for l
   card.hass = { ...hass, language: "en" }; assert.match(card.shadowRoot.textContent, /Night face brightness/);
   assert.equal(card._state("number", "face_brightness").state, "8");
 });
+
+const FACE_OPTIONS = ["off", "awake", "sleepy", "semi_awake", "smiley"];
+const faceState = value => ({ state: value, attributes: { options: FACE_OPTIONS } });
+function setupFace(value) {
+  const entry = registryEntity("select", "face", "select.bedroom_expression");
+  return { ...setup([entry], value === undefined ? {} : { [entry.entity_id]: faceState(value) }), entry };
+}
+function reportFace(card, entry, value) {
+  card.hass = { ...card.hass, states: { ...card.hass.states, [entry.entity_id]: faceState(value) } };
+}
+function changeFaceToggle(card, checked) {
+  const input = card.shadowRoot.querySelector(".face-toggle");
+  input.checked = checked;
+  input.dispatchEvent({ type: "change" });
+}
+function faceCommands(calls) {
+  return calls.filter(call => call.type === "call_service" && call.domain === "select" && call.service === "select_option");
+}
+function disclosure(card, key) {
+  return card.shadowRoot.querySelectorAll("details").find(node => node.dataset.key === key);
+}
+
+test("face toggle switches off then restores the last observed expression without optimistic state", async () => {
+  const { card, calls, entry } = setupFace("sleepy");
+  changeFaceToggle(card, false);
+  await flush();
+  assert.deepEqual(faceCommands(calls)[0].service_data, { option: "off" });
+  assert.deepEqual(faceCommands(calls)[0].target, { entity_id: entry.entity_id });
+  assert.equal(card.shadowRoot.querySelector(".face-toggle").checked, true, "a command ACK is not an observed face");
+  reportFace(card, entry, "off");
+  assert.equal(card.shadowRoot.querySelector(".face-toggle").checked, false);
+  changeFaceToggle(card, true);
+  await flush();
+  assert.deepEqual(faceCommands(calls).map(call => call.service_data.option), ["off", "sleepy"]);
+  assert.equal(card.shadowRoot.querySelector(".face-toggle").checked, false, "restoration waits for reported state too");
+  reportFace(card, entry, "sleepy");
+  assert.equal(card.shadowRoot.querySelector(".face-toggle").checked, true);
+});
+
+test("failed expression commands are never remembered as a confirmed expression", async () => {
+  const { card, hass, calls, entry } = setupFace("sleepy");
+  hass.callWS = async request => { calls.push(request); throw new Error("Write rejected"); };
+  card.shadowRoot.querySelector(".faces").querySelectorAll("button")[0].dispatchEvent({ type: "click" });
+  await flush();
+  assert.equal(faceCommands(calls).length, 1, "failed writes are not retried");
+  assert.equal(card._message.error, true);
+  assert.equal(card._state("select", "face").state, "sleepy");
+  reportFace(card, entry, "off");
+  card.hass.callWS = async request => { calls.push(request); return {}; };
+  changeFaceToggle(card, true);
+  await flush();
+  assert.deepEqual(faceCommands(calls).map(call => call.service_data.option), ["awake", "sleepy"]);
+});
+
+test("starting with an off face uses awake only after an explicit turn-on action", async () => {
+  const { card, calls } = setupFace("off");
+  assert.equal(faceCommands(calls).length, 0);
+  assert.equal(card.shadowRoot.querySelector(".face-toggle").checked, false);
+  changeFaceToggle(card, true);
+  await flush();
+  assert.deepEqual(faceCommands(calls).map(call => call.service_data.option), ["awake"]);
+  assert.equal(card._state("select", "face").state, "off");
+});
+
+test("last observed expression and command target remain isolated between two REMI", async () => {
+  const { card, calls, entry } = setupFace("sleepy");
+  const secondDevice = { id: "device-2", remiId: "REMI2", name: "Other bedroom" };
+  const secondEntry = { ...registryEntity("select", "face", "select.second_expression"), device_id: secondDevice.id, unique_id: "REMI2_face" };
+  card._devices.push(secondDevice);
+  card._entities.push(secondEntry);
+  card.hass = { ...card.hass, states: { ...card.hass.states, [secondEntry.entity_id]: faceState("smiley") } };
+  card.setConfig({ device_id: secondDevice.id });
+  reportFace(card, secondEntry, "off");
+  reportFace(card, entry, "off");
+  changeFaceToggle(card, true);
+  await flush();
+  card.setConfig({ device_id: device.id });
+  changeFaceToggle(card, true);
+  await flush();
+  assert.deepEqual(faceCommands(calls).map(call => [call.target.entity_id, call.service_data.option]), [
+    [secondEntry.entity_id, "smiley"], [entry.entity_id, "sleepy"],
+  ]);
+});
+
+for (const unknown of [undefined, "unknown", "unavailable", "future_face"]) {
+  test(`unreported face ${String(unknown)} creates no expression or main-control command`, async () => {
+    const { card, calls } = setupFace(unknown);
+    const toggle = card.shadowRoot.querySelector(".face-toggle");
+    const buttons = card.shadowRoot.querySelector(".faces").querySelectorAll("button");
+    assert.equal(toggle.disabled, true);
+    assert.equal(toggle.checked, false);
+    assert.equal(buttons.length, 2);
+    assert.ok(buttons.every(button => button.disabled && button.getAttribute("aria-pressed") === "false"));
+    assert.match(card.shadowRoot.querySelector(".face-title").textContent, /Non communiqué/);
+    assert.equal(card.shadowRoot.querySelector(".face-art").querySelectorAll("path").length, 2, "unknown data must not draw awake or sleepy eyes");
+    // Even stale/programmatic UI events cannot bypass the state guard.
+    changeFaceToggle(card, true);
+    for (const button of buttons) button.dispatchEvent({ type: "click" });
+    await flush();
+    assert.equal(faceCommands(calls).length, 0);
+    assert.equal(card._lastFaces.size, 0);
+  });
+}
+
+for (const [lang, labels, displayLabel] of [
+  ["fr", ["Réveillé", "Endormi"], "Affichage du visage"],
+  ["en", ["Awake", "Sleepy"], "Face display"],
+]) {
+  test(`${lang}: two quick expressions and all five advanced options preserve stable state values`, () => {
+    const { card } = setupFace("awake");
+    card.hass = { ...card.hass, language: lang };
+    const buttons = card.shadowRoot.querySelector(".faces").querySelectorAll("button");
+    assert.deepEqual(buttons.map(button => button.textContent), labels);
+    assert.deepEqual(buttons.map(button => button.getAttribute("aria-pressed")), ["true", "false"]);
+    assert.equal(card.shadowRoot.querySelector(".face-toggle").getAttribute("aria-label"), displayLabel);
+    assert.match(card.shadowRoot.querySelector(".face-title").textContent, lang === "fr" ? /Allumé/ : /On/);
+    const options = disclosure(card, "remi:advanced").querySelectorAll("select")[0].querySelectorAll("option");
+    assert.deepEqual(options.map(option => option.value), FACE_OPTIONS);
+    assert.equal(options[1].textContent, labels[0]);
+    assert.equal(options[2].textContent, labels[1]);
+    assert.equal(card._state("select", "face").state, "awake");
+    assert.equal(disclosure(card, "remi:music").querySelector("summary").textContent, lang === "fr" ? "Musique" : "Music");
+  });
+}
+
+for (const [expression, label] of [["semi_awake", "À moitié éveillé"], ["smiley", "Souriant"]]) {
+  test(`${expression} stays visibly on without being misreported as awake or sleepy`, () => {
+    const { card, calls } = setupFace(expression);
+    assert.equal(card.shadowRoot.querySelector(".face-toggle").checked, true);
+    assert.ok(card.shadowRoot.querySelector(".faces").querySelectorAll("button").every(button => button.getAttribute("aria-pressed") === "false"));
+    assert.equal(card.shadowRoot.querySelector(".current-face").textContent, label);
+    assert.equal(faceCommands(calls).length, 0);
+  });
+}
+
+test("semi-awake and sleepy have distinct eye drawings while off has no lit face", () => {
+  const { card, entry } = setupFace("sleepy");
+  const drawing = () => card.shadowRoot.querySelector(".face-art").querySelectorAll("path").map(node => node.getAttribute("d"));
+  const sleepy = drawing();
+  reportFace(card, entry, "semi_awake");
+  const semiAwake = drawing();
+  assert.equal(sleepy.length, 4);
+  assert.equal(semiAwake.length, 4);
+  assert.notEqual(sleepy[2], semiAwake[2]);
+  reportFace(card, entry, "off");
+  assert.equal(drawing().length, 2);
+});
+
+test("music starts collapsed and retains its own disclosure state across reports and tabs", () => {
+  const { card, calls, entry } = setupFace("awake");
+  assert.equal(disclosure(card, "remi:music").open, false);
+  assert.equal(disclosure(card, "remi:advanced").open, false);
+  disclosure(card, "remi:music").open = true;
+  reportFace(card, entry, "sleepy");
+  assert.equal(disclosure(card, "remi:music").open, true);
+  assert.equal(disclosure(card, "remi:advanced").open, false, "music does not open unrelated settings");
+  card.shadowRoot.querySelector(".tabs").querySelectorAll("button")[1].dispatchEvent({ type: "click" });
+  card.shadowRoot.querySelector(".tabs").querySelectorAll("button")[0].dispatchEvent({ type: "click" });
+  assert.equal(disclosure(card, "remi:music").open, true);
+  disclosure(card, "remi:music").open = false;
+  disclosure(card, "remi:advanced").open = true;
+  reportFace(card, entry, "awake");
+  assert.equal(disclosure(card, "remi:music").open, false);
+  assert.equal(disclosure(card, "remi:advanced").open, true);
+  assert.equal(calls.length, 0, "rendering, disclosing and changing tabs must not send commands or browse music");
+});
+
+test("a replacement HA connection clears the previous connection's face-restoration history", async () => {
+  const { card, calls, entry } = setupFace("sleepy");
+  reportFace(card, entry, "off");
+  card.hass = { ...card.hass, connection: { ...card.hass.connection } };
+  await flush();
+  assert.equal(card._registryReady, true);
+  changeFaceToggle(card, true);
+  await flush();
+  assert.deepEqual(faceCommands(calls).map(call => call.service_data.option), ["awake"]);
+});
+
+test("quick expressions send only the corresponding select command", async () => {
+  for (const [index, expected] of ["awake", "sleepy"].entries()) {
+    const { card, calls, entry } = setupFace("off");
+    card.shadowRoot.querySelector(".faces").querySelectorAll("button")[index].dispatchEvent({ type: "click" });
+    await flush();
+    assert.deepEqual(calls, [{ type: "call_service", domain: "select", service: "select_option", service_data: { option: expected }, target: { entity_id: entry.entity_id } }]);
+  }
+});
+
+test("rapid face actions cannot send a second command while the first is pending", async () => {
+  const { card, hass, calls } = setupFace("sleepy");
+  let finish;
+  hass.callWS = request => { calls.push(request); return new Promise(resolve => { finish = resolve; }); };
+  changeFaceToggle(card, false);
+  assert.equal(card._busy, true);
+  assert.ok(card.shadowRoot.querySelector(".faces").querySelectorAll("button").every(button => button.disabled));
+  card.shadowRoot.querySelector(".faces").querySelectorAll("button")[0].dispatchEvent({ type: "click" });
+  changeFaceToggle(card, true);
+  assert.equal(faceCommands(calls).length, 1);
+  finish({});
+  await flush();
+  assert.equal(card._busy, false);
+  assert.deepEqual(faceCommands(calls).map(call => call.service_data.option), ["off"]);
+});
