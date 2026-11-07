@@ -12,7 +12,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DAYS_OF_WEEK, DOMAIN, FACE_OBJECT_ID_TO_DEFINE, FACE_DEFINE_TO_NAME
 from .coordinator import RemiDataUpdateCoordinator
-from .entity import RemiEntity, valid_alarm_snapshot
+from .entity import RemiAlarmEntity, retained_alarm_ids, valid_alarm_snapshot
 from .time import alarm_time
 
 
@@ -36,11 +36,12 @@ async def async_setup_entry(
         for event_id, event in current.items():
             if event_id not in known_event_ids:
                 known_event_ids.add(event_id)
-                new_entities.append(RemiAlarmSwitchEntity(coordinator, event))
+                new_entities.append(RemiAlarmSwitchEntity(coordinator, event, event_id))
         if new_entities:
             async_add_entities(new_entities)
 
-        _remove_stale_alarms(set(current))
+        _remove_stale_alarms(retained_alarm_ids(coordinator, set(current)))
+        known_event_ids.intersection_update(current)
 
     def _remove_stale_alarms(current_ids: set[str]) -> None:
         """Remove switch entities for events that no longer exist."""
@@ -55,13 +56,12 @@ async def async_setup_entry(
             event_id = entity.unique_id[len(prefix):]
             if event_id and event_id not in current_ids:
                 ent_registry.async_remove(entity.entity_id)
-        known_event_ids.intersection_update(current_ids)
 
     _add_new_alarms()
     entry.async_on_unload(coordinator.async_add_listener(lambda: _add_new_alarms()))
 
 
-class RemiAlarmSwitchEntity(RemiEntity, SwitchEntity):
+class RemiAlarmSwitchEntity(RemiAlarmEntity, SwitchEntity):
     """Switch entity representing a single Remi alarm (Event)."""
 
     _attr_icon = "mdi:alarm"
@@ -70,10 +70,10 @@ class RemiAlarmSwitchEntity(RemiEntity, SwitchEntity):
         self,
         coordinator: RemiDataUpdateCoordinator,
         event: dict[str, Any],
+        logical_id: str | None = None,
     ) -> None:
-        super().__init__(coordinator)
-        self._event_id: str = event["objectId"]
-        self._attr_unique_id = f"{self._remi_id}_alarm_{self._event_id}"
+        super().__init__(coordinator, event, logical_id)
+        self._attr_unique_id = f"{self._remi_id}_alarm_{self._logical_id}"
         self._update_alarm_name(event)
 
     @callback
@@ -82,19 +82,13 @@ class RemiAlarmSwitchEntity(RemiEntity, SwitchEntity):
         value = alarm_time(event)
         self._set_alarm_name(
             "alarm" if event.get("name") else "unnamed_alarm",
-            event.get("name") or self._event_id,
+            event.get("name") or self._logical_id,
             value.strftime("%H:%M") if value is not None else "--:--",
         )
 
     def _get_event(self) -> dict[str, Any]:
         """Return the current event data from the coordinator."""
-        events = self.coordinator.events
-        if not isinstance(events, list):
-            return {}
-        for event in events:
-            if isinstance(event, dict) and event.get("objectId") == self._event_id:
-                return event
-        return {}
+        return self._alarm_event()
 
     @property
     def available(self) -> bool:
@@ -116,7 +110,7 @@ class RemiAlarmSwitchEntity(RemiEntity, SwitchEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return alarm details as state attributes."""
         event = self._get_event()
-        attrs: dict[str, Any] = {}
+        attrs: dict[str, Any] = {"event_id": event.get("objectId")}
         if isinstance(event.get("name"), str):
             attrs["alarm_name"] = event["name"]
         if isinstance(event.get("music_path"), str):
@@ -154,14 +148,14 @@ class RemiAlarmSwitchEntity(RemiEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Enable the alarm."""
-        if not self._get_event():
+        if not self.coordinator.events_available or not (event := self._get_event()):
             raise ServiceValidationError(translation_domain=DOMAIN, translation_key="alarm_not_found")
-        await self.coordinator.client.update_event(self._event_id, {"enabled": True})
+        await self.coordinator.client.update_event(event["objectId"], {"enabled": True})
         await self.coordinator.async_request_refresh()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Disable the alarm."""
-        if not self._get_event():
+        if not self.coordinator.events_available or not (event := self._get_event()):
             raise ServiceValidationError(translation_domain=DOMAIN, translation_key="alarm_not_found")
-        await self.coordinator.client.update_event(self._event_id, {"enabled": False})
+        await self.coordinator.client.update_event(event["objectId"], {"enabled": False})
         await self.coordinator.async_request_refresh()
