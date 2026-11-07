@@ -11,7 +11,7 @@ import pytest
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.translation import async_get_translations, async_translate_state
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.urbanhello_remi_unofficial.const import DOMAIN
 
@@ -42,8 +42,14 @@ ENTITIES = [
     ("select", "face", "Clock Face", "Visage du réveil"),
     ("select", "clock_format", "Clock Format", "Format de l’heure"),
     ("select", "music_mode", "Music Mode", "Mode de lecture musicale"),
-    ("switch", "alarm_event_id_1", "Morning Alarm", "Morning Alarm"),
+    ("switch", "alarm_event_id_1", "07:30 · Morning Alarm", "07:30 · Morning Alarm"),
     ("time", "alarm_event_id_1_time", "Morning Alarm time", "Heure de Morning Alarm"),
+    ("media_player", "music_player", "Music", "Musique"),
+    ("sensor", "sleep_duration", "Last sleep duration", "Durée du dernier sommeil"),
+    ("sensor", "sleep_score", "Last sleep score", "Score du dernier sommeil"),
+    ("sensor", "sleep_bedtime", "Last bedtime", "Dernière heure de coucher"),
+    ("sensor", "sleep_wake_time", "Last wake-up time", "Dernière heure de réveil"),
+    ("sensor", "sleep_report_timestamp", "Sleep report date", "Date du bilan de sommeil"),
 ]
 
 
@@ -84,7 +90,7 @@ async def test_localized_names_states_and_reload_preserve_identity(
             assert current.name == saved.name
             state = hass.states.get(saved.entity_id)
             assert state is not None
-            expected_name = saved.name or f"Remi Bedroom {current.original_name}"
+            expected_name = f"Remi Bedroom {saved.name or current.original_name}"
             assert state.attributes["friendly_name"] == expected_name
 
     with (
@@ -151,6 +157,8 @@ async def test_frontend_resources_cover_flows_services_options_and_errors(hass, 
             "config.step.user.data.password": "Mot de passe",
             "services.create_alarm.name": "Créer une alarme",
             "services.update_alarm.fields.time.name": "Heure",
+            "services.update_alarm.fields.music_duration_minutes.name": "Durée de la musique",
+            "services.get_history.name": "Consulter l’historique du sommeil et de l’environnement",
             "services.delete_alarm.fields.event_id.name": "Identifiant de l’alarme",
             "selector.alarm_face.options.sleepy": "Endormi",
             "entity.select.face.state.semi_awake": "À moitié réveillé",
@@ -160,6 +168,8 @@ async def test_frontend_resources_cover_flows_services_options_and_errors(hass, 
             "config.step.user.data.password": "Password",
             "services.create_alarm.name": "Create Alarm",
             "services.update_alarm.fields.time.name": "Time",
+            "services.update_alarm.fields.music_duration_minutes.name": "Music duration",
+            "services.get_history.name": "Get sleep and environmental history",
             "services.delete_alarm.fields.event_id.name": "Event ID",
             "selector.alarm_face.options.sleepy": "Sleepy",
             "entity.select.face.state.semi_awake": "Semi-Awake",

@@ -15,15 +15,34 @@
         "data": {
           "remi_id": "Device"
         }
+      },
+      "reauth_confirm": {
+        "title": "Reconnect to UrbanHello",
+        "description": "Update the credentials for the account that owns this REMI.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
+      },
+      "reconfigure": {
+        "title": "Update UrbanHello credentials",
+        "description": "The selected REMI and its entities will be kept.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
       }
     },
     "error": {
       "invalid_auth": "Invalid username or password.",
       "cannot_connect": "Cannot connect to the Remi server.",
-      "unknown": "An unexpected error occurred."
+      "unknown": "An unexpected error occurred.",
+      "device_not_in_account": "This REMI does not belong to the supplied account."
     },
     "abort": {
-      "already_configured": "This Remi device is already configured."
+      "already_configured": "This Remi device is already configured.",
+      "reauth_successful": "UrbanHello reconnected successfully.",
+      "reconfigure_successful": "UrbanHello credentials updated."
     }
   },
   "entity": {
@@ -71,6 +90,121 @@
           "sleepy": "Sleepy",
           "semi_awake": "Semi-Awake",
           "smiley": "Smiley"
+        }
+      },
+      "sleep_duration": {
+        "name": "Last sleep duration",
+        "state_attributes": {
+          "source": {
+            "name": "Source",
+            "state": {
+              "cloud_history": "Cloud history"
+            }
+          },
+          "log_timestamp": {
+            "name": "Report date"
+          },
+          "report_age_days": {
+            "name": "Report age in days"
+          },
+          "stale": {
+            "name": "Old or undated report"
+          },
+          "timezone": {
+            "name": "Time zone"
+          }
+        }
+      },
+      "sleep_score": {
+        "name": "Last sleep score",
+        "state_attributes": {
+          "source": {
+            "name": "Source",
+            "state": {
+              "cloud_history": "Cloud history"
+            }
+          },
+          "log_timestamp": {
+            "name": "Report date"
+          },
+          "report_age_days": {
+            "name": "Report age in days"
+          },
+          "stale": {
+            "name": "Old or undated report"
+          },
+          "timezone": {
+            "name": "Time zone"
+          }
+        }
+      },
+      "sleep_bedtime": {
+        "name": "Last bedtime",
+        "state_attributes": {
+          "source": {
+            "name": "Source",
+            "state": {
+              "cloud_history": "Cloud history"
+            }
+          },
+          "log_timestamp": {
+            "name": "Report date"
+          },
+          "report_age_days": {
+            "name": "Report age in days"
+          },
+          "stale": {
+            "name": "Old or undated report"
+          },
+          "timezone": {
+            "name": "Time zone"
+          }
+        }
+      },
+      "sleep_wake_time": {
+        "name": "Last wake-up time",
+        "state_attributes": {
+          "source": {
+            "name": "Source",
+            "state": {
+              "cloud_history": "Cloud history"
+            }
+          },
+          "log_timestamp": {
+            "name": "Report date"
+          },
+          "report_age_days": {
+            "name": "Report age in days"
+          },
+          "stale": {
+            "name": "Old or undated report"
+          },
+          "timezone": {
+            "name": "Time zone"
+          }
+        }
+      },
+      "sleep_report_timestamp": {
+        "name": "Sleep report date",
+        "state_attributes": {
+          "source": {
+            "name": "Source",
+            "state": {
+              "cloud_history": "Cloud history"
+            }
+          },
+          "log_timestamp": {
+            "name": "Report date"
+          },
+          "report_age_days": {
+            "name": "Report age in days"
+          },
+          "stale": {
+            "name": "Old or undated report"
+          },
+          "timezone": {
+            "name": "Time zone"
+          }
         }
       }
     },
@@ -149,7 +283,7 @@
     },
     "switch": {
       "alarm": {
-        "name": "{name}",
+        "name": "{time} · {name}",
         "state_attributes": {
           "time": {
             "name": "Time"
@@ -184,11 +318,23 @@
               "semi_awake": "Semi-Awake",
               "smiley": "Smiley"
             }
+          },
+          "alarm_name": {
+            "name": "Alarm name"
+          },
+          "event_id": {
+            "name": "Alarm ID"
+          },
+          "music_path": {
+            "name": "Music file"
+          },
+          "play_button_enabled": {
+            "name": "Play button enabled"
           }
         }
       },
       "unnamed_alarm": {
-        "name": "Alarm {name}",
+        "name": "{time} · Alarm",
         "state_attributes": {
           "time": {
             "name": "Time"
@@ -223,6 +369,18 @@
               "semi_awake": "Semi-Awake",
               "smiley": "Smiley"
             }
+          },
+          "alarm_name": {
+            "name": "Alarm name"
+          },
+          "event_id": {
+            "name": "Alarm ID"
+          },
+          "music_path": {
+            "name": "Music file"
+          },
+          "play_button_enabled": {
+            "name": "Play button enabled"
           }
         }
       }
@@ -230,6 +388,11 @@
     "light": {
       "background_color": {
         "name": "App Background Color"
+      }
+    },
+    "media_player": {
+      "music_player": {
+        "name": "Music"
       }
     }
   },
@@ -256,11 +419,31 @@
         },
         "face_define": {
           "name": "Face",
-          "description": "Face to show at alarm time (e.g. FACE_DAY)."
+          "description": "Face shown at alarm time."
         },
         "volume": {
           "name": "Volume",
           "description": "Alarm volume override (0–100)."
+        },
+        "brightness": {
+          "name": "Brightness",
+          "description": "Brightness at alarm time (0–100)."
+        },
+        "music_path": {
+          "name": "Music file",
+          "description": "Relative path to a file stored on REMI; empty to remove music."
+        },
+        "music_duration_minutes": {
+          "name": "Music duration",
+          "description": "Minutes; 0 uses the app’s single-play setting."
+        },
+        "play_button_enabled": {
+          "name": "Play button enabled",
+          "description": "Enable the physical Play button after this alarm. Other alarm settings are preserved."
+        },
+        "remi_id": {
+          "name": "REMI identifier",
+          "description": "Optional when exactly one REMI integration is loaded."
         }
       }
     },
@@ -290,11 +473,31 @@
         },
         "face_define": {
           "name": "Face",
-          "description": "New face define string."
+          "description": "Face shown at alarm time."
         },
         "volume": {
           "name": "Volume",
           "description": "New volume override."
+        },
+        "brightness": {
+          "name": "Brightness",
+          "description": "Brightness at alarm time (0–100)."
+        },
+        "music_path": {
+          "name": "Music file",
+          "description": "Relative path to a file stored on REMI; empty to remove music."
+        },
+        "music_duration_minutes": {
+          "name": "Music duration",
+          "description": "Minutes; 0 uses the app’s single-play setting."
+        },
+        "play_button_enabled": {
+          "name": "Play button enabled",
+          "description": "Enable the physical Play button after this alarm. Other alarm settings are preserved."
+        },
+        "remi_id": {
+          "name": "REMI identifier",
+          "description": "Optional when exactly one REMI integration is loaded."
         }
       }
     },
@@ -305,6 +508,160 @@
         "event_id": {
           "name": "Event ID",
           "description": "The objectId of the alarm to delete."
+        },
+        "remi_id": {
+          "name": "REMI identifier",
+          "description": "Optional when exactly one REMI integration is loaded."
+        }
+      }
+    },
+    "get_history": {
+      "name": "Get sleep and environmental history",
+      "description": "Returns up to two recent cloud reports, sleep estimates and environmental charts. Reports may be old: check log_timestamp and stale. Sample clocks follow the app's noon-to-noon grid; absolute sample dates are not established. Noise and light have no calibrated physical unit.",
+      "fields": {
+        "limit": {
+          "name": "Reports",
+          "description": "Number of recent reports to return (1 or 2)."
+        },
+        "remi_id": {
+          "name": "REMI identifier",
+          "description": "Optional when exactly one REMI integration is loaded."
+        }
+      }
+    },
+    "list_naps": {
+      "name": "List timer profiles",
+      "description": "Read stored profiles from the cloud. This does not report a running countdown.",
+      "fields": {
+        "remi_id": {
+          "name": "REMI identifier",
+          "description": "Optional when exactly one REMI integration is loaded."
+        }
+      }
+    },
+    "create_nap": {
+      "name": "Create a timer profile",
+      "description": "Create one of REMI's five stored timer profiles. Use the physical timer button to start it.",
+      "fields": {
+        "remi_id": {
+          "name": "REMI identifier",
+          "description": "Optional when exactly one REMI integration is loaded."
+        },
+        "name": {
+          "name": "Name",
+          "description": "Name of the stored profile."
+        },
+        "duration_minutes": {
+          "name": "Timer duration",
+          "description": "Minutes; the profile is started using REMI's physical timer button."
+        },
+        "face": {
+          "name": "Face",
+          "description": "Face displayed during the timer."
+        },
+        "brightness": {
+          "name": "Night-light brightness",
+          "description": "Brightness from 0 to 100%."
+        },
+        "sleep_aid": {
+          "name": "Sleep aid",
+          "description": "Enable the profile’s sleep aid."
+        },
+        "music_path_start": {
+          "name": "Music at start",
+          "description": "Device-relative file path; empty to clear."
+        },
+        "music_path_end": {
+          "name": "Music at end",
+          "description": "Device-relative file path; empty to clear."
+        },
+        "volume_start": {
+          "name": "Start music volume",
+          "description": "Volume from 0 to 100%."
+        },
+        "volume_end": {
+          "name": "End music volume",
+          "description": "Volume from 0 to 100%."
+        },
+        "music_duration_start_minutes": {
+          "name": "Start music duration",
+          "description": "Minutes; 0 uses the app's single-play setting."
+        },
+        "music_duration_end_minutes": {
+          "name": "End music duration",
+          "description": "Minutes; 0 uses the app's single-play setting."
+        }
+      }
+    },
+    "update_nap": {
+      "name": "Update a timer profile",
+      "description": "Change only the supplied fields of a stored profile.",
+      "fields": {
+        "nap_id": {
+          "name": "Profile identifier",
+          "description": "Identifier returned by the List timer profiles action."
+        },
+        "remi_id": {
+          "name": "REMI identifier",
+          "description": "Optional when exactly one REMI integration is loaded."
+        },
+        "name": {
+          "name": "Name",
+          "description": "Name of the stored profile."
+        },
+        "duration_minutes": {
+          "name": "Timer duration",
+          "description": "Minutes; the profile is started using REMI's physical timer button."
+        },
+        "face": {
+          "name": "Face",
+          "description": "Face displayed during the timer."
+        },
+        "brightness": {
+          "name": "Night-light brightness",
+          "description": "Brightness from 0 to 100%."
+        },
+        "sleep_aid": {
+          "name": "Sleep aid",
+          "description": "Enable the profile’s sleep aid."
+        },
+        "music_path_start": {
+          "name": "Music at start",
+          "description": "Device-relative file path; empty to clear."
+        },
+        "music_path_end": {
+          "name": "Music at end",
+          "description": "Device-relative file path; empty to clear."
+        },
+        "volume_start": {
+          "name": "Start music volume",
+          "description": "Volume from 0 to 100%."
+        },
+        "volume_end": {
+          "name": "End music volume",
+          "description": "Volume from 0 to 100%."
+        },
+        "music_duration_start_minutes": {
+          "name": "Start music duration",
+          "description": "Minutes; 0 uses the app's single-play setting."
+        },
+        "music_duration_end_minutes": {
+          "name": "End music duration",
+          "description": "Minutes; 0 uses the app's single-play setting."
+        }
+      }
+    },
+    "delete_nap": {
+      "name": "Delete a timer profile",
+      "description": "Remove a stored timer profile belonging to this REMI.",
+      "fields": {
+        "nap_id": {
+          "name": "Profile identifier",
+          "description": "Identifier returned by the List timer profiles action."
+        },
+        "remi_id": {
+          "name": "REMI identifier",
+          "description": "Optional when exactly one REMI integration is loaded."
         }
       }
     }
@@ -357,6 +714,63 @@
     },
     "cannot_refresh_firmware": {
       "message": "Could not refresh REMI firmware status"
+    },
+    "history_request_failed": {
+      "message": "Unable to read REMI history. Try again later."
+    },
+    "invalid_music_path": {
+      "message": "Use a relative file path on REMI, without a URL, command suffix, or parent directory."
+    },
+    "missing_remi_target": {
+      "message": "No REMI device is selected."
+    },
+    "invalid_profile_id": {
+      "message": "The profile identifier is invalid."
+    },
+    "invalid_cloud_response": {
+      "message": "The cloud returned incomplete or inconsistent data. No replacement data was assumed."
+    },
+    "unsupported_media_command": {
+      "message": "This music command is not supported."
+    },
+    "unsupported_media_selection": {
+      "message": "Select a music file from this REMI's library."
+    },
+    "music_track_not_found": {
+      "message": "The selected file is absent from this REMI's cloud music library."
+    },
+    "music_track_not_selected": {
+      "message": "Select a file before starting or changing tracks."
+    },
+    "music_track_boundary": {
+      "message": "There is no neighboring track in this folder."
+    },
+    "invalid_media_volume": {
+      "message": "Volume must be a number between 0 and 1."
+    },
+    "invalid_nap_value": {
+      "message": "A timer-profile field is invalid. Check its type and permitted range."
+    },
+    "nap_not_found": {
+      "message": "This timer profile does not belong to the selected REMI or no longer exists."
+    },
+    "nap_profile_limit": {
+      "message": "REMI supports up to five timer profiles. Delete one before creating another."
+    },
+    "empty_nap_update": {
+      "message": "Provide at least one profile field to update."
+    },
+    "nap_target_not_unique": {
+      "message": "Specify a REMI identifier when the target cannot be determined uniquely."
+    },
+    "reauth_required": {
+      "message": "UrbanHello credentials must be updated"
+    },
+    "api_invalid_response": {
+      "message": "UrbanHello returned incomplete or inconsistent data"
+    },
+    "unknown_alarm_play_settings": {
+      "message": "Save this alarm in the REMI app before changing its Play button setting, so its other settings can be preserved."
     }
   },
   "selector": {

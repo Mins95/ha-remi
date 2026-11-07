@@ -8,7 +8,7 @@ import uuid
 import aiohttp
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -94,6 +94,70 @@ class RemiConfigFlow(ConfigFlow, domain=DOMAIN):
                     vol.Required(CONF_REMI_ID): vol.In(self._all_remi_ids),
                 }
             ),
+        )
+
+    async def async_step_reauth(self, entry_data: dict[str, Any]) -> ConfigFlowResult:
+        """Recover the existing selected device instead of creating an entry."""
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Ask for fresh account credentials without pre-filling the password."""
+        return await self._async_update_credentials(
+            self._get_reauth_entry(), "reauth_confirm", user_input
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Let users change credentials while retaining the selected REMI."""
+        return await self._async_update_credentials(
+            self._get_reconfigure_entry(), "reconfigure", user_input
+        )
+
+    async def _async_update_credentials(
+        self, entry: ConfigEntry, step_id: str, user_input: dict[str, Any] | None
+    ) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            installation_id = entry.data.get(CONF_INSTALLATION_ID) or str(uuid.uuid4())
+            client = RemiApiClient(
+                user_input[CONF_USERNAME], user_input[CONF_PASSWORD],
+                async_get_clientsession(self.hass), installation_id,
+            )
+            selected_id = entry.data[CONF_REMI_ID]
+            try:
+                token, _, device_ids = await client.login()
+                if selected_id not in device_ids:
+                    errors["base"] = "device_not_in_account"
+                else:
+                    client.set_remi_id(selected_id)
+                    device = await client.get_remi()
+                    if device.get("objectId") != selected_id:
+                        errors["base"] = "device_not_in_account"
+            except RemiAuthError:
+                errors["base"] = "invalid_auth"
+            except (RemiApiError, aiohttp.ClientError, TimeoutError):
+                errors["base"] = "cannot_connect"
+            if not errors:
+                # Do not replace the entry, its title, selected device or options.
+                return self.async_update_reload_and_abort(
+                    entry,
+                    data_updates={
+                        CONF_USERNAME: user_input[CONF_USERNAME],
+                        CONF_PASSWORD: user_input[CONF_PASSWORD],
+                        CONF_SESSION_TOKEN: token,
+                        CONF_INSTALLATION_ID: installation_id,
+                    },
+                )
+        return self.async_show_form(
+            step_id=step_id,
+            data_schema=vol.Schema({
+                vol.Required(CONF_USERNAME, default=entry.data[CONF_USERNAME]): str,
+                vol.Required(CONF_PASSWORD): str,
+            }),
+            errors=errors,
         )
 
     async def _async_create_entry(self, remi_id: str) -> ConfigFlowResult:

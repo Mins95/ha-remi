@@ -232,7 +232,7 @@ async def test_services_refuse_missing_alarm(hass):
 
 async def test_last_unload_removes_services(hass):
     entry = MagicMock(entry_id="entry")
-    hass.data[DOMAIN] = {"entry": MagicMock()}
+    hass.data[DOMAIN] = {"entry": MagicMock(history_coordinator=None)}
     _register_services(hass)
     with patch.object(hass.config_entries, "async_unload_platforms", return_value=True):
         assert await async_unload_entry(hass, entry)

@@ -1,6 +1,11 @@
 {
   "domain": "urbanhello_remi_unofficial",
   "name": "Remi",
+  "after_dependencies": [
+    "frontend",
+    "http",
+    "lovelace"
+  ],
   "categories": [
     "health_wellbeing"
   ],
@@ -13,5 +18,5 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/Mins95/ha-remi/issues",
   "requirements": [],
-  "version": "0.4.0"
+  "version": "0.5.0-beta.1"
 }

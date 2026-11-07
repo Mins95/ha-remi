@@ -72,10 +72,6 @@ class TestConfigFlowUserStep:
         assert result["step_id"] == "user"
         assert result["errors"] == {}
 
-    @pytest.mark.xfail(
-        reason="HA daemon thread cleanup issue in pytest-homeassistant-custom-component - test passes functionally but fails on teardown thread check",
-        strict=False,
-    )
     async def test_single_device_creates_entry(self, hass):
         with _patch_login(), _patch_setup_entry():
             result = await hass.config_entries.flow.async_init(

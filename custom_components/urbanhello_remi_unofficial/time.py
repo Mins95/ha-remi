@@ -13,7 +13,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 from .coordinator import RemiDataUpdateCoordinator
-from .entity import RemiEntity
+from .entity import RemiEntity, valid_alarm_snapshot
 
 
 def alarm_time(event: dict[str, Any]) -> time | None:
@@ -38,20 +38,23 @@ async def async_setup_entry(
 
     @callback
     def synchronize() -> None:
-        if not coordinator.last_update_success:
+        current = valid_alarm_snapshot(coordinator)
+        if current is None:
             return
-        current = {event["objectId"]: event for event in coordinator.events
-                   if isinstance(event.get("objectId"), str) and event["objectId"]}
         new = [RemiAlarmTime(coordinator, event) for key, event in current.items()
                if key not in known]
         if new:
             async_add_entities(new)
         registry = er.async_get(hass)
-        for key in known - current.keys():
-            unique_id = f"{coordinator.client.remi_id}_alarm_{key}_time"
-            entity_id = registry.async_get_entity_id("time", DOMAIN, unique_id)
-            if entity_id:
-                registry.async_remove(entity_id)
+        remi_id = coordinator.client.remi_id
+        if isinstance(remi_id, str) and remi_id:
+            prefix = f"{remi_id}_alarm_"
+            for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
+                if entity.platform != DOMAIN or entity.domain != "time" or not entity.unique_id.startswith(prefix) or not entity.unique_id.endswith("_time"):
+                    continue
+                event_id = entity.unique_id[len(prefix):-len("_time")]
+                if event_id and event_id not in current:
+                    registry.async_remove(entity.entity_id)
         known.clear()
         known.update(current)
 
@@ -69,17 +72,24 @@ class RemiAlarmTime(RemiEntity, TimeEntity):
         super().__init__(coordinator)
         self._event_id = event["objectId"]
         self._attr_unique_id = f"{self._remi_id}_alarm_{self._event_id}_time"
-        self._attr_translation_placeholders = {
-            "name": event.get("name") or self._event_id
-        }
+        self._set_alarm_name("alarm_time", event.get("name") or self._event_id)
 
     def _event(self) -> dict[str, Any]:
-        return next((event for event in self.coordinator.events
-                     if event.get("objectId") == self._event_id), {})
+        events = self.coordinator.events
+        if not isinstance(events, list):
+            return {}
+        return next((event for event in events
+                     if isinstance(event, dict) and event.get("objectId") == self._event_id), {})
 
     @property
     def available(self) -> bool:
-        return super().available and bool(self._event())
+        return super().available and self.coordinator.events_available and bool(self._event())
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        if self.coordinator.events_available and (event := self._event()):
+            self._set_alarm_name("alarm_time", event.get("name") or self._event_id)
+        super()._handle_coordinator_update()
 
     @property
     def native_value(self) -> time | None:

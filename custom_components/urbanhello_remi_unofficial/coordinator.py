@@ -1,16 +1,17 @@
 """DataUpdateCoordinator for the UrbanHello Remi integration."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from time import monotonic
 from datetime import timedelta
 from typing import Any
 
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import RemiApiClient, RemiApiError
+from .api import RemiApiClient, RemiApiError, RemiAuthError
 from .const import DOMAIN, SCAN_INTERVAL_SECONDS
 
 _LOGGER = logging.getLogger(__name__)
@@ -30,21 +31,47 @@ class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.faces: list[dict[str, Any]] = []
         self.config_params: dict[str, Any] = {}
         self._config_checked_at: float | None = None
+        self.events_available = False
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch latest data from the Remi API."""
         try:
-            remi, events = await _gather(
+            remi, events = await asyncio.gather(
                 self.client.get_remi(),
                 self.client.get_events(),
+                return_exceptions=True,
             )
+            # A rejected account needs repair even if the other read succeeded.
+            for result in (remi, events):
+                if isinstance(result, RemiAuthError):
+                    self.events_available = False
+                    raise result
+            if isinstance(remi, BaseException):
+                self.events_available = False
+                raise remi
+            if isinstance(events, BaseException):
+                self.events_available = False
+                if not isinstance(events, RemiApiError):
+                    raise events
+                _LOGGER.debug("Could not refresh REMI alarms; retaining the previous snapshot")
+                events = self.events
+            else:
+                self.events_available = True
             if self._config_checked_at is None or monotonic() - self._config_checked_at >= 3600:
                 try:
                     await self._async_refresh_config()
+                except RemiAuthError as err:
+                    raise ConfigEntryAuthFailed(
+                        translation_domain=DOMAIN, translation_key="reauth_required"
+                    ) from err
                 except RemiApiError:
                     # A firmware metadata failure must not discard valid device data.
                     _LOGGER.debug("Could not refresh REMI firmware metadata")
             return {"remi": remi, "events": events}
+        except RemiAuthError as err:
+            raise ConfigEntryAuthFailed(
+                translation_domain=DOMAIN, translation_key="reauth_required"
+            ) from err
         except RemiApiError as err:
             raise UpdateFailed(
                 translation_domain=DOMAIN, translation_key="cannot_refresh_device"
@@ -55,6 +82,10 @@ class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             self.faces = await self.client.get_faces()
             await self._async_refresh_config()
+        except RemiAuthError as err:
+            raise ConfigEntryAuthFailed(
+                translation_domain=DOMAIN, translation_key="reauth_required"
+            ) from err
         except RemiApiError as err:
             _LOGGER.warning("Could not fetch static Remi data: %s", err)
 
@@ -96,9 +127,3 @@ class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def latest_firmware_version(self) -> int | None:
         """Return the latest firmware version from server config."""
         return self.config_params.get("default_firmware_update_version")
-
-
-async def _gather(*coros):
-    """Run multiple coroutines and return results as a list."""
-    import asyncio
-    return await asyncio.gather(*coros)

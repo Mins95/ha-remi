@@ -22,6 +22,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN, FACE_OBJECT_ID_TO_DEFINE, FACE_DEFINE_TO_NAME
 from .coordinator import RemiDataUpdateCoordinator
 from .entity import RemiEntity
+from .history_sensor import HISTORY_SENSOR_DESCRIPTIONS, RemiHistorySensor
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -46,6 +47,14 @@ def _temperature_value(remi: dict[str, Any]) -> float | None:
     except OverflowError:
         return None
     return temperature if math.isfinite(temperature) else None
+
+
+def _face_value(remi: dict[str, Any]) -> str | None:
+    """A malformed cloud pointer must not break the other sensors."""
+    face = remi.get("face")
+    if not isinstance(face, dict) or not isinstance(face.get("objectId"), str):
+        return None
+    return FACE_DEFINE_TO_NAME.get(FACE_OBJECT_ID_TO_DEFINE.get(face["objectId"]))
 
 
 SENSOR_DESCRIPTIONS: tuple[RemiSensorEntityDescription, ...] = (
@@ -86,12 +95,7 @@ SENSOR_DESCRIPTIONS: tuple[RemiSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.ENUM,
         options=list(FACE_DEFINE_TO_NAME.values()),
         icon="mdi:emoticon-outline",
-        value_fn=lambda remi: FACE_DEFINE_TO_NAME.get(
-            FACE_OBJECT_ID_TO_DEFINE.get(
-                (remi.get("face") or {}).get("objectId", ""), ""
-            ),
-            None,
-        ),
+        value_fn=_face_value,
     ),
 )
 
@@ -107,6 +111,11 @@ async def async_setup_entry(
         RemiSensorEntity(coordinator, description)
         for description in SENSOR_DESCRIPTIONS
     )
+    if (history := getattr(coordinator, "history_coordinator", None)) is not None:
+        async_add_entities(
+            RemiHistorySensor(history, description)
+            for description in HISTORY_SENSOR_DESCRIPTIONS
+        )
 
 
 class RemiSensorEntity(RemiEntity, SensorEntity):
@@ -122,6 +131,13 @@ class RemiSensorEntity(RemiEntity, SensorEntity):
         super().__init__(coordinator)
         self.entity_description = description
         self._attr_unique_id = f"{self._remi_id}_{description.key}"
+
+    @property
+    def available(self) -> bool:
+        """Live readings cannot be trusted when REMI explicitly reports offline."""
+        if self.entity_description.key in {"temperature", "rssi", "current_face"}:
+            return self.device_available
+        return super().available
 
     @property
     def native_value(self) -> Any:

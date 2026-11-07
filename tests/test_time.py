@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import entity_registry as er
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.urbanhello_remi_unofficial.const import DOMAIN
 from custom_components.urbanhello_remi_unofficial.time import (
@@ -17,7 +18,7 @@ from .conftest import MOCK_EVENT_DATA, MOCK_REMI_DATA, MOCK_REMI_ID
 def coordinator(hass, mock_api_client):
     return MagicMock(
         hass=hass, client=mock_api_client, remi=MOCK_REMI_DATA,
-        events=[dict(MOCK_EVENT_DATA[0])], last_update_success=True,
+        events=[dict(MOCK_EVENT_DATA[0])], last_update_success=True, events_available=True,
         async_request_refresh=AsyncMock(),
     )
 
@@ -64,8 +65,9 @@ async def test_precision_or_timezone_not_silently_discarded(coordinator, value):
 
 
 async def test_alarm_lifecycle_and_failed_poll(hass, coordinator):
-    hass.data[DOMAIN] = {"entry": coordinator}
-    entry = MagicMock(entry_id="entry")
+    entry = MockConfigEntry(domain=DOMAIN, data={}, title="REMI")
+    entry.add_to_hass(hass)
+    hass.data[DOMAIN] = {entry.entry_id: coordinator}
     add = MagicMock()
     await async_setup_entry(hass, entry, add)
     assert len(add.call_args.args[0]) == 1
@@ -74,7 +76,7 @@ async def test_alarm_lifecycle_and_failed_poll(hass, coordinator):
     assert add.call_count == 1
     registry = er.async_get(hass)
     registered = registry.async_get_or_create(
-        "time", DOMAIN, f"{MOCK_REMI_ID}_alarm_event_id_1_time"
+        "time", DOMAIN, f"{MOCK_REMI_ID}_alarm_event_id_1_time", config_entry=entry
     )
     coordinator.events = []
     coordinator.last_update_success = False

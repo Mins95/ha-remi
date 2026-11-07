@@ -8,6 +8,7 @@
   <a href="https://www.home-assistant.io/"><img src="https://img.shields.io/badge/Home%20Assistant-Integration-41BDF5?style=for-the-badge&logo=home-assistant&logoColor=white" alt="Home Assistant integration"></a>
   <a href="https://my.home-assistant.io/redirect/marketplace_repository/?owner=Mins95&amp;repository=ha-remi&amp;category=integration"><img src="https://img.shields.io/badge/Marketplace-Custom-0080ff?style=for-the-badge" alt="Custom Marketplace repository"></a>
   <a href="https://github.com/Mins95/ha-remi/releases/latest"><img src="https://img.shields.io/github/v/release/Mins95/ha-remi?style=for-the-badge&amp;label=Latest%20release&amp;color=0080ff" alt="Latest release"></a>
+  <a href="https://github.com/Mins95/ha-remi/releases/tag/0.5.0-beta.1"><img src="https://img.shields.io/badge/0.5.0--beta.1-Opt--in%20beta-f59e0b?style=for-the-badge" alt="0.5.0-beta.1 opt-in beta"></a>
 </p>
 
 <p align="center">
@@ -27,8 +28,8 @@
 </p>
 
 <p align="center">
-  Alarms, clock faces, brightness and temperature for your UrbanHello REMI.<br>
-  Manage everyday settings from Home Assistant, with an English or French interface.
+  Your REMI, its schedules and its sleep reports in one dashboard card.<br>
+  Everyday controls, music and timer profiles, in English or French.
 </p>
 
 <p align="center">
@@ -38,32 +39,40 @@
 
 Community integration maintained by [Mins95](https://github.com/Mins95), based on [timoa/ha-remi](https://github.com/timoa/ha-remi). It uses your UrbanHello account and requires an internet connection. It is not affiliated with or endorsed by UrbanHello.
 
+> [!IMPORTANT]
+> **0.5.0-beta.1 is an opt-in pre-release for Home Assistant 2026.11.0 or newer.** The latest stable release remains **0.4.0**. The beta adds a dashboard card, music controls, sleep reports, environmental charts and stored timer profiles. Read the [beta limitations](#-beta-limitations) before enabling it.
+
 ---
 
 ## 📖 Documentation
 
-[Install and configure](#-installation) · [Entities and controls](#-entities-and-controls) · [Alarm actions](docs/usage.md#alarm-actions) · [Upgrade guide](docs/usage.md#upgrading) · [Changelog](CHANGELOG.md)
+[Install and configure](#-installation) · [Add the REMI card](docs/card.md) · [Controls and actions](docs/usage.md) · [Upgrade guide](docs/usage.md#upgrading) · [Changelog](CHANGELOG.md)
 
-**Version 0.4.0 adds English and French interface translations.** Entity names, settings, action descriptions and supported state labels follow your Home Assistant language. Your custom entity names and alarm names are preserved.
+**Start with the included REMI card.** Add it through your dashboard's card picker, choose your device if needed, and use the four tabs: REMI, Schedules, Sleep and Timers. No YAML or separate frontend download is required. Existing dashboards are left as you configured them. [Card setup →](docs/card.md)
 
 **Upgrading from 0.3.x or the original integration?** Read the [0.4.0 migration notice](#-upgrading-to-040) before updating automations that compare face states or select music modes.
 
 ## ✨ Features
 
 - 🌡️ **Temperature with decimals**, corrected conversion and diagnostic attributes.
-- ⏰ **Alarm switches and time controls**, plus actions to create, edit and delete schedules.
+- 🪄 **An included dashboard card**, with a visual editor and device selection.
+- ⏰ **Schedules with time, face, volume, brightness and music settings**, plus switches and time entities.
 - 🙂 **Clock face and time format**, with 12-hour and 24-hour display settings.
 - 💡 **Two separate brightness controls:** upper light from 0 to 100, and night face brightness from 1 to 10.
 - 🔊 **Volume, sound notification threshold and music playback mode.**
+- 🎵 **Music player and library browsing**, for files already associated with your REMI.
+- 🌙 **Sleep reports**, including duration, score, bedtime, wake-up time and report date.
+- 📈 **Environmental history on demand**, with report age and the app's chart scales.
+- ⏳ **Up to five stored timer profiles**, with start/end music and volume settings.
 - 🎨 **Official app background color**, exposed as an RGB light entity.
 - 🔎 **Connection and firmware information**, with a read-only firmware check button.
 - 🇬🇧 🇫🇷 **English and French interface**, including translated display labels and errors.
 
-The integration polls the UrbanHello cloud every 60 seconds. Successful commands request a refresh. Transient read failures have bounded retries; commands are not automatically replayed after an ambiguous connection failure.
+Device state is polled every 60 seconds. Sleep metadata is refreshed separately every 20 minutes; chart files are downloaded only when requested. A history failure does not disable device controls. Transient read failures have bounded retries; commands are not automatically replayed after an ambiguous connection failure.
 
 ## 📥 Installation
 
-You need a REMI already configured in the official app, its UrbanHello account credentials, and internet access from Home Assistant. Installation has been checked on Home Assistant 2026.11.0; the automated test environment is described in the [changelog](CHANGELOG.md).
+You need **Home Assistant 2026.11.0 or newer**, a REMI already configured in the official app, its UrbanHello account credentials, and internet access from Home Assistant. Development and release checks target **Home Assistant 2026.11.0 exactly**.
 
 ### Home Assistant 2026.11 and newer: Marketplace
 
@@ -77,11 +86,18 @@ You need a REMI already configured in the official app, its UrbanHello account c
 
 See the [official Marketplace instructions](https://www.home-assistant.io/integrations/marketplace/#custom-repositories).
 
-### Older installations using HACS
+### HACS installations
 
 [![Open this repository in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Mins95&repository=ha-remi&category=integration)
 
-Add `https://github.com/Mins95/ha-remi` under **Custom repositories**, choose **Integration**, install the published release and restart Home Assistant.
+If you manage custom integrations with HACS, add `https://github.com/Mins95/ha-remi` under **Custom repositories**, choose **Integration**, install the published release and restart Home Assistant. The beta still requires Home Assistant 2026.11.0 or newer.
+
+### Opt in to 0.5.0-beta.1
+
+- **Marketplace:** open the repository's device under the Marketplace integration. Enable its disabled-by-default **Pre-release** switch, then turn that switch on. Check for updates and select **0.5.0-beta.1**.
+- **HACS:** enable **Show beta versions** for this repository, then select **0.5.0-beta.1** when downloading the update.
+
+Restart Home Assistant after installation and reload the browser page. The beta does not replace 0.4.0 as the default stable release. [Upgrade details →](docs/usage.md#050-beta1-new-controls-and-dashboard-card)
 
 ### Configure REMI
 
@@ -111,10 +127,11 @@ The table uses English display names. Entity names follow Home Assistant's confi
 | App background color | RGB light | REMI's background color in the official app |
 | Each alarm | Switch | Enable or disable that schedule |
 | Each alarm time | Time | Set hours and minutes in REMI's time zone |
+| Music player | Media player | Browse files, play a selection, pause, stop, previous/next, volume and repeat |
 
 **Night face brightness** matches the scale in the [manufacturer's guide](https://www.urbanhello.com/fr/faq/faqs/gerer-la-luminosite-de-remi). It is independent of the upper light. The RGB entity changes the app's appearance; it does not control a physical multicolor light.
 
-**Music mode** changes repeat behavior. It does not choose a track or start playback.
+**Music mode** changes repeat behavior. Use the separate music player to select a track. The player reports the selected cloud path, but the API does not confirm whether audio is physically playing. [Music controls and limitations →](docs/usage.md#music-player)
 
 | Information | Entity type | Purpose |
 | --- | --- | --- |
@@ -126,6 +143,9 @@ The table uses English display names. Entity names follow Home Assistant's confi
 | Check firmware status | Button | Refresh firmware information; **does not install an update** |
 | Wi-Fi signal | Sensor | RSSI in dBm; disabled by default |
 | IP address | Sensor | Reported address; disabled by default |
+| Last sleep duration / score | Sensors | Estimates from the latest available cloud report |
+| Last bedtime / wake-up time | Sensors | Clock times from that report |
+| Sleep report date | Timestamp sensor | Date of the report, which may be older than last night |
 
 A missing or invalid measurement stays unknown. The firmware server's default version alone does not trigger an update alert. Firmware installation remains managed by UrbanHello; see the [manufacturer's update instructions](https://www.urbanhello.com/fr/faq/faqs/comment-mettre-a-jour-remi-manuellement-).
 
@@ -135,9 +155,9 @@ Use the alarm switch and time entity for everyday adjustments. For automation, t
 
 | Action | Required fields | Optional fields |
 | --- | --- | --- |
-| `urbanhello_remi_unofficial.create_alarm` | `name`, `time` | `enabled`, `repeat`, `face_define`, `volume` |
-| `urbanhello_remi_unofficial.update_alarm` | `event_id` | `name`, `time`, `enabled`, `repeat`, `face_define`, `volume` |
-| `urbanhello_remi_unofficial.delete_alarm` | `event_id` | — |
+| `urbanhello_remi_unofficial.create_alarm` | `name`, `time` | `enabled`, `repeat`, `face_define`, `volume`, `brightness`, `music_path`, `music_duration_minutes`, `play_button_enabled`, `remi_id` |
+| `urbanhello_remi_unofficial.update_alarm` | `event_id` | All create fields, including `remi_id` |
+| `urbanhello_remi_unofficial.delete_alarm` | `event_id` | `remi_id` |
 
 Times use `HH:MM` or `HH:MM:00` in REMI's time zone. The service's repeat convention remains **Sunday = 0, Monday = 1, …, Saturday = 6**. The app's weekly display starts on Monday; the integration handles the conversion.
 
@@ -152,7 +172,7 @@ data:
   volume: 40
 ```
 
-Creation currently requires exactly one loaded REMI. Updating or deleting an alarm locates its device from `event_id`, available in the alarm time entity's attributes. See the [full action reference and examples](docs/usage.md#alarm-actions).
+With one loaded REMI, device selection is automatic. With several, specify `remi_id` when creating an alarm. Updating or deleting resolves ownership from `event_id` and checks `remi_id` if supplied. Alarm IDs are available in time entity attributes. See the [full action reference and examples](docs/usage.md#alarm-actions), [history action](docs/usage.md#sleep-and-environmental-history) and [timer profile actions](docs/usage.md#timer-profiles).
 
 ## 🔄 Upgrading to 0.4.0
 
@@ -176,20 +196,36 @@ This update preserves the integration domain, entity unique IDs and custom names
 - **Firmware alert without an install action:** the integration only reads the update status and refreshes it. It cannot install firmware.
 - **An automation stopped selecting a face or music mode:** apply the [0.4.0 state mapping](docs/usage.md#040-translated-interface-and-stable-state-codes).
 - **A previous brightness or Night Light entity disappeared:** see the [entity migration guide](docs/usage.md#earlier-entity-and-behavior-changes).
+- **The new card is missing:** restart Home Assistant after updating, then reload the browser. See [card setup](docs/card.md#troubleshooting).
 
-The cloud API may change independently of this integration. Alarm writes are covered by simulated API tests; the recorded installation check did not change the physical device's schedules. Night face brightness is implemented and tested at the API level, but its physical effect has not yet been verified with this fork. This integration does not provide baby monitor audio or music playback controls.
+### 🧪 Beta limitations
+
+- **Sleep reports can be old.** The latest reports available during validation were 9–10 days old. Always check the report date and stale indicator; “last sleep” means the last published report.
+- **History uses the app's chart format.** Temperature history follows its °C axis, separately from the live sensor conversion. Noise is relative and light is an overlay, without dB or lux. Sample clocks are available, but absolute timestamps are not reconstructed.
+- **Music commands do not prove playback.** Play starts the selected file again; resume position is unknown. Pause and other commands are implemented from the app protocol, with physical behavior still to be validated in this beta.
+- **Timer profiles can be created, edited and deleted.** Starting a physical countdown from Home Assistant is not implemented; use the physical timer button on REMI to start a profile.
+- **Firmware installation and baby monitor audio are not provided.** The firmware check remains read-only. Night face brightness's physical effect also remains to be confirmed with this fork.
+
+The cloud API may change independently of the integration. See the [usage guide](docs/usage.md) for each feature's limits and the [release notes](CHANGELOG.md) for validation details.
 
 [Usage and migration guide](docs/usage.md) · [Protocol observations](docs/protocol-3.4.23.json) · [Changelog](CHANGELOG.md) · [Report an issue](https://github.com/Mins95/ha-remi/issues)
 
 ## 🤝 Development and credits
 
-Contributions should target `main` in [Mins95/ha-remi](https://github.com/Mins95/ha-remi). Use Python 3.14, install `requirements-test.txt`, then run:
+Contributions should target `main` in [Mins95/ha-remi](https://github.com/Mins95/ha-remi). Use Python 3.14 and an isolated environment:
 
 ```sh
-pytest --cov --cov-report=term-missing
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install uv==0.13.7
+python -m uv pip install -r requirements-test.txt
+python -c 'from importlib.metadata import version; assert version("homeassistant") == "2026.11.0"'
+python scripts/run_tests.py --cov --cov-report=term-missing
 ```
 
-GitHub Actions runs the test suite, Hassfest and HACS validation. The Release workflow checks the requested version against the manifest and changelog and runs the tests before publishing.
+Home Assistant requires a Linux test runtime; use WSL on Windows. The tests use the official `pytest-homeassistant==2026.11.0` package paired with the exact Home Assistant release. Create a fresh environment rather than keeping the older `pytest-homeassistant-custom-component` plugin installed alongside it. The runner checks both versions before loading tests. CI uses `python -m uv pip install --system -r requirements-test.txt` in its disposable Python environment.
+
+GitHub Actions runs the test suite against Home Assistant 2026.11.0, plus Hassfest and HACS validation. The Release workflow checks the requested version against the manifest and changelog and runs the tests before publishing. Beta tags are marked as pre-releases and do not become the latest stable release.
 
 Thanks to [timoa](https://github.com/timoa/ha-remi) and the original contributors, and to [pdruart](https://github.com/pdruart/Remi_UrbanHello_hass) for earlier work on REMI alarms and brightness. The product photo belongs to [UrbanHello](https://www.urbanhello.com/fr/).
 
