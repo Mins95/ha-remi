@@ -1,3 +1,18 @@
+## 0.4.0 — Langue de Home Assistant et nouvelle présentation (2026-11-07)
+
+- Traduction complète en français et en anglais des noms d'entités, des états, des choix, des formulaires, des actions et des erreurs affichées par l'intégration.
+- Utilisation des traductions natives de Home Assistant ; les noms personnalisés et les noms d'alarmes définis dans l'application Rémi sont conservés.
+- Conservation des identifiants uniques et des identifiants des entités existantes lors de la mise à jour.
+- Refonte du README en anglais, avec une bannière, une photo officielle du Rémi, des badges et une documentation détaillée.
+
+**Adaptation des automatisations :** les valeurs internes des visages et des modes
+musicaux deviennent des codes indépendants de la langue. Les menus affichent
+toujours leur traduction. Dans les appels `select.select_option`, les modèles et
+les conditions portant sur ces états, remplacer les anciens libellés comme
+`Awake`, `Sleepy` ou `Repeat playlist` par `awake`, `sleepy` ou `repeat_playlist`.
+La liste complète figure dans [le guide de migration](docs/usage.md#upgrading-from-030).
+Les constantes `FACE_*` des actions d'alarme restent acceptées.
+
 ## 0.3.0 — Fork Mins95 (2026-11-07)
 
 - Correction de la température, en conservant les décimales.
