@@ -4,7 +4,7 @@
 
 This guide covers the public Mins95 integration, its Home Assistant actions and changes from earlier versions. It requires an UrbanHello account and internet access. Example entity IDs and alarm IDs are placeholders: use the IDs from your own installation.
 
-**Stable 0.5.0 requires Home Assistant 2026.11.0 or newer.** Pre-release versions do not need to be enabled. Start with the [included dashboard card](card.md) for a visual interface to the features below.
+**Stable 0.5.1 requires Home Assistant 2026.11.0 or newer.** Pre-release versions do not need to be enabled. Start with the [included dashboard card](card.md) for a visual interface to the features below.
 
 ## Installation
 
@@ -17,7 +17,7 @@ You need a REMI already configured in the official app, its UrbanHello account c
 1. Open **Settings → Marketplace → Add from link**.
 2. Enter `https://github.com/Mins95/ha-remi`.
 3. Connect your GitHub account if Marketplace requests it for custom repositories.
-4. Open **Remi (Mins95)** and install stable **0.5.0** or newer.
+4. Open **Remi (Mins95)** and install stable **0.5.1** or newer.
 5. Restart Home Assistant, then configure the integration below.
 
 See the [official Marketplace instructions](https://www.home-assistant.io/integrations/marketplace/#custom-repositories).
@@ -26,7 +26,7 @@ See the [official Marketplace instructions](https://www.home-assistant.io/integr
 
 [Open this repository in HACS](https://my.home-assistant.io/redirect/hacs_repository/?owner=Mins95&repository=ha-remi&category=integration).
 
-Add `https://github.com/Mins95/ha-remi` under **Custom repositories**, choose **Integration**, install stable **0.5.0** or newer and restart Home Assistant. **Show beta versions** is not required. The same Home Assistant 2026.11.0 minimum applies.
+Add `https://github.com/Mins95/ha-remi` under **Custom repositories**, choose **Integration**, install stable **0.5.1** or newer and restart Home Assistant. **Show beta versions** is not required. The same Home Assistant 2026.11.0 minimum applies.
 
 ### Manual installation
 
@@ -78,7 +78,7 @@ The tables use English display names. Entity names follow Home Assistant's confi
 | Check firmware status | Button | Refresh firmware information; does not install an update |
 | Wi-Fi signal | Sensor | RSSI in dBm; disabled by default |
 | IP address | Sensor | Reported address; disabled by default |
-| Last sleep duration / score | Sensors | Estimates from the latest available cloud report |
+| Last sleep duration / score | Sensors | Estimates from the latest valid completed cloud report, when available |
 | Last bedtime / wake-up time | Sensors | Clock times from that report |
 | Sleep report date | Timestamp sensor | Report date, which may be older than last night |
 
@@ -266,44 +266,89 @@ data:
 
 ## Sleep and environmental history
 
-The latest available cloud sleep report provides five sensors:
+The integration reads a catalogue of up to **60 cloud journals**. The card lets you select an available recording period, with its sleep values and charts kept together. The five native Home Assistant sensors prefer the latest **completed report with a valid sleep estimate**; if none exists, they use the latest available report and leave missing estimates unknown.
 
 | Sensor | Value |
 | --- | --- |
-| Last sleep duration | Duration in minutes |
-| Last sleep score | Cloud estimate, 0–100, without a physical unit |
+| Last sleep duration | Positive duration in minutes |
+| Last sleep score | Cloud estimate, 1–100, without a physical unit |
 | Last bedtime | Clock time as `HH:MM` |
 | Last wake-up time | Clock time as `HH:MM` |
-| Sleep report date | The cloud journal's timestamp |
+| Sleep report date | The cloud journal's timestamp, used to identify its recording period |
 
-These are historical reports, so they remain readable when REMI is offline. A history API failure affects the history entities independently of live controls. Invalid or missing fields stay unknown; a valid zero is preserved.
+These are historical reports, so they remain readable when REMI is offline. A history API failure affects the history entities independently of live controls. Invalid or missing fields stay unknown. As in the app, a zero sleep duration or zero score is a placeholder, not a confirmed zero-hour night or zero score. A bedtime or wake-up time of **00:00 remains valid**.
 
-**“Last” means the last published report, not necessarily last night.** The most recent reports available during validation were 9–10 days old. The sensors expose `log_timestamp`, `report_age_days` and `stale`; a report older than 48 hours is marked stale. Bedtime and wake-up times are retained as the server supplied them, without inventing a date from a clock time.
+**“Last” does not necessarily mean last night.** A newly published empty or unfinished period does not replace a valid completed sleep report in the native sensors. The card can still display that current period; its chosen period is independent of the native sensors.
 
-### Request chart data
+The app identifies each recording period using the journal timestamp's **UTC calendar date**: the previous day through that date. Its chart grid runs from noon to the following morning. The timestamp's hour is not the journal's latest export time and does not establish absolute sample timestamps. Bedtime and wake-up remain clock values supplied by the server.
 
-Action: `urbanhello_remi_unofficial.get_history`. It returns a response and does not change the device. `limit` is 1 or 2; it defaults to 2. Select a device with `remi_id` only when needed.
+The latest cloud update is exposed separately as `updated_at`. `report_age_days` and `stale` use that update time; an update older than 48 hours is stale. If the update time is missing or invalid, its freshness remains unknown. `period_start`, `period_end`, `report_status` and `sleep_status` distinguish the recording period from its available sleep estimate. A missing or invalid device time zone leaves the period's completion status unknown.
+
+### Request history data
+
+Action: `urbanhello_remi_unofficial.get_history`. It returns a response. With the default `sync: false`, it reads cloud data without sending a command to REMI. Select a device with `remi_id` only when needed.
+
+| Field | Default | Behavior |
+| --- | --- | --- |
+| `limit` | `2` | Integer 1–60 for metadata; at most 2 when requesting series without a `report_id` |
+| `include_series` | `true` | Include temperature, noise and light files; set `false` to list periods without downloading charts |
+| `report_id` | Not set | Return one journal from the selected REMI's available catalogue; use the ID returned by a metadata request |
+| `refresh` | `false` | Reread cloud metadata and clear cached chart files; this alone does not request a device export |
+| `sync` | `false` | Explicitly request a new device export, then refresh cloud data; see the limits below |
+| `remi_id` | Not set | Cloud REMI ID, required to choose among multiple loaded devices |
+
+List available periods without downloading chart files:
 
 ```yaml
 action: urbanhello_remi_unofficial.get_history
 data:
-  limit: 2
+  limit: 60
+  include_series: false
 response_variable: remi_history
 ```
 
-The response contains `logs`, a metadata `fetched_at` time and the configured `timezone`. Each log includes its `log_timestamp`, sleep fields, `report_age_days`, `stale`, and three `series`: `temperature`, `noise`, `light`. A series has a `status` (`available`, `missing`, `empty` or `unavailable`) and bounded `samples`.
+Request charts for one returned journal:
 
-Each sample exposes `index`, `minute_offset`, `clock`, `value`, `raw_value` and `graph_value`. The format has 720 positions, two minutes apart, on the app's **12:00 → 11:58** clock grid. **Absolute sample timestamps are not established**, so `absolute_sample_timestamps` is false. Do not treat the journal's timestamp as a proven start time or insert reconstructed values into Recorder.
+```yaml
+action: urbanhello_remi_unofficial.get_history
+data:
+  report_id: YOUR_REPORT_ID
+  include_series: true
+response_variable: remi_report
+```
+
+The response contains `logs`, a metadata `fetched_at` time, `sync_status` and the configured `timezone`. Each log includes `report_id`, `log_timestamp`, `updated_at`, `sleep_updated_at`, period and freshness fields, and sleep estimates. With `include_series: true`, it also includes three `series`: `temperature`, `noise`, `light`. A series has a `status` (`available`, `missing`, `empty` or `unavailable`) and bounded `samples`.
+
+Each sample exposes `index`, `minute_offset`, `clock`, `value`, `raw_value`, `graph_value` and `valid`. The format has 720 positions, two minutes apart, on the app's **12:00 → 11:58** clock grid. **Absolute sample timestamps are not established**, so `absolute_sample_timestamps` is false. Do not treat the journal's timestamp as a proven start time or insert reconstructed values into Recorder.
 
 | Series | `value` | `graph_value` |
 | --- | --- | --- |
-| Temperature | °C using the app chart's continuous axis: `raw * 50 / 255 - 10` | The app's 0–100 chart position |
+| Temperature | For nonzero bytes, °C using the app chart's axis: `raw * 50 / 255 - 10`; `null` for an ambiguous zero byte | The app's 0–100 chart position; `null` for an ambiguous zero byte |
 | Noise | Raw 0–255 relative level, without dB | `raw * 100 / 255` |
 | Light | Raw byte, without lux | The app's overlay: 100 for raw values 1–7, otherwise 0 |
 
-Historical temperature uses a different scale from the live sensor's `(raw - 50) / 5` conversion. The response names its source as `app_chart_axis` and retains decimals and raw values. This reproduces the graph's scale; it does not independently calibrate the physical sensor. Boundary bytes 0 and 255 are retained and identified in `boundary_values_not_calibrated`, because their meaning as missing data, saturation or measurement is not established.
+Historical temperature uses a different scale from the live sensor's `(raw - 50) / 5` conversion. The response names its source as `app_chart_axis` and retains decimals and raw values. This reproduces the graph's scale; it does not independently calibrate the physical sensor. A temperature byte of zero could be an unfilled slot or the graph's lower boundary, so `raw_value: 0` is retained while `value` and `graph_value` are `null` and `valid` is `false`. It is not presented as a confirmed −10 °C reading. The card leaves a gap and does not connect lines across it. Zero noise and light bytes remain valid. Boundary bytes remain identified in `boundary_values_not_calibrated`; this does not mean all boundary values are missing.
 
 Metadata refreshes every 20 minutes. Binary chart files are fetched only on demand, with a bounded memory cache. A failed file appears as unavailable without hiding the other series or the sleep report. No historical values are retroactively inserted into Home Assistant's recorder.
+
+### Request a fresh export from REMI
+
+The card's Sleep **Refresh** button requests `sync: true`. An explicit action can do the same:
+
+```yaml
+action: urbanhello_remi_unofficial.get_history
+data:
+  limit: 60
+  include_series: false
+  sync: true
+response_variable: remi_history
+```
+
+This sends the app's `push_logs:<nonce>` command, waits **12 seconds**, clears the history cache and rereads the cloud. A **60-second cooldown** limits export attempts for the loaded REMI. During the cooldown, the action rereads the cloud without sending another command and returns `sync_status: cooldown`; a new request returns `sync_status: requested`. That status confirms a request, not that every expected report has arrived. With no sync request, `sync_status` is `null`.
+
+Normal polling, opening the Sleep tab, selecting a period and loading charts never request an export automatically. To reread only the cloud and clear cached files, set `refresh: true` and leave `sync: false`.
+
+The export command has been tested on a physical REMI and updated its current journal. It does not guarantee recovery of missing earlier days or completion of a sleep estimate. Ambiguous command failures are not automatically replayed.
 
 ## Timer profiles
 
@@ -352,6 +397,14 @@ To edit a profile, get its `nap_id` with `list_naps` and supply only the fields 
 ## Upgrading
 
 <a id="upgrading-from-030"></a>
+
+### 0.5.1: sleep periods and explicit history refresh
+
+Update normally, restart Home Assistant and reload the browser or Companion app page. Existing entity IDs and card configurations are preserved.
+
+The Sleep tab now navigates up to 60 available journals and keeps the selected report's values and charts together. Native sleep sensors prefer a valid completed report. The journal period, its last cloud update and Home Assistant's fetch time are separate. Zero duration and score placeholders become unknown; midnight stays a valid clock time. Ambiguous zero temperature samples become chart gaps, while noise and light zeroes remain valid.
+
+Existing `get_history` calls with `limit: 1` or `2` continue to work. Its new `include_series`, `report_id`, `refresh` and `sync` options are described [above](#request-history-data). No export command is sent unless you explicitly request sync, including through the card's Sleep Refresh button.
 
 ### 0.5.0: stable release
 
@@ -488,6 +541,8 @@ Commands, including alarm creation and deletion, are not automatically retried a
 
 Earlier installation checks on Home Assistant 2026.11.0 with firmware 332 confirmed corrected live temperature, device-specific firmware status, weekday display and alarm time entities while retaining existing IDs and schedules. Those checks do not establish physical validation of music commands, timer behavior or night face brightness.
 
+The 0.5.1 history export command was separately tested on a physical REMI and refreshed its current journal. This does not establish recovery of older missing journals or change the validation limits of other device commands.
+
 Automated tests cover cloud responses, validation, command payloads and Home Assistant actions. Consult the [current workflow results](https://github.com/Mins95/ha-remi/actions/workflows/tests.yml) and [changelog](../CHANGELOG.md) for release-specific results.
 
 ## Troubleshooting
@@ -498,7 +553,8 @@ Automated tests cover cloud responses, validation, command payloads and Home Ass
 - **A face or music automation stopped working:** use the [language-independent state codes](#040-translated-interface-and-stable-state-codes).
 - **An old brightness or Night Light entity disappeared:** follow the [entity migration guide](#earlier-entity-and-behavior-changes).
 - **The card is missing or still shows its old layout:** restart after installing the update, reload the page and see [card troubleshooting](card.md#troubleshooting).
-- **Sleep data is old, charts are empty or the library has no tracks:** check the report date and the data available in the official app. The integration cannot create missing reports or files.
+- **Sleep data is old or charts are empty:** check the selected period and its last cloud export time. The Sleep Refresh button can request a new current-journal export; earlier missing days and unavailable sleep estimates are not guaranteed to return.
+- **The music library has no tracks:** check the files available for the selected REMI in the official app. The integration does not create or upload missing tracks.
 
 The cloud API may change independently of this integration. To report an issue, include the integration version, Home Assistant version and a redacted description of the failure in [GitHub issues](https://github.com/Mins95/ha-remi/issues). Do not include account credentials or session tokens.
 

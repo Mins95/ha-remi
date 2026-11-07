@@ -1,3 +1,18 @@
+## 0.5.1 — Bilans de sommeil et historique corrigés (2026-11-07)
+
+- Sélection parmi 60 journaux cloud disponibles, avec une période du jour précédent au jour indiqué. Les valeurs et les courbes de la carte restent rattachées au même journal.
+- Date du dernier export cloud distincte de la période enregistrée. Les capteurs natifs privilégient le dernier bilan terminé disposant d’une estimation de sommeil valide.
+- Score et durée de sommeil à zéro affichés comme indisponibles, conformément à l’application ; minuit reste une heure valide.
+- Les octets zéro ambigus des courbes de température restent des trous, sans fausse mesure à −10 °C ni ligne reliant les données manquantes. Les zéros de bruit et de lumière restent valides.
+- Bouton Actualiser : demande explicite d’export au Rémi, attente de 12 secondes puis relecture du cloud, avec un délai minimal de 60 secondes entre deux commandes. Aucun export automatique.
+- Action `get_history` enrichie : catalogue sans courbes, sélection par `report_id`, relecture cloud avec `refresh` et demande d’export facultative avec `sync`.
+
+La demande d’export a été vérifiée sur un Rémi physique et a actualisé son
+journal courant. Elle ne garantit pas la récupération des jours manquants.
+Après installation, redémarrer Home Assistant puis recharger la page ou
+l’application Companion. La carte existante et les identifiants d’entités
+sont conservés.
+
 ## 0.5.0 — Carte Rémi et fonctions cloud, version stable (2026-11-07)
 
 **Home Assistant 2026.11.0 minimum.** Installer la mise à jour, redémarrer

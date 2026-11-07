@@ -1,6 +1,6 @@
 {
   "analysis_date": "2026-11-07",
-  "scope": "Interoperability findings for live readings, schedules, cloud music, sleep reports and stored timer profiles. Device writes for the 0.5 features are verified with simulated API responses, not physical playback or timer execution.",
+  "scope": "Interoperability findings for live readings, schedules, cloud music, sleep reports and stored timer profiles. The 0.5.1 history export command was verified on a physical REMI and refreshed its current journal. Other 0.5 device writes are verified with simulated API responses, not physical playback or timer execution.",
   "source": {
     "package": "com.app.urbanhello",
     "version_name": "3.4.23",
@@ -141,14 +141,35 @@
     "limitations": "Cloud command text is not playback telemetry. No confirmed playing/paused/position state; Play restarts a selected known file. Previous/next choose known neighbors in the same folder."
   },
   "sleep_history": {
-    "metadata": "Own-device noise_logs with SleepInfo pointers; at most two recent reports.",
+    "metadata": "Own-device noise_logs with SleepInfo pointers; catalogue of at most 60 available journals, not necessarily consecutive days.",
+    "period": "The app uses the UTC calendar date of timestamp as the period end, and the previous date as the start. Its timestamp hour does not identify the latest export or establish an absolute sample time.",
+    "freshness": "updated_at reflects the journal's cloud updatedAt. report_age_days and stale use this value, independently of log_timestamp and Home Assistant fetched_at; stale is true after 48 hours, unknown when freshness cannot be established.",
+    "native_sensor_selection": "Prefer the latest completed report with a positive sleep duration or score. If none exists, use the latest report without inventing missing estimates. The card displays one selected journal consistently across values and charts.",
+    "sleep_placeholders": "The app's zero sleepDuration and zero score are exposed as null. A clock time of 00:00 for bedtime or wake-up is valid and retained.",
     "files": "data, tempData and lightData Parse files; 720 uint8 values at two-minute spacing.",
     "clock_grid": "12:00 through 11:58, following the app. Absolute sample dates are not established.",
-    "temperature_chart_celsius": "raw * 50 / 255 - 10; not the live temperature formula.",
+    "temperature_chart_celsius": "For nonzero bytes, raw * 50 / 255 - 10; not the live temperature formula. A zero temperature byte is ambiguous, so value and graph_value are null, valid is false, and raw_value remains 0.",
     "noise_chart": "raw * 100 / 255, relative level, not dB.",
     "light_overlay": "100 for raw 1..7, otherwise 0; not lux.",
+    "zero_handling": "Noise and light zeroes remain valid. Temperature zeroes are not asserted to be physical -10 C readings or proven missing slots. Chart lines do not bridge invalid or missing samples. No rule declares all zeroes or boundary bytes absent.",
+    "action": {
+      "name": "get_history",
+      "limit": "Default 2; metadata accepts 1..60. With include_series=true and no report_id, the maximum is 2.",
+      "include_series": "Default true; false returns the catalogue without downloading binary charts.",
+      "report_id": "Optional identifier from the selected REMI's available catalogue; returns one selected journal.",
+      "refresh": "Default false; true rereads cloud metadata and clears cached chart files without requesting a device export by itself.",
+      "sync": "Default false; an explicit true sends a history export command before refreshing the cloud. Normal polling and card navigation never send it automatically."
+    },
+    "export_command": {
+      "cloud_field": "cmd",
+      "format": "push_logs:<nonce>",
+      "wait_seconds": 12,
+      "cooldown_seconds": 60,
+      "result": "sync_status is requested for a new command, cooldown for a cloud-only reread during the cooldown, or null when no sync was requested. Requested is not confirmation that all expected data arrived.",
+      "physical_validation": "The explicit command refreshed the current journal on a physical REMI. Recovery of missing earlier days and completion of sleep estimates are not established."
+    },
     "evidence": "TrackLogsService.getBinFileData; TrackGraphChart 0x90ac60, 0x90b3a8, 0x90b63c..0x90b678 and Celsius axis 0x90cab8..0x90cacc.",
-    "limitations": "Reports can be several days old. Report date and stale status are kept. Boundary bytes are retained because saturation versus missing samples has not been established. No claim of sensor calibration."
+    "limitations": "Reports can be old, incomplete or absent. Period dates and cloud update time are distinct; no absolute sample timestamps or recorder backfill are invented. Raw boundary bytes are retained without claiming sensor calibration or a universal missing-data encoding."
   },
   "timer_profiles": {
     "class": "Nap",
