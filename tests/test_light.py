@@ -17,6 +17,7 @@ from custom_components.urbanhello_remi_unofficial.coordinator import (
 )
 from custom_components.urbanhello_remi_unofficial.light import (
     RemiBackgroundLightEntity,
+    RemiBrightnessLightEntity,
     async_setup_entry,
 )
 
@@ -38,6 +39,7 @@ def mock_coordinator_with_lights():
         "background_color": [0, 0, 255],
     }
     coordinator.client = MagicMock()
+    coordinator.last_update_success = True
     coordinator.client.update_remi = AsyncMock(return_value={})
     coordinator.async_request_refresh = AsyncMock()
     return coordinator
@@ -60,8 +62,10 @@ class TestAsyncSetupEntry:
 
         await async_setup_entry(hass, entry, mock_add_entities)
 
-        assert len(added_entities) == 1
+        assert len(added_entities) == 2
         assert isinstance(added_entities[0], RemiBackgroundLightEntity)
+        assert isinstance(added_entities[1], RemiBrightnessLightEntity)
+        assert added_entities[1].entity_registry_enabled_default is False
 
 
 class TestRemiBackgroundLightEntity:
@@ -165,7 +169,10 @@ async def test_setup_removes_obsolete_lights_and_preserves_background_identity(
         assert updated.original_name == "App Background Color"
         assert hass.states.get(background.entity_id).attributes["friendly_name"].endswith(custom_name or "App Background Color")
         lights = [item for item in er.async_entries_for_config_entry(registry, entry.entry_id) if item.domain == "light"]
-        assert [item.entity_id for item in lights] == [background.entity_id]
+        assert len(lights) == 2
+        physical = next(item for item in lights if item.unique_id.endswith("_physical_brightness"))
+        assert physical.disabled_by is er.RegistryEntryDisabler.INTEGRATION
+        assert hass.states.get(physical.entity_id) is None
         mock_api_client.update_remi.assert_not_awaited()
         assert mock_api_client.get_remi.return_value == original
         await hass.services.async_call("light", "turn_on", {

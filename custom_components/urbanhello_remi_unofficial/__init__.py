@@ -10,12 +10,13 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, Platform
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
-from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.exceptions import ConfigEntryNotReady, HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers import entity_registry as er
 import homeassistant.helpers.config_validation as cv
 
 from .api import RemiApiClient
+from .alarm_identity import AlarmIdentityMap, AlarmIdentityStorageError, alarm_identity_store
 from .const import (
     CONF_INSTALLATION_ID,
     CONF_REMI_ID,
@@ -156,6 +157,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     client._remi_id = entry.data[CONF_REMI_ID]
 
     coordinator = RemiDataUpdateCoordinator(hass, client)
+    registry = er.async_get(hass)
+    prefix = f"{entry.data[CONF_REMI_ID]}_alarm_"
+    registry_alarm_ids: set[str] = set()
+    for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
+        if entity.platform != DOMAIN or not entity.unique_id.startswith(prefix):
+            continue
+        if entity.domain == "switch":
+            logical_id = entity.unique_id[len(prefix):]
+        elif entity.domain == "time" and entity.unique_id.endswith("_time"):
+            logical_id = entity.unique_id[len(prefix):-len("_time")]
+        else:
+            continue
+        if logical_id:
+            registry_alarm_ids.add(logical_id)
+    coordinator.alarm_identities = AlarmIdentityMap(
+        entry.data[CONF_REMI_ID], entry_id=entry.entry_id,
+        store=alarm_identity_store(hass, entry.entry_id),
+    )
+    try:
+        await coordinator.alarm_identities.async_load(registry_alarm_ids)
+    except (AlarmIdentityStorageError, HomeAssistantError, OSError) as err:
+        raise ConfigEntryNotReady(
+            translation_domain=DOMAIN, translation_key="alarm_identity_storage_invalid"
+        ) from err
     await coordinator.async_setup()
     await coordinator.async_config_entry_first_refresh()
 
@@ -164,7 +189,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Remove only obsolete entities owned by this config entry. Automation
     # references are intentionally left for the user to migrate.
-    registry = er.async_get(hass)
     legacy_unique_id = f"{entry.data[CONF_REMI_ID]}_luminosity"
     for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
         if (
@@ -188,6 +212,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     async_register_nap_services(hass)
 
     return True
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Discard the identity store only when its config entry is removed."""
+    await alarm_identity_store(hass, entry.entry_id).async_remove()
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -214,7 +243,8 @@ def _register_services(hass: HomeAssistant) -> None:
             coordinators = [c for c in coordinators if c.client.remi_id == remi_id]
         if event_id is not None:
             coordinators = [c for c in coordinators
-                            if any(e.get("objectId") == event_id for e in c.events)]
+                            if c.last_update_success and c.events_available
+                            and any(e.get("objectId") == event_id for e in c.events)]
         if len(coordinators) != 1:
             raise HomeAssistantError(
                 translation_domain=DOMAIN,

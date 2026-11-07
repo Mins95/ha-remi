@@ -12,6 +12,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import RemiApiClient, RemiApiError, RemiAuthError
+from .alarm_identity import AlarmIdentityMap, AlarmIdentityStorageError
 from .const import DOMAIN, SCAN_INTERVAL_SECONDS
 
 _LOGGER = logging.getLogger(__name__)
@@ -32,6 +33,7 @@ class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.config_params: dict[str, Any] = {}
         self._config_checked_at: float | None = None
         self.events_available = False
+        self.alarm_identities = AlarmIdentityMap(client.remi_id)
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch latest data from the Remi API."""
@@ -56,7 +58,13 @@ class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 _LOGGER.debug("Could not refresh REMI alarms; retaining the previous snapshot")
                 events = self.events
             else:
-                self.events_available = True
+                try:
+                    self.events_available = await self.alarm_identities.async_reconcile(events)
+                except (AlarmIdentityStorageError, OSError, HomeAssistantError):
+                    self.events_available = False
+                    _LOGGER.error("Could not safely persist REMI alarm identities; retaining the previous snapshot")
+                if not self.events_available:
+                    events = self.events
             if self._config_checked_at is None or monotonic() - self._config_checked_at >= 3600:
                 try:
                     await self._async_refresh_config()

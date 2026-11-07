@@ -25,7 +25,7 @@
   Everyday controls in English or French, following your Home Assistant language.
 </p>
 
-**0.5.1 is the current stable release.** Requires Home Assistant **2026.11.0 or newer**, a REMI configured in the UrbanHello app and internet access.
+**0.5.2 is the current stable release.** Requires Home Assistant **2026.11.0 or newer**, a REMI configured in the UrbanHello app and internet access.
 
 ## Your REMI dashboard
 
@@ -51,7 +51,7 @@ The card updates with the integration. Existing entity IDs and dashboard configu
 2. Restart Home Assistant, then add **Remi** under **Settings → Devices & services** using your UrbanHello account.
 3. Add **REMI** from your dashboard's card picker. No separate card download or YAML is needed.
 
-**Already installed?** Update to **0.5.1**, restart Home Assistant and reload the browser or Companion app. Keep your existing integration and card.
+**Already installed?** Update to **0.5.2**, restart Home Assistant and reload the browser or Companion app. Keep your existing integration and card.
 
 [HACS, manual installation and repository changes →](docs/usage.md#installation)
 
@@ -71,6 +71,8 @@ The card updates with the integration. Existing entity IDs and dashboard configu
 Community integration maintained by [Mins95](https://github.com/Mins95), based on [timoa/ha-remi](https://github.com/timoa/ha-remi).
 
 Thanks to [timoa](https://github.com/timoa/ha-remi) and the original contributors, and to [pdruart](https://github.com/pdruart/Remi_UrbanHello_hass) for earlier work on REMI alarms and brightness.
+
+Additional ideas and interoperability findings: [Jbis-4](https://github.com/Jbis-4/ha-remi), [ADNPolymerase and homeassistant-fr-ecosystem](https://github.com/homeassistant-fr-ecosystem/urbanhello_remi_hass), and [P-clean / JeeRemi](https://github.com/P-clean/jeedom-jeeremi).
 
 Product photo © [UrbanHello](https://www.urbanhello.com/fr/) · [Original image](https://www.urbanhello.com/img/cms/UH-REMI-Bleu-Simple.webp). This project is not affiliated with or endorsed by UrbanHello.
 

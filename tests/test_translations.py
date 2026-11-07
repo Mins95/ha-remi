@@ -164,6 +164,9 @@ async def test_frontend_resources_cover_flows_services_options_and_errors(hass, 
             "entity.select.face.state.semi_awake": "À moitié réveillé",
             "entity.select.music_mode.state.repeat_playlist": "Répéter la liste",
             "exceptions.alarm_not_found.message": "Cette alarme REMI n’existe plus",
+            "entity.light.physical_brightness.name": "Éclairage",
+            "entity.sensor.daily_reconnections.name": "Reconnexions quotidiennes signalées",
+            "entity.sensor.reported_clock_shift.name": "Décalage d’horloge signalé",
         } if language == "fr" else {
             "config.step.user.data.password": "Password",
             "services.create_alarm.name": "Create Alarm",
@@ -175,6 +178,9 @@ async def test_frontend_resources_cover_flows_services_options_and_errors(hass, 
             "entity.select.face.state.semi_awake": "Semi-Awake",
             "entity.select.music_mode.state.repeat_playlist": "Repeat playlist",
             "exceptions.alarm_not_found.message": "This REMI alarm no longer exists",
+            "entity.light.physical_brightness.name": "Light",
+            "entity.sensor.daily_reconnections.name": "Reported daily reconnections",
+            "entity.sensor.reported_clock_shift.name": "Reported clock shift",
         }
     )
     for key, text in expected.items():

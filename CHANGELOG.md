@@ -1,3 +1,17 @@
+## 0.5.2 — Alarmes stables, éclairage mémorisé et carte configurable (2026-11-07)
+
+- Conservation des identifiants Home Assistant lorsqu’une alarme est recréée dans le cloud, grâce à une correspondance persistante par appareil. Les noms ambigus ne sont jamais associés automatiquement.
+- Les commandes et l’éditeur de la carte suivent l’identifiant cloud actuel de l’alarme, même après une reconnexion ou un redémarrage.
+- Nouvelle entité Éclairage facultative : marche/arrêt, variateur et restauration de la dernière luminosité confirmée, sans modifier le visage ni remplacer les entités existantes.
+- Éditeur visuel de la carte enrichi pour afficher ou masquer les commandes, la température, la connexion, la musique et les onglets secondaires. L’affichage existant reste le choix par défaut.
+- Diagnostics de connexion téléchargeables sans identifiants de compte, appareil, réseau ou horaires. Deux capteurs diagnostiques facultatifs exploitent les valeurs signalées par le Rémi lorsqu’elles existent ; les données absentes restent inconnues.
+
+Home Assistant 2026.11.0 minimum. Installer la mise à jour, redémarrer Home
+Assistant puis recharger la page ou l’application Companion. Conserver
+l’intégration et la carte existantes. La protection des alarmes commence avec
+le premier instantané mémorisé ; une rotation et un renommage simultanés ne
+peuvent pas être rapprochés avec certitude.
+
 ## 0.5.1 — Bilans de sommeil et historique corrigés (2026-11-07)
 
 - Sélection parmi 60 journaux cloud disponibles, avec une période du jour précédent au jour indiqué. Les valeurs et les courbes de la carte restent rattachées au même journal.

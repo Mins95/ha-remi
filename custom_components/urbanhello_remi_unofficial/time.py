@@ -13,7 +13,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 from .coordinator import RemiDataUpdateCoordinator
-from .entity import RemiEntity, valid_alarm_snapshot
+from .entity import RemiAlarmEntity, retained_alarm_ids, valid_alarm_snapshot
 
 
 def alarm_time(event: dict[str, Any]) -> time | None:
@@ -41,11 +41,12 @@ async def async_setup_entry(
         current = valid_alarm_snapshot(coordinator)
         if current is None:
             return
-        new = [RemiAlarmTime(coordinator, event) for key, event in current.items()
+        new = [RemiAlarmTime(coordinator, event, key) for key, event in current.items()
                if key not in known]
         if new:
             async_add_entities(new)
         registry = er.async_get(hass)
+        retained = retained_alarm_ids(coordinator, set(current))
         remi_id = coordinator.client.remi_id
         if isinstance(remi_id, str) and remi_id:
             prefix = f"{remi_id}_alarm_"
@@ -53,7 +54,7 @@ async def async_setup_entry(
                 if entity.platform != DOMAIN or entity.domain != "time" or not entity.unique_id.startswith(prefix) or not entity.unique_id.endswith("_time"):
                     continue
                 event_id = entity.unique_id[len(prefix):-len("_time")]
-                if event_id and event_id not in current:
+                if event_id and event_id not in retained:
                     registry.async_remove(entity.entity_id)
         known.clear()
         known.update(current)
@@ -62,24 +63,19 @@ async def async_setup_entry(
     entry.async_on_unload(coordinator.async_add_listener(synchronize))
 
 
-class RemiAlarmTime(RemiEntity, TimeEntity):
+class RemiAlarmTime(RemiAlarmEntity, TimeEntity):
     """Change the hour/minute of one existing alarm without changing its days."""
 
     _attr_icon = "mdi:alarm"
     _attr_translation_key = "alarm_time"
 
-    def __init__(self, coordinator: RemiDataUpdateCoordinator, event: dict) -> None:
-        super().__init__(coordinator)
-        self._event_id = event["objectId"]
-        self._attr_unique_id = f"{self._remi_id}_alarm_{self._event_id}_time"
-        self._set_alarm_name("alarm_time", event.get("name") or self._event_id)
+    def __init__(self, coordinator: RemiDataUpdateCoordinator, event: dict, logical_id: str | None = None) -> None:
+        super().__init__(coordinator, event, logical_id)
+        self._attr_unique_id = f"{self._remi_id}_alarm_{self._logical_id}_time"
+        self._set_alarm_name("alarm_time", event.get("name") or self._logical_id)
 
     def _event(self) -> dict[str, Any]:
-        events = self.coordinator.events
-        if not isinstance(events, list):
-            return {}
-        return next((event for event in events
-                     if isinstance(event, dict) and event.get("objectId") == self._event_id), {})
+        return self._alarm_event()
 
     @property
     def available(self) -> bool:
@@ -88,7 +84,7 @@ class RemiAlarmTime(RemiEntity, TimeEntity):
     @callback
     def _handle_coordinator_update(self) -> None:
         if self.coordinator.events_available and (event := self._event()):
-            self._set_alarm_name("alarm_time", event.get("name") or self._event_id)
+            self._set_alarm_name("alarm_time", event.get("name") or self._logical_id)
         super()._handle_coordinator_update()
 
     @property
@@ -97,10 +93,10 @@ class RemiAlarmTime(RemiEntity, TimeEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        return {"event_id": self._event_id}
+        return {"event_id": self._event().get("objectId")}
 
     async def async_set_value(self, value: time) -> None:
-        if not self._event():
+        if not self.coordinator.events_available or not (event := self._event()):
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="alarm_not_found",
@@ -111,6 +107,6 @@ class RemiAlarmTime(RemiEntity, TimeEntity):
                 translation_key="invalid_alarm_clock_time",
             )
         await self.coordinator.client.update_event(
-            self._event_id, {"event_time": [value.hour, value.minute]}
+            event["objectId"], {"event_time": [value.hour, value.minute]}
         )
         await self.coordinator.async_request_refresh()
