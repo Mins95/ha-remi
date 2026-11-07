@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="420" viewBox="0 0 1280 420" role="img" aria-labelledby="title desc">
+  <title id="title">UrbanHello REMI for Home Assistant</title>
+  <desc id="desc">A smiling REMI clock beside the integration title. Alarms, face brightness, temperature and music controls.</desc>
+  <defs>
+    <linearGradient id="background" x2="1" y2="1"><stop stop-color="#0b1220"/><stop offset=".55" stop-color="#132b4c"/><stop offset="1" stop-color="#0b6fa4"/></linearGradient>
+    <linearGradient id="shell" x2="1" y2="1"><stop stop-color="#52d4da"/><stop offset="1" stop-color="#16899e"/></linearGradient>
+    <radialGradient id="glow"><stop stop-color="#41bdf5" stop-opacity=".22"/><stop offset="1" stop-color="#41bdf5" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1280" height="420" rx="28" fill="url(#background)"/>
+  <circle cx="1240" cy="80" r="330" fill="url(#glow)"/>
+  <circle cx="125" cy="385" r="205" fill="#72e6c7" opacity=".05"/>
+  <g transform="translate(64 56)">
+    <ellipse cx="113" cy="300" rx="108" ry="14" fill="#020a15" opacity=".35"/>
+    <path d="M12 264 22 101C25 40 60 7 113 7s88 33 91 94l10 163c1 19-13 30-32 30H44c-19 0-33-11-32-30Z" fill="url(#shell)" stroke="#8be3e8" stroke-width="2"/>
+    <path d="M17 278c58 12 133 12 192 0v7c-3 12-17 16-31 16H48c-15 0-28-5-31-16Z" fill="#e7eff2"/>
+    <path d="M60 119q19 19 38 0m30 0q19 19 38 0M88 166q25 24 50 0" fill="none" stroke="#e6ffff" stroke-width="8" stroke-linecap="round"/>
+    <text x="113" y="244" text-anchor="middle" font-family="Consolas,monospace" font-size="47" fill="#e6ffff">07:30</text>
+  </g>
+  <g font-family="Segoe UI,Arial,sans-serif">
+    <rect x="324" y="57" width="192" height="28" rx="14" fill="#72e6c7" opacity=".13"/>
+    <text x="420" y="76" text-anchor="middle" font-size="12" font-weight="700" letter-spacing="1.8" fill="#94f2d7">CUSTOM INTEGRATION</text>
+    <text x="322" y="159" font-size="56" font-weight="750" letter-spacing="-1.8" fill="#ffffff">UrbanHello REMI</text>
+    <text x="324" y="207" font-size="34" font-weight="400" fill="#d2e7f4">for Home Assistant</text>
+    <path d="M325 239h64" stroke="#72e6c7" stroke-width="4" stroke-linecap="round"/>
+    <text x="324" y="282" font-size="21" fill="#e4f1fa">Alarms · Face brightness · Temperature</text>
+    <text x="324" y="319" font-size="19" fill="#a9c7dd">Your bedtime controls, in your Home Assistant language.</text>
+    <text x="324" y="368" font-size="13" letter-spacing="1.5" fill="#91b7d0">MINS95 / HA-REMI</text>
+  </g>
+  <g transform="translate(1070 106)" fill="none" stroke="#87dffb" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity=".7">
+    <path d="M0 76 64 20l64 56M18 66v95h92V66"/>
+    <path d="M64 161V87m0 24L44 91m20 40 22-23"/>
+    <circle cx="64" cy="79" r="8"/><circle cx="38" cy="85" r="8"/><circle cx="92" cy="102" r="8"/>
+  </g>
+</svg>
