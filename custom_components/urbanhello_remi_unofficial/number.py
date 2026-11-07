@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -13,6 +14,7 @@ from homeassistant.components.number import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
@@ -26,6 +28,7 @@ class RemiNumberEntityDescription(NumberEntityDescription):
 
     field: str = ""
     value_fn: Any = None
+    command_fn: Callable[[float], int] = int
 
 
 def _luminosity_value(remi: dict[str, Any]) -> int | float | None:
@@ -34,6 +37,27 @@ def _luminosity_value(remi: dict[str, Any]) -> int | float | None:
     if type(value) in (int, float) and 0 <= value <= 100 and math.isfinite(value):
         return value
     return None
+
+
+def _face_brightness_value(remi: dict[str, Any]) -> int | None:
+    """Return the app's native night face level (1–10), if valid."""
+    value = remi.get("light_min")
+    if (
+        type(value) in (int, float)
+        and 1 <= value <= 10
+        and math.isfinite(value)
+        and value == int(value)
+    ):
+        return int(value)
+    return None
+
+
+def _face_brightness_command(value: float) -> int:
+    """Reject invalid face levels before sending any command to REMI."""
+    level = _face_brightness_value({"light_min": value})
+    if level is None:
+        raise ServiceValidationError("Night face brightness must be an integer from 1 to 10")
+    return level
 
 
 NUMBER_DESCRIPTIONS: tuple[RemiNumberEntityDescription, ...] = (
@@ -73,6 +97,19 @@ NUMBER_DESCRIPTIONS: tuple[RemiNumberEntityDescription, ...] = (
         field="luminosity",
         value_fn=_luminosity_value,
     ),
+    RemiNumberEntityDescription(
+        key="face_brightness",
+        translation_key="face_brightness",
+        name="Night face brightness",
+        icon="mdi:brightness-4",
+        native_min_value=1,
+        native_max_value=10,
+        native_step=1,
+        mode=NumberMode.SLIDER,
+        field="light_min",
+        value_fn=_face_brightness_value,
+        command_fn=_face_brightness_command,
+    ),
 )
 
 
@@ -111,6 +148,6 @@ class RemiNumberEntity(RemiEntity, NumberEntity):
     async def async_set_native_value(self, value: float) -> None:
         """Set a new value."""
         await self.coordinator.client.update_remi(
-            {self.entity_description.field: int(value)}
+            {self.entity_description.field: self.entity_description.command_fn(value)}
         )
         await self.coordinator.async_request_refresh()

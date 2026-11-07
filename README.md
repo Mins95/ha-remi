@@ -21,7 +21,7 @@ This is a community-maintained integration and is **not affiliated with or endor
 - **Sensors**: Room temperature, WiFi signal strength, firmware version, IP address, current face
 - **Binary Sensors**: Online status, alive status, firmware update available
 - **Select**: Clock face (Off / Awake / Sleepy / Semi-Awake / Smiley), clock format (12h / 24h), music mode
-- **Number**: Volume, noise alert threshold, brightness
+- **Number**: Volume, noise alert threshold, brightness, night face brightness
 - **Switch**: Per-alarm enable/disable toggles (one switch per alarm)
 - **Time**: Edit each alarm's hour and minute directly in Home Assistant
 - **Lights**: App background color (RGB)
@@ -100,6 +100,7 @@ publishing this fork does not change the installed repository automatically.
 | Music Mode | Select | Normal / Single track / Repeat track / Repeat playlist |
 | Volume | Number | Speaker volume (0–100) |
 | Brightness | Number | Upper light brightness (0–100) |
+| Night face brightness | Number | Face brightness in the dark (1–10), matching the app setting |
 | Noise Alert Threshold | Number | Noise notification threshold (0–250) |
 | App Background Color | Light | Color associated with the REMI in the official app |
 | Alarm (per alarm) | Switch | Enable/disable individual alarms |
@@ -127,6 +128,22 @@ entity registry entries. Remove references to it from dashboards, scripts and
 automations; the app background color is not a replacement for a physical light.
 
 ## Brightness migration
+
+### Night face brightness
+
+The **Night face brightness** slider (French: **Luminosité du visage la nuit**)
+uses the same 1–10 scale as **Settings → Night face brightness** in the REMI app.
+It sets the face brightness in the dark, as described in the
+[UrbanHello guide](https://www.urbanhello.com/fr/faq/faqs/gerer-la-luminosite-de-remi).
+This is a separate control from the existing 0–100 **Brightness** slider.
+
+The setting is read from and written to `light_min`. A change sends only this
+field and then refreshes the device state; it does not change the face, alarm
+schedule or light calibration. Missing or invalid readings are shown as unknown.
+The entity is added automatically when the integration loads the updated code.
+Its effect on a physical REMI has not yet been tested with this fork.
+
+### Existing brightness control
 
 Brightness is a `number` slider on the REMI brightness scale (0–100), like
 Volume and Noise Alert Threshold. It drives the same API `luminosity` setting
@@ -220,8 +237,11 @@ using the first one. Update/delete actions locate the loaded device by event ID.
 
 ## Validation
 
-The automated suite passed with Python 3.14.9 and Home Assistant 2026.10.4:
-248 passed, 2 skipped, 1 non-strict XPASS; coverage 97.32%.
+Before adding the night face brightness control, the reliability changes passed
+with Python 3.14.9 and Home Assistant 2026.10.4: 248 passed, 2 skipped,
+1 non-strict XPASS; coverage 97.32%. The face control adds tests for native
+values, invalid input, isolated commands and the Home Assistant service path.
+The repository's Tests and Release workflows run the full suite for new releases.
 
 After installation and a full restart on Home Assistant 2026.11.0, one REMI
 running firmware 332 reported 22.0 °C for raw temperature 160, no pending

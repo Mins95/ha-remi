@@ -1,6 +1,6 @@
 {
   "analysis_date": "2026-11-07",
-  "scope": "Interoperability findings for temperature, alarm fields, playback modes and firmware status, corroborated by read-only observations of one REMI.",
+  "scope": "Interoperability findings for temperature, alarm fields, playback modes, firmware status and night face brightness. Existing temperature, alarm and firmware readings were checked on one REMI; face brightness is based on the app and manufacturer documentation.",
   "source": {
     "package": "com.app.urbanhello",
     "version_name": "3.4.23",
@@ -75,6 +75,25 @@
     ],
     "icon_map_pool_offset": "0x32450",
     "evidence": "Icon mapping: oneDisable, oneEnable, repeat1Enable and repeatEnable for modes 0, 1, 2 and 3 respectively."
+  },
+  "night_face_brightness": {
+    "status": "Implemented with mocked command and HA service tests; physical effect not yet tested.",
+    "cloud_field": "light_min",
+    "range": [1, 10],
+    "step": 1,
+    "unit": null,
+    "conversion": "The app rounds its slider value to an integer and writes it directly, without scaling.",
+    "source_file": "modules/remi_settings/remi_settings.dart",
+    "slider_address": "0x866ac0",
+    "bounds_addresses": ["0x866b08", "0x866b10"],
+    "write_callback_address": "0x86d468",
+    "round_address": "0x86d568",
+    "update_address": "0x86d5c4",
+    "property_source_file": "globals/services/remi_manager/current_remi.dart",
+    "property_definition_addresses": ["0x64d3dc", "0x64d44c"],
+    "cloud_write_path": "StoredProperty.update -> updateNetwork -> updateParse -> Parse.set/save",
+    "manufacturer_reference": "https://www.urbanhello.com/fr/faq/faqs/gerer-la-luminosite-de-remi",
+    "distinction": "light_min controls face brightness in the dark; the existing 0-100 luminosity setting is a separate control. No calibration or face-selection command is sent."
   },
   "firmware": {
     "status": "Device-specific eligibility implemented; firmware installation not implemented.",

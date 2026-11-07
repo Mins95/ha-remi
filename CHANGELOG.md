@@ -5,13 +5,15 @@
 - Bound cloud-read retries, coordinate session recovery, and avoid replaying writes after transient errors.
 - Correct alarm weekday labels and service payloads; add editable alarm time entities.
 - Correct music playback-mode labels.
+- Add a separate night face brightness slider (1–10), matching the REMI app's `light_min` setting.
 - Prepare Marketplace metadata, independent maintenance and release tooling for this fork.
 
 Existing entity IDs and configured alarms are preserved. Alarm service times now
 use `HH:MM` or `HH:MM:00`; automations using ISO dates or old music mode labels
 must be updated. Automated tests passed on HA 2026.10.4 and the integration was
 checked after installation on HA 2026.11.0 with firmware 332. Physical alarm
-writes and playback were not exercised during deployment.
+writes and playback were not exercised during deployment. The new face brightness
+control has automated command tests; its physical effect has not yet been checked.
 
 ## [0.2.7](https://github.com/timoa/ha-remi/compare/0.2.6...0.2.7) (2026-11-05)
 

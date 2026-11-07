@@ -1,5 +1,10 @@
 {
   "entity": {
+    "number": {
+      "face_brightness": {
+        "name": "Luminosité du visage la nuit"
+      }
+    },
     "button": {
       "check_firmware": {
         "name": "Vérifier le firmware"

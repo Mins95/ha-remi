@@ -53,7 +53,8 @@
     "number": {
       "volume": { "name": "Volume" },
       "noise_threshold": { "name": "Noise Alert Threshold" },
-      "brightness": { "name": "Brightness" }
+      "brightness": { "name": "Brightness" },
+      "face_brightness": { "name": "Night face brightness" }
     },
     "switch": {
       "alarm": { "name": "{name}" }
