@@ -1,14 +1,13 @@
 """Sensors for the last cloud sleep report, separate from live REMI readings."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Any
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorEntityDescription
 from homeassistant.const import UnitOfTime
 
 from .entity import RemiEntity
-from .history import RemiHistoryCoordinator, parse_history_datetime
+from .history import RemiHistoryCoordinator, parse_history_datetime, report_timing
 
 HISTORY_SENSOR_DESCRIPTIONS = (
     SensorEntityDescription(
@@ -49,12 +48,13 @@ class RemiHistorySensor(RemiEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        stamp = parse_history_datetime(self.coordinator.latest_report.get("log_timestamp"))
-        age = (datetime.now(timezone.utc) - stamp).total_seconds() if stamp else None
+        report = self.coordinator.latest_report
+        stamp = parse_history_datetime(report.get("log_timestamp"))
         return {
             "source": "cloud_history",
             "log_timestamp": stamp.isoformat() if stamp else None,
-            "report_age_days": round(age / 86400, 2) if age is not None else None,
-            "stale": age is None or age < 0 or age > 48 * 3600,
+            "updated_at": report.get("updated_at"),
+            "sleep_status": report.get("sleep_status"),
+            **report_timing(report, self.coordinator.remi.get("timezone")),
             "timezone": self.coordinator.remi.get("timezone"),
         }
