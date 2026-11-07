@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import random
 import re
 from typing import Any
 from urllib.parse import unquote, urlsplit
@@ -12,6 +13,7 @@ from homeassistant.exceptions import HomeAssistantError
 from .const import API_BASE_URL, DOMAIN
 
 MAX_HISTORY_LOGS = 2
+MAX_HISTORY_REPORTS = 60
 MAX_HISTORY_FILE_BYTES = 1024 * 1024
 _OBJECT_ID = re.compile(r"[A-Za-z0-9_-]{1,128}\Z")
 
@@ -28,9 +30,22 @@ def history_error() -> RemiHistoryError:
 
 
 def validate_history_limit(limit: int) -> None:
-    """Bound each read to the two most recent reports."""
+    """Bound an untargeted chart request to two reports."""
     if type(limit) is not int or not 1 <= limit <= MAX_HISTORY_LOGS:
         raise history_error()
+
+
+def validate_report_limit(limit: int) -> None:
+    """Bound the metadata catalogue independently from binary chart downloads."""
+    if type(limit) is not int or not 1 <= limit <= MAX_HISTORY_REPORTS:
+        raise history_error()
+
+
+def validate_history_report_id(report_id: Any) -> str:
+    """Validate identifier syntax before looking up an owned catalogue record."""
+    if not isinstance(report_id, str) or not _OBJECT_ID.fullmatch(report_id):
+        raise history_error()
+    return report_id
 
 
 def _owned_by(record: dict[str, Any], remi_id: str) -> bool:
@@ -86,11 +101,9 @@ class RemiHistoryApiMixin:
     """Read helpers mixed into RemiApiClient, sharing its authenticated _request."""
 
     async def get_history_logs(self, limit: int = MAX_HISTORY_LOGS) -> list[dict[str, Any]]:
-        """Read only logs belonging to the selected REMI."""
-        validate_history_limit(limit)
-        remi_id = self._remi_id
-        if not isinstance(remi_id, str) or not remi_id:
-            raise history_error()
+        """Read up to 60 owned log metadata records, without downloading files."""
+        validate_report_limit(limit)
+        remi_id = validate_history_report_id(self._remi_id)
         pointer = {"__type": "Pointer", "className": "Remi", "objectId": remi_id}
         data = await self._request(
             "POST", "/parse/classes/noise_logs",
@@ -100,27 +113,39 @@ class RemiHistoryApiMixin:
         return self._history_records(data, limit)
 
     async def get_history_sleep_info(self, ids: list[str]) -> list[dict[str, Any]]:
-        """Resolve at most two sleep pointers, with an additional owner filter."""
-        if not isinstance(ids, list) or len(ids) > MAX_HISTORY_LOGS or any(
+        """Resolve at most 60 sleep pointers, with an additional owner filter."""
+        if not isinstance(ids, list) or len(ids) > MAX_HISTORY_REPORTS or any(
             not isinstance(item, str) or not _OBJECT_ID.fullmatch(item) for item in ids
         ):
             raise history_error()
         if not ids:
             return []
-        remi_id = self._remi_id
-        if not isinstance(remi_id, str) or not remi_id:
-            raise history_error()
+        ids = list(dict.fromkeys(ids))
+        remi_id = validate_history_report_id(self._remi_id)
         pointer = {"__type": "Pointer", "className": "Remi", "objectId": remi_id}
         data = await self._request(
             "POST", "/parse/classes/SleepInfo",
             {"_method": "GET", "limit": len(ids),
-             "where": {"objectId": {"$in": list(dict.fromkeys(ids))},
+             "where": {"objectId": {"$in": ids},
                        "$or": [{"remi": pointer}, {"remi": remi_id}]}},
         )
         records = self._history_records(data, len(ids))
         if any(record["objectId"] not in ids for record in records):
             raise history_error()
         return records
+
+    async def request_history_sync(self) -> dict[str, Any]:
+        """Request a device log export once, matching the app's explicit action.
+
+        Sending this command does not confirm publication of a new report or
+        recovery of missing days. The caller handles the subsequent cloud read.
+        """
+        validate_history_report_id(self._remi_id)
+        nonce = random.randrange(1000)
+        if nonce == getattr(self, "_last_history_sync_nonce", None):
+            nonce = (nonce + 1) % 1000
+        self._last_history_sync_nonce = nonce
+        return await self.update_remi({"cmd": f"push_logs:{nonce}"})
 
     def _history_records(self, data: Any, limit: int) -> list[dict[str, Any]]:
         if not isinstance(data, dict) or not isinstance(data.get("results"), list):

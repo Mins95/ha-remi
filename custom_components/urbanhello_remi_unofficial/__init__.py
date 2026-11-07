@@ -26,6 +26,7 @@ from .const import (
 )
 from .coordinator import RemiDataUpdateCoordinator
 from .history import RemiHistoryCoordinator
+from .history_api import MAX_HISTORY_REPORTS, validate_history_report_id
 from .nap import async_register_nap_services, async_unregister_nap_services
 
 _LOGGER = logging.getLogger(__name__)
@@ -301,16 +302,28 @@ def _register_services(hass: HomeAssistant) -> None:
         await coordinator.async_request_refresh()
 
     async def handle_history(call: ServiceCall) -> dict[str, Any]:
-        """Read bounded reports and charts, without requesting device commands."""
+        """Read history, with a device export only when explicitly requested."""
         coordinator = resolve_coordinator(remi_id=call.data.get("remi_id"))
-        return await coordinator.history_coordinator.async_get_history(call.data["limit"])
+        return await coordinator.history_coordinator.async_get_history(
+            call.data["limit"],
+            report_id=call.data.get("report_id"),
+            include_series=call.data["include_series"],
+            refresh=call.data["refresh"],
+            sync=call.data["sync"],
+        )
 
     if not hass.services.has_service(DOMAIN, "get_history"):
         hass.services.async_register(
             DOMAIN, "get_history", handle_history,
             schema=vol.Schema({
                 vol.Optional("remi_id"): cv.string,
-                vol.Optional("limit", default=2): vol.All(_alarm_integer, vol.Range(min=1, max=2)),
+                vol.Optional("limit", default=2): vol.All(
+                    _alarm_integer, vol.Range(min=1, max=MAX_HISTORY_REPORTS)
+                ),
+                vol.Optional("report_id"): validate_history_report_id,
+                vol.Optional("include_series", default=True): cv.boolean,
+                vol.Optional("refresh", default=False): cv.boolean,
+                vol.Optional("sync", default=False): cv.boolean,
             }),
             supports_response=SupportsResponse.ONLY,
         )

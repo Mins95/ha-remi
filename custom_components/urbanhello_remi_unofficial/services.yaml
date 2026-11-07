@@ -140,9 +140,24 @@ get_history:
       selector:
         number:
           min: 1
-          max: 2
+          max: 60
           step: 1
           mode: box
+    report_id:
+      selector:
+        text: {}
+    include_series:
+      default: true
+      selector:
+        boolean: {}
+    refresh:
+      default: false
+      selector:
+        boolean: {}
+    sync:
+      default: false
+      selector:
+        boolean: {}
 list_naps:
   fields:
     remi_id:

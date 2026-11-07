@@ -124,12 +124,14 @@ async def test_get_history_response_targets_one_remi_and_never_writes(hass, coor
         "remi_id": "remi-one", "limit": 1,
     }, blocking=True, return_response=True)
     assert response == {"reports": []}
-    coordinator.history_coordinator.async_get_history.assert_awaited_once_with(1)
+    coordinator.history_coordinator.async_get_history.assert_awaited_once_with(
+        1, report_id=None, include_series=True, refresh=False, sync=False,
+    )
     coordinator.client.update_event.assert_not_awaited()
     coordinator.client.create_event.assert_not_awaited()
 
 
-@pytest.mark.parametrize("limit", [0, 3, 1.5, True])
+@pytest.mark.parametrize("limit", [0, 61, 1.5, True])
 async def test_history_rejects_out_of_budget_or_fractional_limits(hass, coordinator, limit):
     with pytest.raises((vol.Invalid, HomeAssistantError)):
         await hass.services.async_call(DOMAIN, "get_history", {"limit": limit},

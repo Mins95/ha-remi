@@ -517,11 +517,27 @@
     },
     "get_history": {
       "name": "Get sleep and environmental history",
-      "description": "Returns up to two recent cloud reports, sleep estimates and environmental charts. Reports may be old: check log_timestamp and stale. Sample clocks follow the app's noon-to-noon grid; absolute sample dates are not established. Noise and light have no calibrated physical unit.",
+      "description": "Returns a catalogue of up to 60 cloud reports, or up to two reports with environmental charts. Use report_id to select one report. Dates label report periods; sleep estimates may be unavailable. Noise and light have no calibrated physical unit. Device export is requested only when sync is enabled.",
       "fields": {
         "limit": {
           "name": "Reports",
-          "description": "Number of recent reports to return (1 or 2)."
+          "description": "Number of recent reports to return: 1–60 for metadata only, at most 2 with charts unless a report_id selects one report."
+        },
+        "report_id": {
+          "name": "Report identifier",
+          "description": "Optional report_id from the catalogue for this REMI. Selects that single report instead of the most recent reports."
+        },
+        "include_series": {
+          "name": "Include charts",
+          "description": "Download chart files for the selected reports. Turn off to browse up to 60 reports without downloading chart files."
+        },
+        "refresh": {
+          "name": "Refresh cloud data",
+          "description": "Read cloud metadata again and clear cached chart files. Does not send a command to REMI."
+        },
+        "sync": {
+          "name": "Request an export from REMI",
+          "description": "Explicitly ask REMI to publish its logs, wait 12 seconds, then refresh cloud data. This can take at least 12 seconds and does not guarantee recovery of missing days."
         },
         "remi_id": {
           "name": "REMI identifier",

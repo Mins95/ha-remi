@@ -517,11 +517,27 @@
     },
     "get_history": {
       "name": "Consulter l’historique du sommeil et de l’environnement",
-      "description": "Renvoie jusqu’à deux bilans cloud récents, les estimations de sommeil et les courbes d’environnement. Les bilans peuvent être anciens : vérifiez log_timestamp et stale. Les heures des échantillons suivent la grille midi-midi de l’application ; leurs dates absolues ne sont pas établies. Le bruit et la lumière n’ont pas d’unité physique étalonnée.",
+      "description": "Renvoie un catalogue de 60 bilans cloud au maximum, ou jusqu’à deux bilans avec leurs courbes d’environnement. Utilisez report_id pour sélectionner un bilan. Les dates désignent les périodes des bilans ; les estimations de sommeil peuvent être absentes. Le bruit et la lumière n’ont pas d’unité physique étalonnée. Un export depuis le Rémi est demandé uniquement si sync est activé.",
       "fields": {
         "limit": {
           "name": "Bilans",
-          "description": "Nombre de bilans récents à renvoyer (1 ou 2)."
+          "description": "Nombre de bilans récents : de 1 à 60 sans courbes, au maximum 2 avec courbes sauf si report_id sélectionne un seul bilan."
+        },
+        "report_id": {
+          "name": "Identifiant du bilan",
+          "description": "Identifiant report_id facultatif provenant du catalogue de ce Rémi. Sélectionne uniquement ce bilan au lieu des bilans les plus récents."
+        },
+        "include_series": {
+          "name": "Inclure les courbes",
+          "description": "Télécharge les fichiers des courbes des bilans sélectionnés. Désactivez pour consulter jusqu’à 60 bilans sans télécharger leurs courbes."
+        },
+        "refresh": {
+          "name": "Actualiser les données cloud",
+          "description": "Relit les bilans dans le cloud et vide le cache des courbes. N’envoie aucune commande au Rémi."
+        },
+        "sync": {
+          "name": "Demander un export au Rémi",
+          "description": "Demande explicitement au Rémi de publier ses journaux, attend 12 secondes, puis relit le cloud. Cette action peut prendre au moins 12 secondes et ne garantit pas la récupération des jours absents."
         },
         "remi_id": {
           "name": "Identifiant du Rémi",
