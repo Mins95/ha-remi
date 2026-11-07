@@ -27,6 +27,9 @@
     }
   },
   "entity": {
+    "button": {
+      "check_firmware": { "name": "Check firmware status" }
+    },
     "sensor": {
       "temperature": { "name": "Temperature" },
       "rssi": { "name": "WiFi Signal" },
