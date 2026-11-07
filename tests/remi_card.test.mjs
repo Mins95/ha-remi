@@ -388,3 +388,184 @@ test("rapid face actions cannot send a second command while the first is pending
   assert.equal(card._busy, false);
   assert.deepEqual(faceCommands(calls).map(call => call.service_data.option), ["off"]);
 });
+
+const historyReport = (report_id, period_end, extra = {}) => ({
+  report_id, period_start: period_end === "2026-11-08" ? "2026-11-07" : "2026-11-04", period_end,
+  updated_at: "2026-11-07T14:00:00Z", report_status: "completed", sleep_status: "available", stale: false,
+  sleep_duration: 510, sleep_score: 86, sleep_bedtime: "21:15", sleep_wake_time: "06:45", ...extra
+});
+const historySample = (index, value) => ({ index, value, graph_value: value, clock: "unexpected" });
+function setupHistory(extra = {}) {
+  const reports = [historyReport("recent", "2026-11-08", { report_status: "in_progress", sleep_status: "unavailable", sleep_duration: null, sleep_score: null, sleep_bedtime: null, sleep_wake_time: null }), historyReport("older", "2026-11-05")];
+  const stateEntry = registryEntity("sensor", "sleep_duration", "sensor.global_sleep");
+  const context = setup([stateEntry], { [stateEntry.entity_id]: { state: "999", attributes: { unit_of_measurement: "min" } } });
+  const { card, hass, calls } = context;
+  hass.callWS = async request => {
+    calls.push(request);
+    const data = request.service_data;
+    if (data?.report_id) return { response: { logs: [{ ...reports.find(report => report.report_id === data.report_id), series: { temperature: { samples: [historySample(0, 20), historySample(1, 21)] } } }] } };
+    return { response: { logs: reports, ...extra } };
+  };
+  card._tab = "sleep"; card._render();
+  return { ...context, reports, stateEntry };
+}
+
+test("opening Sleep reads a bounded catalogue without exporting or downloading chart files", async () => {
+  const { card, calls, hass, stateEntry } = setupHistory(); card._tab = "remi"; card._render();
+  card.shadowRoot.querySelector(".tabs").querySelectorAll("button")[2].dispatchEvent({ type: "click" });
+  await flush();
+  assert.deepEqual(calls.map(call => call.service_data), [{ remi_id: "REMI1", limit: 60, include_series: false }]);
+  assert.equal(calls[0].return_response, true);
+  assert.equal(card._historyId, "recent");
+  assert.deepEqual(card.shadowRoot.querySelectorAll(".stat-value").map(node => node.textContent), ["—", "—", "—", "—"]);
+  assert.match(card.shadowRoot.textContent, /Enregistrement en cours/);
+  assert.doesNotMatch(card.shadowRoot.textContent, /Cet export cloud est ancien/);
+  assert.equal(card.shadowRoot.querySelectorAll(".chart").length, 0);
+  card._render(); card.hass = { ...hass, states: { [stateEntry.entity_id]: { state: "1000", attributes: {} } } };
+  card.shadowRoot.querySelector(".tabs").querySelectorAll("button")[0].dispatchEvent({ type: "click" });
+  card.shadowRoot.querySelector(".tabs").querySelectorAll("button")[2].dispatchEvent({ type: "click" });
+  assert.equal(calls.length, 1, "render, entity updates and return to the tab must not request an export");
+});
+
+test("date selection navigates actual journals and never invents missing calendar days", async () => {
+  const { card, calls } = setupHistory(); await card._loadHistory();
+  assert.equal(card.shadowRoot.querySelectorAll("option").length, 2);
+  assert.equal(card.shadowRoot.querySelector(".history-next").disabled, true);
+  card.shadowRoot.querySelector(".history-previous").dispatchEvent({ type: "click" });
+  assert.equal(card._historyId, "older");
+  assert.equal(card.shadowRoot.querySelector(".history-previous").disabled, true);
+  assert.deepEqual(card.shadowRoot.querySelectorAll(".stat-value").map(node => node.textContent), ["8 h 30", "86/100", "21:15", "06:45"]);
+  assert.equal(calls.length, 1, "changing an unopened chart uses catalogue metadata only");
+  assert.doesNotMatch(card.shadowRoot.textContent, /999|Enregistrement en cours/);
+  card.shadowRoot.querySelector(".history-next").dispatchEvent({ type: "click" });
+  assert.equal(card._historyId, "recent");
+  const select = card.shadowRoot.querySelector(".history-date"); select.value = "older"; select.dispatchEvent({ type: "change" });
+  assert.equal(card._historyId, "older");
+  card._selectHistory("missing-date"); assert.equal(card._historyId, "older");
+});
+
+test("charts and all four statistics come from the same selected detailed journal", async () => {
+  const { card, hass, calls, reports } = setupHistory(); await card._loadHistory();
+  hass.callWS = async request => {
+    calls.push(request);
+    return { response: { logs: [{ ...reports.find(report => report.report_id === request.service_data.report_id), sleep_duration: 600, sleep_score: 90, sleep_bedtime: "20:00", sleep_wake_time: "06:00", series: { noise: { samples: [historySample(0, 0), historySample(1, 7)] } } }] } };
+  };
+  card._selectHistory("older"); await card._toggleHistoryCharts();
+  assert.deepEqual(calls.at(-1).service_data, { remi_id: "REMI1", limit: 1, report_id: "older" });
+  assert.deepEqual(card.shadowRoot.querySelectorAll(".stat-value").map(node => node.textContent), ["10 h 00", "90/100", "20:00", "06:00"]);
+  assert.equal(card.shadowRoot.querySelectorAll(".chart").length, 3);
+  assert.equal(card.shadowRoot.querySelectorAll("polyline").length, 1);
+  await card._selectHistory("recent");
+  assert.equal(card._historyCharts, true);
+  assert.deepEqual(calls.at(-1).service_data, { remi_id: "REMI1", limit: 1, report_id: "recent" });
+  assert.equal(card._selectedHistory().report_id, "recent");
+  await card._toggleHistoryCharts();
+  assert.equal(card.shadowRoot.querySelectorAll(".chart").length, 0);
+  assert.equal(calls.length, 3);
+});
+
+test("explicit Refresh requests one export, announces the wait, then reloads the selected journal", async () => {
+  const { card, hass, calls, reports } = setupHistory(); await card._loadHistory(); card._selectHistory("older");
+  let finish;
+  hass.callWS = request => {
+    calls.push(request);
+    if (!request.service_data.report_id) return new Promise(resolve => { finish = resolve; });
+    return Promise.resolve({ response: { logs: [reports[1]] } });
+  };
+  card.shadowRoot.querySelector(".history-refresh").dispatchEvent({ type: "click" });
+  assert.deepEqual(calls.at(-1).service_data, { remi_id: "REMI1", limit: 60, include_series: false, refresh: true, sync: true });
+  assert.match(card.shadowRoot.textContent, /environ 12 secondes/);
+  assert.equal(card.shadowRoot.querySelector(".history-date").disabled, true);
+  assert.equal(card.shadowRoot.querySelector(".history-refresh").disabled, true);
+  card._loadHistory({ refresh: true }); card._selectHistory("recent");
+  assert.equal(calls.length, 2); assert.equal(card._historyId, "older");
+  finish({ response: { logs: reports, sync_status: "cooldown" } }); await flush();
+  assert.deepEqual(calls.at(-1).service_data, { remi_id: "REMI1", limit: 1, report_id: "older" });
+  assert.equal(card._busy, false); assert.match(card.shadowRoot.textContent, /demandé récemment/);
+  assert.match(card._message.text, /Journal cloud relu/);
+  assert.doesNotMatch(card._message.text, /envoyé|récupéré/);
+});
+
+test("failed refresh retains the previous journal and its export date without claiming success", async () => {
+  const { card, hass, calls } = setupHistory(); await card._loadHistory(); card._selectHistory("older"); await card._toggleHistoryCharts();
+  const oldDetail = card._historyDetail;
+  hass.callWS = async request => { calls.push(request); throw new Error("Cloud unavailable"); };
+  await card._loadHistory({ refresh: true });
+  assert.equal(card._historyDetail, oldDetail); assert.equal(card._historyId, "older");
+  assert.equal(card._message.error, true); assert.match(card._message.text, /Cloud unavailable/);
+  assert.ok(card.shadowRoot.querySelector(".history-export")); assert.equal(calls.length, 3);
+});
+
+test("a delayed catalogue cannot populate another REMI", async () => {
+  const { card, hass, reports } = setupHistory(); let finish;
+  hass.callWS = () => new Promise(resolve => { finish = resolve; });
+  const pending = card._loadHistory(); card.setConfig({ device_id: "other" });
+  finish({ response: { logs: reports } }); await pending;
+  assert.equal(card._history, null); assert.equal(card._historyId, null); assert.equal(card._historyDetail, null); assert.equal(card._message, null);
+});
+
+test("a delayed chart response is ignored after the selected report changes", async () => {
+  const { card, hass, reports } = setupHistory(); await card._loadHistory(); let finish;
+  hass.callWS = () => new Promise(resolve => { finish = resolve; });
+  const pending = card._toggleHistoryCharts(); card._historyId = "older";
+  finish({ response: { logs: [{ ...reports[0], series: { temperature: { samples: [historySample(0, 21)] } } }] } }); await pending;
+  assert.equal(card._historyDetail, null); assert.equal(card._selectedHistory().report_id, "older");
+});
+
+test("a mismatched detailed response cannot replace selected statistics", async () => {
+  const { card, hass, reports } = setupHistory(); await card._loadHistory(); card._selectHistory("older");
+  hass.callWS = async () => ({ response: { logs: [reports[0]] } }); await card._toggleHistoryCharts();
+  assert.equal(card._historyDetail, null); assert.equal(card._selectedHistory().report_id, "older");
+  assert.equal(card._message.error, true); assert.match(card._message.text, /ne correspond pas/);
+  assert.deepEqual(card.shadowRoot.querySelectorAll(".stat-value").map(node => node.textContent), ["8 h 30", "86/100", "21:15", "06:45"]);
+});
+
+for (const [locale, labels] of [["fr", ["Période enregistrée", "Jour disponible précédent", "Enregistrement en cours", "Actualiser"]], ["en", ["Recorded period", "Previous available day", "Recording in progress", "Refresh"]]]) {
+  test(`${locale} localizes history navigation and status without changing service arguments`, async () => {
+    const { card, hass, calls } = setupHistory(); card.hass = { ...hass, language: locale }; await card._loadHistory();
+    assert.equal(card.shadowRoot.querySelector(".history-date").getAttribute("aria-label"), labels[0]);
+    assert.equal(card.shadowRoot.querySelector(".history-previous").getAttribute("aria-label"), labels[1]);
+    assert.ok(card.shadowRoot.textContent.includes(labels[2])); assert.equal(card.shadowRoot.querySelector(".history-refresh").textContent, labels[3]);
+    assert.deepEqual(calls[0].service_data, { remi_id: "REMI1", limit: 60, include_series: false });
+  });
+}
+
+test("no journal and undated metadata do not invent zero statistics or an old-report warning", async () => {
+  const { card, hass } = setupHistory(); hass.callWS = async () => ({ response: { logs: [] } }); await card._loadHistory();
+  assert.match(card.shadowRoot.textContent, /Aucun bilan disponible/); assert.equal(card.shadowRoot.querySelectorAll(".stat-value").length, 0);
+  assert.doesNotMatch(card.shadowRoot.textContent, /ancien/);
+  card._history = { logs: [{ report_id: "undated", period_start: '<img onerror="fail">', period_end: "2026-02-31", report_status: "unknown" }] }; card._historyId = "undated"; card._render();
+  assert.match(card.shadowRoot.textContent, /Période non datée|non communiqué/); assert.equal(card.shadowRoot.querySelectorAll("img").length, 0);
+  assert.deepEqual(card.shadowRoot.querySelectorAll(".stat-value").map(node => node.textContent), ["—", "—", "—", "—"]);
+});
+
+test("temperature chart breaks at null readings and missing indexes without drawing minus ten", () => {
+  const { card } = setupHistory();
+  const chart = card._chart("temperature", { samples: [historySample(0, 20), historySample(1, 21), { ...historySample(2, null), raw_value: 0 }, historySample(3, 22), historySample(4, 22), historySample(7, 23)] });
+  assert.equal(chart.querySelectorAll("polyline").length, 2); assert.equal(chart.querySelectorAll("circle").length, 1);
+  assert.ok(chart.querySelectorAll("polyline").every(line => line.getAttribute("points").split(" ").length === 2));
+  assert.doesNotMatch(chart.textContent, /-10/); assert.match(chart.textContent, /20\.0/);
+});
+
+test("partial series keep a fixed noon-to-noon horizontal scale and isolated points remain visible", () => {
+  const { card } = setupHistory();
+  const partial = card._chart("noise", { samples: [historySample(0, 1), historySample(1, 2)] });
+  const points = partial.querySelector("polyline").getAttribute("points").split(" ").map(point => point.split(",").map(Number));
+  assert.equal(points[0][0], 32); assert.ok(points[1][0] < 33, "two minutes must not stretch to the full 24-hour axis");
+  assert.match(partial.textContent, /12:0000:0011:58/); assert.doesNotMatch(partial.textContent, /unexpected/);
+  const isolated = card._chart("noise", { samples: [historySample(719, 0)] });
+  assert.equal(isolated.querySelector("circle").getAttribute("cx"), "292");
+});
+
+test("zero noise and zero light remain valid readings, while unavailable series remain empty", () => {
+  const { card } = setupHistory();
+  for (const kind of ["noise", "light"]) {
+    const chart = card._chart(kind, { samples: [historySample(0, 0), historySample(1, 0)] });
+    assert.equal(chart.querySelectorAll("polyline").length, 1); assert.doesNotMatch(chart.textContent, /Aucune courbe/);
+    if (kind === "light") assert.ok(chart.querySelector("polyline").getAttribute("points").split(" ").every(point => point.endsWith(",103")));
+  }
+  for (const samples of [[], [historySample(0, null)], [historySample(-1, 20)], [historySample(720, 20)], [{ ...historySample(2, 20), valid: false }]]) {
+    const chart = card._chart("temperature", { samples });
+    assert.equal(chart.querySelectorAll("svg").length, 0); assert.match(chart.textContent, /Aucune courbe/);
+  }
+});
