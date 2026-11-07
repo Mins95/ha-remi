@@ -1,8 +1,16 @@
-# Home Assistant Remi Integration
+# REMI for Home Assistant — Mins95 fork
 
 > **Unofficial** Home Assistant integration for the [UrbanHello Remi](https://www.urbanhello.com/) smart alarm clock.
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
+[![Open in Marketplace](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=Mins95&repository=ha-remi&category=integration)
+
+This fork is maintained by [Mins95](https://github.com/Mins95), based on
+[timoa/ha-remi](https://github.com/timoa/ha-remi). It keeps the original integration
+domain and entity unique IDs. The MIT license and original credits are retained.
+
+Use `main` for the maintained version and the published releases for updates.
+The contribution branch `fix/remi-state-and-alarm-reliability` is kept separate
+for the [upstream PR](https://github.com/timoa/ha-remi/pull/40).
 
 This is a community-maintained integration and is **not affiliated with or endorsed by UrbanHello**.
 
@@ -30,13 +38,33 @@ This is a community-maintained integration and is **not affiliated with or endor
 
 ## Installation
 
-### Via HACS (recommended)
+### Home Assistant 2026.11+: Marketplace
 
-1. Open HACS in Home Assistant
-2. Go to **Integrations** → **⋮** → **Custom repositories**
-3. Add `https://github.com/timoa/ha-remi` as an **Integration**
-4. Search for **Remi** and install it
-5. Restart Home Assistant
+1. Open **Settings → Marketplace → Add from link**.
+2. Enter `https://github.com/Mins95/ha-remi` and select **Add**.
+3. Connect GitHub if the Marketplace asks; custom repositories require this connection.
+4. Open **Remi (Mins95)** and install the published release.
+5. Restart Home Assistant after updating an already loaded integration.
+
+The Marketplace is built into Home Assistant 2026.11 and replaces HACS. See the
+[Marketplace documentation](https://www.home-assistant.io/integrations/marketplace/#custom-repositories).
+
+### Older Home Assistant versions using HACS
+
+Add `https://github.com/Mins95/ha-remi` under **Custom repositories**, with type
+**Integration**, then download the release and restart Home Assistant.
+
+### Existing REMI installations
+
+This fork and the upstream repository both use `urbanhello_remi_unofficial`.
+Marketplace does not allow two installed repositories to provide the same domain.
+Keep the existing REMI setup when planning a change of code source.
+Marketplace **Delete and uninstall** also removes the setup and its devices and
+entities; it is not a source-switch operation.
+
+This repository is ready to be added from its URL. Migrating an existing
+Marketplace installation from another source is a separate step; preparing or
+publishing this fork does not change the installed repository automatically.
 
 ### Manual
 
@@ -240,7 +268,22 @@ Same fields as `create_alarm`, plus `event_id` (required) — the `objectId` of 
 
 ## Credits
 
+This fork builds on [timoa/ha-remi](https://github.com/timoa/ha-remi), including
+the work of its original author and contributors.
+
 This integration was inspired by [Remi_UrbanHello_hass](https://github.com/pdruart/Remi_UrbanHello_hass) by [@pdruart](https://github.com/pdruart), which provided valuable insights into the alarm toggle functionality and brightness control.
+
+## Development and releases
+
+Create feature branches from `main`, add focused commits and open a pull request
+back to `Mins95/ha-remi`. Run `pytest --cov --cov-report=term-missing` before merging.
+The upstream contribution branch is reserved for the existing upstream PR.
+
+For a release, update the integration's `manifest.json` version and `CHANGELOG.md`
+in a reviewed change. Once the checks pass on `main`, run the **Release** workflow
+with that exact version. It verifies the version, runs the tests, and publishes
+a GitHub release at the checked commit. It uses the repository's standard
+`GITHUB_TOKEN`; no credentials from the upstream maintainer are required.
 
 ---
 

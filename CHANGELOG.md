@@ -1,3 +1,18 @@
+## 0.3.0 — Mins95 fork (2026-11-07)
+
+- Correct the Celsius conversion while keeping decimal values.
+- Determine firmware availability from device-specific information and add a read-only refresh button.
+- Bound cloud-read retries, coordinate session recovery, and avoid replaying writes after transient errors.
+- Correct alarm weekday labels and service payloads; add editable alarm time entities.
+- Correct music playback-mode labels.
+- Prepare Marketplace metadata, independent maintenance and release tooling for this fork.
+
+Existing entity IDs and configured alarms are preserved. Alarm service times now
+use `HH:MM` or `HH:MM:00`; automations using ISO dates or old music mode labels
+must be updated. Automated tests passed on HA 2026.10.4 and the integration was
+checked after installation on HA 2026.11.0 with firmware 332. Physical alarm
+writes and playback were not exercised during deployment.
+
 ## [0.2.7](https://github.com/timoa/ha-remi/compare/0.2.6...0.2.7) (2026-11-05)
 
 
