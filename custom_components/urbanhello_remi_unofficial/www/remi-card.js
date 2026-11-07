@@ -4,9 +4,11 @@ const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 const FACES = ["off", "awake", "sleepy", "semi_awake", "smiley"];
 const TEXT = {
   en: {
+    historyPeriod: "Recorded period", previousReport: "Previous available day", nextReport: "Next available day", historyInProgress: "Recording in progress", historyStatusUnknown: "Recording status not reported", historySleepUnavailable: "No sleep estimate for this period", historyExport: "Cloud export", historyOld: "This cloud export is older or undated.", historyNote: "Estimates for the selected period, not live readings.", historySyncWait: "Requesting a new export from REMI… This takes about 12 seconds.", historyRead: "Cloud journal read", historyCooldown: "An export was requested recently. The available cloud journal was read again.", historyMismatch: "The returned journal does not match the selected period.", hideCharts: "Hide environmental charts", historyChoose: "Open the available journals", historyUndated: "Undated period",
     remi: "REMI", alarms: "Schedules", sleep: "Sleep", naps: "Timers", choose: "Choose your REMI", loading: "Loading…", unavailable: "Unavailable", unknown: "Not reported", online: "Connected", offline: "Disconnected", statusUnknown: "Connection not reported", face: "Expression", faceDisplay: "Face display", on: "On", off: "Off", awake: "Awake", sleepy: "Sleepy", semi_awake: "Half awake", smiley: "Smiling", brightness: "Display brightness", face_brightness: "Night face brightness", volume: "Volume", music: "Music", play: "Play", pause: "Pause", stop: "Stop", browse: "Choose music", more: "More controls", musicNote: "REMI does not report whether music is playing.", advanced: "More settings", clock: "Clock format", musicMode: "Playback mode", normal: "Normal", single_track: "Single track", repeat_track: "Repeat track", repeat_playlist: "Repeat playlist", nightlight: "App background color", noise: "Noise alert threshold", addAlarm: "Add a schedule", edit: "Edit", delete: "Delete", confirmDelete: "Delete this item?", cancel: "Cancel", save: "Save", name: "Name", time: "Time", enabled: "Enabled", repeat: "Repeat", once: "Once", mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun", alarmFace: "Expression at this time", music_path: "Music file on REMI", music_duration_minutes: "Music duration (minutes)", play_button_enabled: "Enable play button", musicHelp: "Advanced: use a file path already present on this REMI. Leave unchanged to keep the app setting.", emptyAlarms: "No schedules yet", refresh: "Refresh", addNap: "Add a timer profile", napNote: "Saved profiles shared with the REMI app. Start a timer using REMI’s physical button.", emptyNaps: "No saved profiles", duration_minutes: "Duration (minutes)", sleep_aid: "Sleep aid", music_path_start: "Music at the start", music_path_end: "Music at the end", volume_start: "Start volume", volume_end: "End volume", music_duration_start_minutes: "Start music duration (minutes)", music_duration_end_minutes: "End music duration (minutes)", sleep_duration: "Sleep duration", sleep_score: "Sleep score", sleep_bedtime: "Bedtime", sleep_wake_time: "Wake-up", sleep_report_timestamp: "Report date", oldReport: "Older or undated report", sleepNote: "Estimates from the latest cloud report, not live readings.", charts: "Show environmental charts", chartNote: "App clock grid, from noon to the following morning. Sample dates are not inferred.", temperature: "Temperature", noiseChart: "Noise · relative level", light: "Light detected", noHistory: "No report available", noSeries: "No series available", sent: "Command sent", saved: "Saved", deleted: "Deleted", error: "The action could not be completed", noDevices: "No REMI device found. Add the integration first.", missingDevice: "The configured REMI is not available. Choose it in the card editor.", title: "Card title", auto: "Automatic (only if one REMI)", device: "REMI device", chooseFirst: "Select a REMI in the card editor.", close: "Close", minutes: "min", libraryEmpty: "No music files found", registryError: "Cannot read the device registry", changes: "Unsaved changes", disabled: "Disabled", successRead: "Updated", pending: "Sending…"
   },
   fr: {
+    historyPeriod: "Période enregistrée", previousReport: "Jour disponible précédent", nextReport: "Jour disponible suivant", historyInProgress: "Enregistrement en cours", historyStatusUnknown: "État de l’enregistrement non communiqué", historySleepUnavailable: "Aucune estimation de sommeil pour cette période", historyExport: "Export cloud", historyOld: "Cet export cloud est ancien ou non daté.", historyNote: "Estimations de la période sélectionnée, et non mesures en direct.", historySyncWait: "Demande d’un nouvel export au Rémi… Comptez environ 12 secondes.", historyRead: "Journal cloud relu", historyCooldown: "Un export a été demandé récemment. Le journal cloud disponible a été relu.", historyMismatch: "Le journal reçu ne correspond pas à la période sélectionnée.", hideCharts: "Masquer les courbes de la chambre", historyChoose: "Consulter les journaux disponibles", historyUndated: "Période non datée",
     remi: "Rémi", alarms: "Horaires", sleep: "Sommeil", naps: "Minuteurs", choose: "Choisissez votre Rémi", loading: "Chargement…", unavailable: "Indisponible", unknown: "Non communiqué", online: "Connecté", offline: "Déconnecté", statusUnknown: "Connexion non communiquée", face: "Visage", faceDisplay: "Affichage du visage", on: "Allumé", off: "Éteint", awake: "Réveillé", sleepy: "Endormi", semi_awake: "À moitié éveillé", smiley: "Souriant", brightness: "Luminosité de l’affichage", face_brightness: "Luminosité du visage la nuit", volume: "Volume", music: "Musique", play: "Lire", pause: "Pause", stop: "Arrêter", browse: "Choisir une musique", more: "Autres commandes", musicNote: "Rémi ne confirme pas si la musique est en cours de lecture.", advanced: "Autres réglages", clock: "Format de l’heure", musicMode: "Mode de lecture", normal: "Normal", single_track: "Un seul morceau", repeat_track: "Répéter le morceau", repeat_playlist: "Répéter la liste", nightlight: "Couleur de fond de l’application", noise: "Seuil d’alerte sonore", addAlarm: "Ajouter un horaire", edit: "Modifier", delete: "Supprimer", confirmDelete: "Supprimer cet élément ?", cancel: "Annuler", save: "Enregistrer", name: "Nom", time: "Heure", enabled: "Activé", repeat: "Répétition", once: "Une seule fois", mon: "Lun", tue: "Mar", wed: "Mer", thu: "Jeu", fri: "Ven", sat: "Sam", sun: "Dim", alarmFace: "Visage à cette heure", music_path: "Fichier musical sur Rémi", music_duration_minutes: "Durée de la musique (minutes)", play_button_enabled: "Activer le bouton lecture", musicHelp: "Réglage avancé : indiquez le chemin d’un fichier déjà présent sur ce Rémi. Ne le modifiez pas pour conserver le réglage de l’application.", emptyAlarms: "Aucun horaire pour le moment", refresh: "Actualiser", addNap: "Ajouter un profil de minuteur", napNote: "Profils enregistrés partagés avec l’application Rémi. Démarrez un minuteur avec le bouton physique du Rémi.", emptyNaps: "Aucun profil enregistré", duration_minutes: "Durée (minutes)", sleep_aid: "Aide à l’endormissement", music_path_start: "Musique au début", music_path_end: "Musique à la fin", volume_start: "Volume au début", volume_end: "Volume à la fin", music_duration_start_minutes: "Durée de la musique au début (minutes)", music_duration_end_minutes: "Durée de la musique à la fin (minutes)", sleep_duration: "Durée de sommeil", sleep_score: "Score de sommeil", sleep_bedtime: "Coucher", sleep_wake_time: "Réveil", sleep_report_timestamp: "Date du bilan", oldReport: "Bilan ancien ou non daté", sleepNote: "Estimations du dernier bilan cloud, et non des mesures en direct.", charts: "Afficher les courbes de la chambre", chartNote: "Heures de l’application, de midi au lendemain matin. Les dates des mesures ne sont pas déduites.", temperature: "Température", noiseChart: "Bruit · niveau relatif", light: "Lumière détectée", noHistory: "Aucun bilan disponible", noSeries: "Aucune courbe disponible", sent: "Commande envoyée", saved: "Enregistré", deleted: "Supprimé", error: "L’action n’a pas pu aboutir", noDevices: "Aucun Rémi trouvé. Ajoutez d’abord l’intégration.", missingDevice: "Le Rémi configuré est indisponible. Sélectionnez-le dans l’éditeur de la carte.", title: "Titre de la carte", auto: "Automatique (si un seul Rémi)", device: "Appareil Rémi", chooseFirst: "Sélectionnez un Rémi dans l’éditeur de la carte.", close: "Fermer", minutes: "min", libraryEmpty: "Aucun fichier musical trouvé", registryError: "Impossible de lire le registre des appareils", changes: "Modifications non enregistrées", disabled: "Désactivé", successRead: "Actualisé", pending: "Envoi…"
   }
 };
@@ -107,6 +109,7 @@ function faceDrawing(face, miniature = false) {
 }
 const STYLE = `
 :host{display:block;color:var(--primary-text-color,#193f46);font-family:var(--paper-font-body1_-_font-family,system-ui,sans-serif)}*{box-sizing:border-box}ha-card{display:block;overflow:hidden;border-radius:var(--ha-card-border-radius,24px);background:var(--ha-card-background,var(--card-background-color,#fff));border:1px solid var(--divider-color,#dfe9e9);box-shadow:var(--ha-card-box-shadow,0 5px 24px #123c4210)}.head{padding:24px 24px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}.eyebrow{font-size:11px;letter-spacing:2px;font-weight:700;color:var(--secondary-text-color,#647d82);text-transform:uppercase;margin-bottom:5px}h2{font-size:24px;line-height:1.2;letter-spacing:-.6px;margin:0}h3{font-size:16px;margin:0 0 14px}p{margin:0}button,input,select{font:inherit;color:inherit}button{cursor:pointer;border:0;border-radius:12px;background:var(--secondary-background-color,#f1f6f6);padding:11px 14px;line-height:1.25;transition:background .15s}button:hover{filter:brightness(.97)}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--primary-color,#39aebb);outline-offset:2px}button:disabled,input:disabled,select:disabled{cursor:default;opacity:.45}button.primary{background:var(--primary-color,#38aab9);color:var(--text-primary-color,#fff)}button.danger{background:#b3261e;color:white}button.subtle{background:transparent;color:var(--secondary-text-color,#647d82)}.tabs{display:grid;grid-template-columns:repeat(4,1fr);padding:0 15px 14px;gap:4px;border-bottom:1px solid var(--divider-color,#e4eded)}.tabs button{background:transparent;font-size:12px;padding:10px 3px}.tabs .selected{background:color-mix(in srgb,var(--primary-color,#38aab9) 12%,transparent);color:var(--primary-color,#248897);font-weight:700}.tabicon{display:block;font-size:18px;margin-bottom:5px}.body{padding:20px 24px 24px}.hero{border-radius:22px;padding:12px 16px 0;background:linear-gradient(140deg,color-mix(in srgb,var(--primary-color,#3cabb8) 16%,var(--card-background-color,#fff)),color-mix(in srgb,var(--primary-color,#3cabb8) 5%,var(--card-background-color,#fff)));text-align:center;overflow:hidden;margin-bottom:18px}.hero-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.pill{border-radius:20px;font-size:11px;background:var(--card-background-color,#fff);padding:7px 10px;white-space:nowrap}.temperature{font-size:20px;font-weight:600}.face-art{display:block;width:140px;height:137px;margin:6px auto 0;color:var(--primary-color,#39aebb)}.control{margin:18px 0}.control-title{display:flex;justify-content:space-between;gap:10px;font-size:13px;margin-bottom:10px}.value{font-weight:600;white-space:nowrap}input[type=range]{width:100%;accent-color:var(--primary-color,#38aab9);cursor:pointer;height:18px}.faces{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.faces button{display:flex;align-items:center;justify-content:center;gap:10px;padding:10px;font-size:13px;min-height:48px}.face-title{align-items:center}.current-face{margin-top:-8px}.faces .selected{outline:2px solid var(--primary-color,#38aab9);background:color-mix(in srgb,var(--primary-color,#38aab9) 10%,transparent)}.face-symbol{display:block;width:32px;height:24px;flex-shrink:0}.music{border:1px solid var(--divider-color,#e4eded);border-radius:14px;padding:14px 16px;margin-top:18px}.music summary{font-weight:600;color:var(--primary-text-color,#193f46)}.music-heading{margin-top:12px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.spread{justify-content:space-between}.muted{color:var(--secondary-text-color,#647d82);font-size:12px;line-height:1.6}.note{margin:12px 0}.music-actions{margin:14px 0;display:flex;justify-content:center;gap:10px}.music-actions button{min-width:62px}.line{height:1px;background:var(--divider-color,#e4eded);margin:20px 0}.schedule{border:1px solid var(--divider-color,#e4eded);border-radius:16px;padding:15px;margin-bottom:10px}.clock{font-size:28px;font-weight:500;letter-spacing:-1px}.schedule-name{font-size:13px;margin-top:4px;font-weight:600}.days{display:flex;gap:5px;flex-wrap:wrap;margin:12px 0}.day{font-size:10px;padding:5px 7px;border-radius:7px;color:var(--secondary-text-color,#647d82);background:var(--secondary-background-color,#f0f4f4)}.day.active{background:color-mix(in srgb,var(--primary-color,#38aab9) 14%,transparent);color:var(--primary-color,#298593)}.toggle{appearance:none;width:41px;height:24px;border-radius:15px;background:var(--disabled-color,#bccacd);position:relative;cursor:pointer;flex-shrink:0}.toggle:before{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .15s}.toggle:checked{background:var(--primary-color,#38aab9)}.toggle:checked:before{transform:translateX(17px)}.full{width:100%;margin-top:12px}.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.stat{padding:16px;border-radius:15px;background:var(--secondary-background-color,#f2f6f6)}.stat-value{font-size:24px;font-weight:500;margin-top:9px;overflow-wrap:anywhere}.stat:last-child{grid-column:1/-1}.stat:last-child .stat-value{font-size:16px}.warning{color:var(--warning-color,#996400)}.feedback{font-size:12px;padding:12px 24px;line-height:1.5;overflow-wrap:anywhere;background:color-mix(in srgb,var(--primary-color,#38aab9) 10%,transparent)}.feedback.error{color:var(--error-color,#b3261e);background:color-mix(in srgb,var(--error-color,#b3261e) 8%,transparent)}details{border-top:1px solid var(--divider-color,#e4eded);margin-top:20px;padding-top:16px}summary{cursor:pointer;font-size:13px;color:var(--secondary-text-color,#647d82)}.field{display:block;margin:16px 0}.field-label{display:block;font-size:12px;font-weight:600;margin-bottom:7px}.field input:not([type=checkbox]),.field select,.device-select{width:100%;padding:11px 12px;background:var(--secondary-background-color,#f3f7f7);border:1px solid var(--divider-color,#dfe9e9);border-radius:10px;min-height:42px}.field input[type=checkbox]{accent-color:var(--primary-color,#38aab9)}.form-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:16px}.form-head h3{margin:0}.day-check{display:flex;flex-direction:column;align-items:center;gap:7px;font-size:11px}.confirm{padding:13px;border-radius:12px;background:color-mix(in srgb,var(--error-color,#b3261e) 8%,transparent);margin-top:12px}.chart{border:1px solid var(--divider-color,#e4eded);padding:14px;border-radius:14px;margin-top:14px}.chart svg{width:100%;height:auto;display:block;overflow:visible}.chart h3{font-size:12px;margin-bottom:20px}.chart-label{fill:var(--secondary-text-color,#647d82);font-size:10px}.empty{padding:28px 8px;text-align:center}.library{display:grid;gap:8px}.library button{text-align:left;overflow-wrap:anywhere}.spin{opacity:.7}.badge{font-size:10px;padding:5px 7px;background:var(--secondary-background-color,#f1f5f5);border-radius:7px}@media(max-width:380px){.head{padding:20px 16px 14px}.body{padding:18px 16px 20px}.tabs{padding-left:10px;padding-right:10px}.faces button{font-size:12px}.face-art{width:125px;height:122px}.temperature{font-size:18px}.music-actions button{min-width:54px}}
+.history-navigation{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;margin:8px 0 12px}.history-date{min-width:0;width:100%;font:inherit;font-size:12px;padding:11px 8px;border:1px solid var(--divider-color,#dfe9e9);border-radius:10px;background:var(--secondary-background-color,#f3f7f7);color:inherit}.history-status{margin:12px 0}.sleep-stats .stat:last-child{grid-column:auto}.sleep-stats .stat:last-child .stat-value{font-size:24px}
 `;
 
 export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
@@ -116,6 +119,7 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
     this._config = {}; this._tab = "remi"; this._devices = []; this._entities = []; this._registryReady = false;
     this._unsub = []; this._generation = 0; this._busy = false; this._form = null; this._message = null;
     this._details = new Map(); this._sourceStates = new Map(); this._lastFaces = new Map();
+    this._history = null; this._historyId = null; this._historyDetail = null; this._historyCharts = false;
     this.shadowRoot?.addEventListener("focusout", () => queueMicrotask(() => {
       if (this._renderPending && !this._form && !this.shadowRoot.activeElement?.matches("input,select")) this._render();
     }));
@@ -146,6 +150,7 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
   disconnectedCallback() { this._resetContext(); this._unsub.splice(0).forEach(fn => fn()); this._registryReady = false; }
   _resetContext() {
     this._generation++; this._form = null; this._naps = null; this._history = null; this._library = null; this._confirm = null; this._message = null;
+    this._historyId = null; this._historyDetail = null; this._historyCharts = false;
     this._sourceStates.clear(); this._renderPending = true;
   }
   _sourcesChanged() {
@@ -203,10 +208,10 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
   _button(label, action, className = "", disabled = false) {
     return el("button", { type: "button", text: label, class: className, disabled: this._busy || disabled, onclick: action });
   }
-  async _run(action, success = "sent") {
+  async _run(action, success = "sent", pending = "pending") {
     if (this._busy) return;
     const generation = this._generation;
-    this._busy = true; this._message = null; this._render();
+    this._busy = true; this._pendingText = pending; this._message = null; this._render();
     try {
       const result = await action();
       if (generation === this._generation) this._message = { text: this.t(success) };
@@ -249,7 +254,7 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
     } else {
       const tabs = el("nav", { class: "tabs", "aria-label": this.t("remi") });
       [["remi", "◡"], ["alarms", "◷"], ["sleep", "☾"], ["naps", "◴"]].forEach(([tab, icon]) => {
-        const button = this._button("", () => { this._tab = tab; this._form = null; this._library = null; this._confirm = null; this._message = null; this._render(); if (tab === "naps" && !this._naps) this._loadNaps(); }, tab === this._tab ? "selected" : "");
+        const button = this._button("", () => { this._tab = tab; this._form = null; this._library = null; this._confirm = null; this._message = null; this._render(); if (tab === "naps" && !this._naps) this._loadNaps(); if (tab === "sleep" && !this._history) this._loadHistory(); }, tab === this._tab ? "selected" : "");
         button.setAttribute("aria-pressed", String(tab === this._tab)); button.append(el("span", { class: "tabicon", text: icon }), document.createTextNode(this.t(tab))); tabs.append(button);
       });
       card.append(tabs);
@@ -263,7 +268,7 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
       card.append(body);
     }
     if (this._message) card.append(el("div", { class: `feedback${this._message.error ? " error" : ""}`, role: this._message.error ? "alert" : "status", text: this._message.text }));
-    if (this._busy) card.append(el("div", { class: "feedback", role: "status", text: this.t("pending") }));
+    if (this._busy) card.append(el("div", { class: "feedback", role: "status", text: this.t(this._pendingText || "pending") }));
     const style = el("style", { text: STYLE });
     this.shadowRoot.replaceChildren(style, card);
     for (const [index, detail] of [...this.shadowRoot.querySelectorAll("details")].entries()) {
@@ -406,36 +411,123 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
     }, "danger")])); form.append(box);
   }
   _renderSleep() {
-    const fragment = document.createDocumentFragment(), stats = el("div", { class: "stats" });
-    for (const key of ["sleep_duration", "sleep_score", "sleep_bedtime", "sleep_wake_time", "sleep_report_timestamp"]) {
-      stats.append(el("div", { class: "stat" }, [el("p", { class: "muted", text: this.t(key) }), el("div", { class: "stat-value", text: this._textState("sensor", key) })]));
+    const fragment = document.createDocumentFragment(), logs = this._history?.logs || [];
+    const report = this._selectedHistory(), index = logs.findIndex(item => item.report_id === this._historyId);
+    fragment.append(el("div", { class: "row spread" }, [el("span", { class: "muted", text: this.t("historyPeriod") }), this._button(this.t("refresh"), () => this._loadHistory({ refresh: true }), "history-refresh")]));
+    if (logs.length) {
+      const select = el("select", { class: "history-date", "aria-label": this.t("historyPeriod"), disabled: this._busy, onchange: event => this._selectHistory(event.target.value) });
+      logs.forEach(item => select.append(el("option", { value: item.report_id, selected: item.report_id === this._historyId, text: this._periodLabel(item) })));
+      const previous = this._button("‹", () => this._selectHistory(logs[index + 1]?.report_id), "history-previous", index < 0 || index >= logs.length - 1);
+      const next = this._button("›", () => this._selectHistory(logs[index - 1]?.report_id), "history-next", index <= 0);
+      previous.setAttribute("aria-label", this.t("previousReport")); next.setAttribute("aria-label", this.t("nextReport"));
+      fragment.append(el("div", { class: "history-navigation" }, [previous, select, next]));
+    }
+    if (!report) {
+      fragment.append(el("p", { class: "empty muted", text: this.t(this._busy ? "loading" : "noHistory") }));
+      if (!this._history && !this._busy) fragment.append(this._button(this.t("historyChoose"), () => this._loadHistory(), "full"));
+      return fragment;
+    }
+    if (report.report_status !== "completed") fragment.append(el("p", { class: "history-status muted", text: this.t(report.report_status === "in_progress" ? "historyInProgress" : "historyStatusUnknown") }));
+    const stats = el("div", { class: "stats sleep-stats" });
+    for (const key of ["sleep_duration", "sleep_score", "sleep_bedtime", "sleep_wake_time"]) {
+      const value = report[key]; let text = "—";
+      if (key === "sleep_duration" && Number.isFinite(value) && value >= 0) text = `${Math.floor(value / 60)} h ${String(value % 60).padStart(2, "0")}`;
+      else if (key === "sleep_score" && Number.isFinite(value) && value >= 0 && value <= 100) text = `${value}/100`;
+      else if (["sleep_bedtime", "sleep_wake_time"].includes(key) && typeof value === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(value)) text = value;
+      stats.append(el("div", { class: "stat" }, [el("p", { class: "muted", text: this.t(key) }), el("div", { class: "stat-value", text })]));
     }
     fragment.append(stats);
-    if (this._state("sensor", "sleep_report_timestamp")?.attributes?.stale !== false) fragment.append(el("p", { class: "muted note warning", text: this.t("oldReport") }));
-    fragment.append(el("p", { class: "muted note", text: this.t("sleepNote") }), this._button(this.t("charts"), () => this._loadHistory(), "full"));
-    if (this._history) {
-      const report = this._history.logs?.[0];
-      if (!report) fragment.append(el("p", { class: "muted note", text: this.t("noHistory") }));
-      else { for (const kind of ["temperature", "noise", "light"]) fragment.append(this._chart(kind, report.series?.[kind])); fragment.append(el("p", { class: "muted note", text: this.t("chartNote") })); }
+    if (report.sleep_status === "unavailable") fragment.append(el("p", { class: "muted note", text: this.t("historySleepUnavailable") }));
+    if (report.stale === true) fragment.append(el("p", { class: "muted note warning", text: this.t("historyOld") }));
+    if (report.updated_at && Number.isFinite(Date.parse(report.updated_at))) fragment.append(el("p", { class: "muted note history-export", text: `${this.t("historyExport")} · ${new Date(report.updated_at).toLocaleString(language(this._hass))}` }));
+    fragment.append(el("p", { class: "muted note", text: this.t("historyNote") }));
+    if (this._history?.sync_status === "cooldown") fragment.append(el("p", { class: "muted note", text: this.t("historyCooldown") }));
+    fragment.append(this._button(this.t(this._historyCharts ? "hideCharts" : "charts"), () => this._toggleHistoryCharts(), "full history-charts"));
+    if (this._historyCharts) {
+      for (const kind of ["temperature", "noise", "light"]) fragment.append(this._chart(kind, report.series?.[kind]));
+      fragment.append(el("p", { class: "muted note", text: this.t("chartNote") }));
     }
     return fragment;
   }
-  _loadHistory() {
-    const device = this._device(), generation = this._generation; if (!device) return;
-    this._run(async () => { const result = await this._call(DOMAIN, "get_history", { remi_id: device.remiId, limit: 1 }, undefined, true); if (generation === this._generation) this._history = result.response; }, "successRead").catch(() => {});
+  _periodLabel(report) {
+    const format = value => {
+      if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+      const date = new Date(`${value}T12:00:00Z`);
+      return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value ? date.toLocaleDateString(language(this._hass), { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : null;
+    };
+    const start = format(report.period_start), end = format(report.period_end);
+    return start && end ? `${start} → ${end}` : this.t("historyUndated");
+  }
+  _selectedHistory() {
+    return this._historyDetail?.report_id === this._historyId ? this._historyDetail : this._history?.logs?.find(item => item.report_id === this._historyId);
+  }
+  async _readHistoryDetail(generation, remiId, reportId) {
+    if (generation !== this._generation || reportId !== this._historyId) return;
+    const result = await this._call(DOMAIN, "get_history", { remi_id: remiId, limit: 1, report_id: reportId }, undefined, true);
+    if (generation !== this._generation || reportId !== this._historyId) return;
+    const report = result?.response?.logs?.[0];
+    if (!report || report.report_id !== reportId) throw new Error(this.t("historyMismatch"));
+    this._historyDetail = report;
+  }
+  _loadHistory({ refresh = false } = {}) {
+    const device = this._device(), generation = this._generation; if (!device || this._busy) return;
+    const selectedId = this._historyId;
+    return this._run(async () => {
+      const data = { remi_id: device.remiId, limit: 60, include_series: false };
+      if (refresh) Object.assign(data, { refresh: true, sync: true });
+      const result = await this._call(DOMAIN, "get_history", data, undefined, true);
+      if (generation !== this._generation || selectedId !== this._historyId) return;
+      if (!Array.isArray(result?.response?.logs)) throw new Error(this.t("historyMismatch"));
+      const seen = new Set(), logs = result.response.logs.filter(report => {
+        if (!report || typeof report.report_id !== "string" || !report.report_id || seen.has(report.report_id)) return false;
+        seen.add(report.report_id); return true;
+      }).slice(0, 60);
+      this._history = { ...result.response, logs };
+      this._historyId = logs.some(item => item.report_id === selectedId) ? selectedId : logs[0]?.report_id || null;
+      this._historyDetail = null;
+      if ((refresh || this._historyCharts) && this._historyId) await this._readHistoryDetail(generation, device.remiId, this._historyId);
+    }, "historyRead", refresh ? "historySyncWait" : "loading").catch(() => {});
+  }
+  _selectHistory(reportId) {
+    if (this._busy || !this._history?.logs?.some(item => item.report_id === reportId)) return;
+    if (reportId === this._historyId) return;
+    this._historyId = reportId; this._historyDetail = null; this._message = null; this._render();
+    if (this._historyCharts) {
+      const generation = this._generation, remiId = this._device()?.remiId;
+      if (remiId) return this._run(() => this._readHistoryDetail(generation, remiId, reportId), "historyRead", "loading").catch(() => {});
+    }
+  }
+  _toggleHistoryCharts() {
+    if (this._busy || !this._historyId || !this._device()) return;
+    this._historyCharts = !this._historyCharts;
+    if (!this._historyCharts) { this._render(); return; }
+    const generation = this._generation, remiId = this._device().remiId, reportId = this._historyId;
+    return this._run(() => this._readHistoryDetail(generation, remiId, reportId), "historyRead", "loading").catch(() => {});
   }
   _chart(kind, series) {
     const title = `${this.t(kind === "noise" ? "noiseChart" : kind)}${kind === "temperature" ? " · °C" : ""}`;
     const section = el("section", { class: "chart" }, [el("h3", { text: title })]);
-    const samples = Array.isArray(series?.samples) ? series.samples.filter(sample => Number.isFinite(sample.index) && Number.isFinite(sample.value) && (kind !== "light" || Number.isFinite(sample.graph_value))) : [];
+    const valid = sample => sample && sample.valid !== false && Number.isInteger(sample.index) && sample.index >= 0 && sample.index < 720 && Number.isFinite(sample.value) && (kind !== "light" || Number.isFinite(sample.graph_value));
+    const rawSamples = Array.isArray(series?.samples) ? series.samples : [], samples = rawSamples.filter(valid);
     if (!samples.length) { section.append(el("p", { class: "muted", text: this.t("noSeries") })); return section; }
     const value = sample => kind === "light" ? sample.graph_value : sample.value;
-    const values = samples.map(value), min = kind === "light" ? 0 : Math.min(...values), max = Math.max(min + 1, ...values), lastIndex = Math.max(1, ...samples.map(sample => sample.index));
+    const values = samples.map(value), min = kind === "light" ? 0 : Math.min(...values), max = kind === "light" ? 100 : Math.max(min + 1, ...values);
     const chart = svg("svg", { viewBox: "0 0 300 135", role: "img", "aria-label": this.t(kind === "noise" ? "noiseChart" : kind) });
-    const points = samples.map(sample => `${32 + sample.index / lastIndex * 260},${103 - (value(sample) - min) / (max - min) * 92}`).join(" ");
-    chart.append(svg("line", { x1: 32, y1: 103, x2: 292, y2: 103, stroke: "var(--divider-color,#dde6e8)" }), svg("polyline", { points, fill: "none", stroke: "var(--primary-color,#38aab9)", "stroke-width": 1.8, "stroke-linejoin": "round" }));
+    const position = sample => [32 + sample.index / 719 * 260, 103 - (value(sample) - min) / (max - min) * 92];
+    chart.append(svg("line", { x1: 32, y1: 103, x2: 292, y2: 103, stroke: "var(--divider-color,#dde6e8)" }));
+    const segments = []; let segment = [], previous = null;
+    for (const sample of rawSamples) {
+      if (!valid(sample)) { if (segment.length) segments.push(segment); segment = []; previous = null; continue; }
+      if (previous !== null && sample.index !== previous + 1) { if (segment.length) segments.push(segment); segment = []; }
+      segment.push(sample); previous = sample.index;
+    }
+    if (segment.length) segments.push(segment);
+    for (const points of segments) {
+      if (points.length === 1) { const [cx, cy] = position(points[0]); chart.append(svg("circle", { cx, cy, r: 2, fill: "var(--primary-color,#38aab9)" })); }
+      else chart.append(svg("polyline", { points: points.map(sample => position(sample).join(",")).join(" "), fill: "none", stroke: "var(--primary-color,#38aab9)", "stroke-width": 1.8, "stroke-linejoin": "round" }));
+    }
     const label = (text, x, y, anchor = "start") => { const node = svg("text", { x, y, class: "chart-label", "text-anchor": anchor }); node.textContent = String(text); chart.append(node); };
-    label(kind === "light" ? "1" : max.toFixed(kind === "temperature" ? 1 : 0), 27, 14, "end"); label(kind === "light" ? "0" : min.toFixed(kind === "temperature" ? 1 : 0), 27, 105, "end"); label(samples[0].clock || "12:00", 32, 126); label(samples.at(-1).clock || "11:58", 292, 126, "end");
+    label(kind === "light" ? "1" : max.toFixed(kind === "temperature" ? 1 : 0), 27, 14, "end"); label(kind === "light" ? "0" : min.toFixed(kind === "temperature" ? 1 : 0), 27, 105, "end"); label("12:00", 32, 126); label("00:00", 32 + 360 / 719 * 260, 126, "middle"); label("11:58", 292, 126, "end");
     section.append(chart); return section;
   }
   _browse() {
