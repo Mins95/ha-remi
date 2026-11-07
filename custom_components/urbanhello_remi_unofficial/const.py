@@ -40,4 +40,5 @@ MUSIC_MODE_OPTIONS = {
     2: "White Noise",
 }
 
-DAYS_OF_WEEK = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
+# The REMI recurrence array starts on Monday (unlike the legacy service input).
+DAYS_OF_WEEK = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]

@@ -200,3 +200,36 @@ async def test_simultaneous_expired_reads_share_one_login(api_pair):
     await asyncio.wait_for(asyncio.gather(client.get_events(), client.get_events()), timeout=2)
     session.post.assert_called_once()
     assert session.request.call_count == 4
+
+
+async def test_services_use_current_coordinator_after_reload(hass):
+    old = MagicMock()
+    current = MagicMock()
+    current.events = [{"objectId": "event1"}]
+    current.client.update_event = AsyncMock()
+    current.async_request_refresh = AsyncMock()
+    hass.data[DOMAIN] = {"entry": old}
+    _register_services(hass)
+    hass.data[DOMAIN]["entry"] = current
+    await hass.services.async_call(DOMAIN, "update_alarm", {"event_id": "event1", "enabled": False}, blocking=True)
+    current.client.update_event.assert_awaited_once_with("event1", {"enabled": False})
+    old.client.update_event.assert_not_called()
+
+
+async def test_services_refuse_missing_alarm(hass):
+    coordinator = MagicMock()
+    coordinator.events = []
+    hass.data[DOMAIN] = {"entry": coordinator}
+    _register_services(hass)
+    with pytest.raises(HomeAssistantError):
+        await hass.services.async_call(DOMAIN, "delete_alarm", {"event_id": "stale"}, blocking=True)
+    coordinator.client.delete_event.assert_not_called()
+
+
+async def test_last_unload_removes_services(hass):
+    entry = MagicMock(entry_id="entry")
+    hass.data[DOMAIN] = {"entry": MagicMock()}
+    _register_services(hass)
+    with patch.object(hass.config_entries, "async_unload_platforms", return_value=True):
+        assert await async_unload_entry(hass, entry)
+    assert not hass.services.has_service(DOMAIN, "create_alarm")
