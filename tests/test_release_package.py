@@ -69,12 +69,15 @@ def test_tracked_caches_tests_and_docs_are_excluded(package_repository: Path) ->
         assert set(archive.namelist()) == REQUIRED_FILES | {"brand/icon.png"}
 
 
-def test_missing_frontend_fails_before_overwriting_package(package_repository: Path) -> None:
-    """The card and loader must ship together; a bad build preserves any prior ZIP."""
+@pytest.mark.parametrize("missing", ["www/remi-loader.js", "LICENSE"])
+def test_missing_required_file_fails_before_overwriting_package(
+    package_repository: Path, missing: str
+) -> None:
+    """Frontend and license files must ship; a bad build preserves any prior ZIP."""
     output = package_repository / ASSET_NAME
     output.write_bytes(b"previous release")
     subprocess.run(
-        ["git", "rm", "--cached", "--quiet", str(COMPONENT / "www/remi-loader.js")],
+        ["git", "rm", "--cached", "--quiet", str(COMPONENT / missing)],
         cwd=package_repository,
         check=True,
     )

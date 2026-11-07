@@ -17,6 +17,7 @@ VERSION_PATTERN = re.compile(
     r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-beta\.[1-9][0-9]*)?"
 )
 REQUIRED_FILES = {
+    "LICENSE",
     "__init__.py",
     "manifest.json",
     "services.yaml",

@@ -43,7 +43,7 @@ These tests cover the card and its resource loader. They do not replace checking
 - [HACS validation](https://github.com/Mins95/ha-remi/actions/workflows/hacs.yml) checks repository compatibility.
 - [Release](https://github.com/Mins95/ha-remi/actions/workflows/release.yml) checks the requested version against the manifest and changelog and runs validation before publishing. Tags containing a pre-release suffix are published as pre-releases rather than becoming the latest stable release.
 
-Starting with 0.5.0, releases provide `urbanhello_remi_unofficial.zip`, containing the integration files directly at its root. Marketplace and HACS use this packaged asset; [manual installation](usage.md#manual-installation) explains its destination directory. Older releases retain their original packaging configuration.
+Starting with 0.5.0, releases provide `urbanhello_remi_unofficial.zip`, containing the integration files and original MIT license directly at its root. Marketplace and HACS use this packaged asset; [manual installation](usage.md#manual-installation) explains its destination directory. Older releases retain their original packaging configuration.
 
 The README's download badge counts downloads of GitHub release assets, introduced here with 0.5.0. It is not a count of installations or unique users, and it does not include past downloads of GitHub's automatically generated source archives.
 
