@@ -4,7 +4,7 @@
 
 This guide covers the public Mins95 integration, its Home Assistant actions and changes from earlier versions. It requires an UrbanHello account and internet access. Example entity IDs and alarm IDs are placeholders: use the IDs from your own installation.
 
-**0.5.0-beta.1 requires Home Assistant 2026.11.0 or newer.** It is an opt-in beta; 0.4.0 remains the latest stable release. Start with the [included dashboard card](card.md) for a visual interface to the features below.
+**0.5.0-beta.2 requires Home Assistant 2026.11.0 or newer.** It is an opt-in beta; 0.4.0 remains the latest stable release. Start with the [included dashboard card](card.md) for a visual interface to the features below.
 
 ## Everyday controls
 
@@ -44,6 +44,8 @@ The [UrbanHello brightness guide](https://www.urbanhello.com/fr/faq/faqs/gerer-l
 
 ### Face and music options
 
+In the card's main tab, a display on/off control and **Awake/Sleepy** buttons provide quick face changes. The control affects the displayed face, not power to the device. Off selects `off`; On restores the last non-off face observed by that card for the selected REMI, or uses `awake` when no previous face is known. All expressions remain available through the native select entity below.
+
 Select a face using its stable code:
 
 ```yaml
@@ -65,6 +67,8 @@ data:
 ```
 
 ### Music player
+
+Expand **Music** in the REMI card to reveal its controls. The section is collapsed by default in beta.2 to keep the main view compact.
 
 The separate media player browses the cloud library associated with the selected REMI. Choose a track from its media browser to play an existing file. The integration does not upload files, stream arbitrary URLs or expose baby monitor audio.
 
@@ -287,6 +291,12 @@ To edit a profile, get its `nap_id` with `list_naps` and supply only the fields 
 ## Upgrading
 
 <a id="upgrading-from-030"></a>
+
+### 0.5.0-beta.2: simpler everyday controls
+
+The card's main tab now focuses on the face display on/off control, **Awake/Sleepy** choices and brightness. Music is collapsed by default, making the card shorter. Turning the face display off does not power down REMI; turning it on restores the last known non-off face in the card, with Awake as the fallback.
+
+Select **0.5.0-beta.2** in Marketplace or HACS with pre-releases enabled, restart Home Assistant and reload the browser or Companion app page. The bundled card's versioned resource updates with the integration. No dashboard configuration or entity-ID migration is required. **0.4.0 remains the latest stable release.**
 
 ### 0.5.0-beta.1: new controls and dashboard card
 
