@@ -1,3 +1,23 @@
+## 0.5.0-beta.1 — Carte Rémi, musique et sommeil (2026-11-07)
+
+- Nouvelle carte de tableau de bord inspirée de Rémi : visage, température avec décimales, commandes et quatre onglets « Rémi », « Horaires », « Sommeil » et « Minuteurs ». Interface française ou anglaise selon Home Assistant, adaptée aux thèmes clair et sombre.
+- Carte livrée avec l’intégration : enregistrement automatique de sa ressource, version et empreinte des sources pour renouveler le cache. Après une mise à jour et le redémarrage de Home Assistant, recharger la page ou l’application Companion. Les tableaux de bord existants ne sont pas modifiés automatiquement.
+- Détection des entités à partir des registres Home Assistant, y compris après leur renommage. Choix explicite de l’appareil lorsqu’il y a plusieurs Rémi.
+- Horaires classés par heure dans la carte ; les interrupteurs natifs affichent également « 07:30 · Nom de l’alarme ». Les identifiants existants et les noms personnalisés sont conservés.
+- Édition des alarmes enrichie : luminosité, fichier musical, durée et bouton de lecture. Les modifications partielles préservent les autres réglages ; les formats de commande inconnus sont refusés pour éviter de les remplacer arbitrairement.
+- Lecteur musical avec bibliothèque du Rémi, lecture, pause, arrêt, piste précédente/suivante, volume et répétition. L’état de lecture reste inconnu lorsque le cloud ne le confirme pas ; « Lire » relance le fichier sélectionné.
+- Cinq capteurs de sommeil et consultation des courbes de température, bruit et lumière, chargées à la demande. La date et l’ancienneté du bilan restent visibles. Le bruit et la lumière n’ont pas d’unité physique étalonnée.
+- Gestion des cinq profils de minuteur : consultation, création, modification et suppression. Leur lancement se fait avec le bouton physique du Rémi ; aucun faux compte à rebours n’est affiché.
+- Reconnexion du compte sans recréer l’appareil, récupération complète des alarmes et isolation des erreurs : un échec de lecture des horaires ou de l’historique ne supprime pas les entités et ne bloque pas les autres commandes disponibles.
+- Environnement de validation ciblé sur Home Assistant 2026.11.0 et Python 3.14.10.
+
+**Version bêta :** activer l’affichage des préversions dans le Marketplace/HACS
+pour la sélectionner. La version 0.4.0 reste la dernière version stable.
+Les nouvelles écritures musicales, d’alarme et de minuteur sont vérifiées avec
+des réponses API simulées ; leur effet physique n’a pas encore été validé sur
+un Rémi. Un bilan cloud peut avoir plusieurs jours : il n’est jamais présenté
+comme une mesure en direct.
+
 ## 0.4.0 — Langue de Home Assistant et nouvelle présentation (2026-11-07)
 
 - Traduction complète en français et en anglais des noms d'entités, des états, des choix, des formulaires, des actions et des erreurs affichées par l'intégration.

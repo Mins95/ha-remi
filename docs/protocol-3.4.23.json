@@ -1,6 +1,6 @@
 {
   "analysis_date": "2026-11-07",
-  "scope": "Interoperability findings for temperature, alarm fields, playback modes, firmware status and night face brightness. Existing temperature, alarm and firmware readings were checked on one REMI; face brightness is based on the app and manufacturer documentation.",
+  "scope": "Interoperability findings for live readings, schedules, cloud music, sleep reports and stored timer profiles. Device writes for beta features are verified with simulated API responses, not physical playback or timer execution.",
   "source": {
     "package": "com.app.urbanhello",
     "version_name": "3.4.23",
@@ -54,7 +54,18 @@
     "recurrence_serialization_address": "0x57bd40",
     "weekday_evidence": "Existing cloud arrays matched the weekly view in the REMI app, which starts on Monday.",
     "service_compatibility": "The existing public repeat input still uses Sunday=0 through Saturday=6; it is converted to the Monday-first array.",
-    "clock_timezone": "Device local time; no UTC date is synthesized."
+    "clock_timezone": "Device local time; no UTC date is synthesized.",
+    "additional_fields": {
+      "brightness": "0..100",
+      "music_path": "Relative file path or empty string",
+      "length_min": "Music duration in minutes",
+      "cmd": "Only app formats 10, 11, 14, 15 are modified; bit 2 controls Play and bit 0 is preserved."
+    },
+    "additional_evidence": {
+      "serialization": "models/event_model.dart 0x57bbc4..0x57bc0c",
+      "command_bits": "models/event_model.dart 0x57c87c and 0x57c8d0; modules/bedtime/bedtime_event_form.dart saveEvent 0x83468c..0x8346d0",
+      "music_length": "The duration picker supplies whole minutes; EventModel field_2f serializes directly as length_min. Saving the form forwards that integer into EventModel."
+    }
   },
   "music_mode": {
     "status": "Corrected option labels; device playback not exercised.",
@@ -79,18 +90,27 @@
   "night_face_brightness": {
     "status": "Implemented with mocked command and HA service tests; physical effect not yet tested.",
     "cloud_field": "light_min",
-    "range": [1, 10],
+    "range": [
+      1,
+      10
+    ],
     "step": 1,
     "unit": null,
     "conversion": "The app rounds its slider value to an integer and writes it directly, without scaling.",
     "source_file": "modules/remi_settings/remi_settings.dart",
     "slider_address": "0x866ac0",
-    "bounds_addresses": ["0x866b08", "0x866b10"],
+    "bounds_addresses": [
+      "0x866b08",
+      "0x866b10"
+    ],
     "write_callback_address": "0x86d468",
     "round_address": "0x86d568",
     "update_address": "0x86d5c4",
     "property_source_file": "globals/services/remi_manager/current_remi.dart",
-    "property_definition_addresses": ["0x64d3dc", "0x64d44c"],
+    "property_definition_addresses": [
+      "0x64d3dc",
+      "0x64d44c"
+    ],
     "cloud_write_path": "StoredProperty.update -> updateNetwork -> updateParse -> Parse.set/save",
     "manufacturer_reference": "https://www.urbanhello.com/fr/faq/faqs/gerer-la-luminosite-de-remi",
     "distinction": "light_min controls face brightness in the dark; the existing 0-100 luminosity setting is a separate control. No calibration or face-selection command is sent."
@@ -110,5 +130,35 @@
     },
     "interpretation": "The server-wide default is not proof that an update has been assigned to this REMI.",
     "manufacturer_reference": "https://www.urbanhello.com/fr/faq/faqs/comment-mettre-a-jour-remi-manuellement-"
+  },
+  "music_control": {
+    "write_field": "musicPath",
+    "format": "relative/path.mp3:nonce, pause:nonce or stop:nonce",
+    "nonce": "Random integer from 0 through 999; consecutive identical nonces avoided.",
+    "evidence": "CurrentRemi musicPath 0x64ce40; serializeRemiCommand 0x5614c0; music updateMusicPath 0x843d7c; mini-player pause 0x88514c and stop 0x884d04.",
+    "library": "Class Music, uppercase REMI owner via $select on selected Remi.objectId; full path joins path and file. Read budget 200 with overflow detection.",
+    "library_evidence": "Library getter 0x58319c; Parse SDK whereMatchesKeyInQuery 0x579d04; MusicModel 0x583d1c..0x583d84.",
+    "limitations": "Cloud command text is not playback telemetry. No confirmed playing/paused/position state; Play restarts a selected known file. Previous/next choose known neighbors in the same folder."
+  },
+  "sleep_history": {
+    "metadata": "Own-device noise_logs with SleepInfo pointers; at most two recent reports.",
+    "files": "data, tempData and lightData Parse files; 720 uint8 values at two-minute spacing.",
+    "clock_grid": "12:00 through 11:58, following the app. Absolute sample dates are not established.",
+    "temperature_chart_celsius": "raw * 50 / 255 - 10; not the live temperature formula.",
+    "noise_chart": "raw * 100 / 255, relative level, not dB.",
+    "light_overlay": "100 for raw 1..7, otherwise 0; not lux.",
+    "evidence": "TrackLogsService.getBinFileData; TrackGraphChart 0x90ac60, 0x90b3a8, 0x90b63c..0x90b678 and Celsius axis 0x90cab8..0x90cacc.",
+    "limitations": "Reports can be several days old. Report date and stale status are kept. Boundary bytes are retained because saturation versus missing samples has not been established. No claim of sensor calibration."
+  },
+  "timer_profiles": {
+    "class": "Nap",
+    "owner": "remi pointer to selected Remi",
+    "maximum_profiles": 5,
+    "duration": "[hours, minutes], each bounded to 0..23 and 0..59; positive service duration 1..1439 minutes.",
+    "music_duration": "lengthStart and lengthEnd are minutes, 0 when duration option is disabled.",
+    "evidence": "NapModel.toJson 0x57a344; constructor 0x57b550..0x57b5a4; music picker 0x84fe74..0x84feb8; nap callback 0x8373cc; saveEvent 0x837b34/0x837b40.",
+    "supported": "List, create, patch supplied fields and delete, after ownership checks.",
+    "limitations": "No verified cloud command chain to start/stop a timer. Physical activation only; no invented countdown.",
+    "manufacturer_reference": "https://www.urbanhello.com/fr/faq/faqs/utilisation-du-minuteur"
   }
 }
