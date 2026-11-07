@@ -1,1 +1,5 @@
-pytest-homeassistant-custom-component==0.13.373
+# Official fixtures and runtime are released together. Do not install alongside
+# pytest-homeassistant-custom-component, which registers overlapping fixtures.
+pytest-homeassistant==2026.11.0
+homeassistant==2026.11.0
+pytest-cov==7.1.0
