@@ -30,6 +30,9 @@
     "button": {
       "check_firmware": { "name": "Check firmware status" }
     },
+    "time": {
+      "alarm_time": { "name": "{name} time" }
+    },
     "sensor": {
       "temperature": { "name": "Temperature" },
       "rssi": { "name": "WiFi Signal" },
