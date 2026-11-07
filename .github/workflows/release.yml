@@ -1,26 +1,32 @@
 name: Release
 
 on:
-  workflow_run:
-    workflows: ["Tests"]
-    types:
-      - completed
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version already recorded in manifest.json and CHANGELOG.md (X.Y.Z)"
+        required: true
+        type: string
 
-# Declare default permissions as read only.
-permissions: read-all
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.repository }}
+  cancel-in-progress: false
 
 jobs:
-
-  # -- RELEASE ------------------------------------------------------------
   release:
     name: Release
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success'
+    if: github.repository == 'Mins95/ha-remi' && github.ref == 'refs/heads/main'
 
     permissions:
       contents: write
+
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+      RELEASE_SHA: ${{ github.sha }}
 
     steps:
       - name: Harden GitHub Actions Runner
@@ -28,25 +34,78 @@ jobs:
         with:
           egress-policy: audit
 
-      - name: Checkout
+      - name: Checkout the requested commit
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: 'main' # Force checkout of main branch to avoid cache from previous jobs
+          ref: ${{ github.sha }}
+          fetch-depth: 0
           persist-credentials: false
 
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
-          app-id: ${{ vars.TIMOA_BOT_APP_ID }}
-          private-key: ${{ secrets.TIMOA_BOT_PRIVATE_KEY }}
+          python-version: "3.14"
+          cache: "pip"
 
-      - name: Create the Release
-        uses: cycjimmy/semantic-release-action@d9bf53a078bd2f86aaffaec796dbb3d28f1b6f34 # v8.1.3
-        with:
-          extra_plugins: |
-            @semantic-release/changelog
-            @semantic-release/exec
-            @semantic-release/git
+      - name: Validate version and prepare release notes
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          RELEASE_NOTES: ${{ runner.temp }}/release-notes.md
+        shell: python
+        run: |
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import subprocess
+
+          version = os.environ["RELEASE_VERSION"]
+          if not re.fullmatch(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", version):
+              raise SystemExit("Version must be X.Y.Z, without a prefix or suffix")
+
+          manifest_path = Path("custom_components/urbanhello_remi_unofficial/manifest.json")
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          if manifest.get("version") != version:
+              raise SystemExit("Version does not match manifest.json")
+
+          tag = subprocess.run(
+              ["git", "show-ref", "--verify", "--quiet", f"refs/tags/{version}"],
+              check=False,
+          )
+          if tag.returncode == 0:
+              raise SystemExit("This version already has a tag; choose a new version")
+          if tag.returncode != 1:
+              raise SystemExit("Could not verify the existing tags")
+
+          changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+          heading = re.compile(
+              rf"^#{{1,2}}[ \t]+(?:\[{re.escape(version)}\]|{re.escape(version)})(?=[ \t(]|$)[^\n]*$",
+              re.MULTILINE,
+          )
+          entries = list(heading.finditer(changelog))
+          if len(entries) != 1:
+              raise SystemExit("CHANGELOG.md must contain exactly one heading for this version")
+          body = changelog[entries[0].end():]
+          next_release = re.search(r"^#{1,2}[ \t]+", body, re.MULTILINE)
+          notes = body[:next_release.start()] if next_release else body
+          notes = notes.strip()
+          if not notes:
+              raise SystemExit("The changelog entry must contain release notes")
+          Path(os.environ["RELEASE_NOTES"]).write_text(notes + "\n", encoding="utf-8")
+
+      - name: Install test dependencies
+        run: python -m pip install -r requirements-test.txt
+
+      - name: Run tests
+        run: python -m pytest
+
+      - name: Publish the tested release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_NOTES: ${{ runner.temp }}/release-notes.md
+        run: |
+          gh release create "$RELEASE_VERSION" \
+            --repo "$GH_REPO" \
+            --target "$RELEASE_SHA" \
+            --title "$RELEASE_VERSION" \
+            --notes-file "$RELEASE_NOTES"
