@@ -1,19 +1,22 @@
-## 0.3.0 — Mins95 fork (2026-11-07)
+## 0.3.0 — Fork Mins95 (2026-11-07)
 
-- Correct the Celsius conversion while keeping decimal values.
-- Determine firmware availability from device-specific information and add a read-only refresh button.
-- Bound cloud-read retries, coordinate session recovery, and avoid replaying writes after transient errors.
-- Correct alarm weekday labels and service payloads; add editable alarm time entities.
-- Correct music playback-mode labels.
-- Add a separate night face brightness slider (1–10), matching the REMI app's `light_min` setting.
-- Prepare Marketplace metadata, independent maintenance and release tooling for this fork.
+- Correction de la température, en conservant les décimales.
+- Détection des mises à jour du firmware à partir des informations propres au Rémi, avec un bouton de vérification.
+- Reprises limitées des lectures cloud et récupération de session, sans répéter les écritures après une erreur temporaire.
+- Correction des jours et des commandes d'alarme ; ajout d'un réglage de l'heure pour chaque alarme.
+- Correction des libellés des modes de lecture musicale.
+- Ajout du curseur « Luminosité du visage la nuit », de 1 à 10, comme dans l'application Rémi.
+- Préparation du fork pour le Marketplace, avec ses propres liens de support et son processus de publication.
 
-Existing entity IDs and configured alarms are preserved. Alarm service times now
-use `HH:MM` or `HH:MM:00`; automations using ISO dates or old music mode labels
-must be updated. Automated tests passed on HA 2026.10.4 and the integration was
-checked after installation on HA 2026.11.0 with firmware 332. Physical alarm
-writes and playback were not exercised during deployment. The new face brightness
-control has automated command tests; its physical effect has not yet been checked.
+Les identifiants des entités existantes et les alarmes configurées sont conservés.
+Les services d'alarme attendent désormais `HH:MM` ou `HH:MM:00` : les automatisations
+utilisant des dates ISO ou les anciens libellés musicaux doivent être adaptées.
+
+Validation : 284 tests réussis, 2 ignorés et 1 réussite inattendue d'un test marqué
+non bloquant ; couverture de 97,36 %. Les correctifs précédents ont aussi été
+vérifiés sur Home Assistant 2026.11.0 avec un Rémi en firmware 332. Les écritures
+d'alarme, la lecture musicale et l'effet physique du nouveau réglage de luminosité
+n'ont pas été testés sur cet appareil.
 
 ## [0.2.7](https://github.com/timoa/ha-remi/compare/0.2.6...0.2.7) (2026-11-05)
 

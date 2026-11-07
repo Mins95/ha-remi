@@ -1,166 +1,172 @@
-# REMI for Home Assistant — Mins95 fork
+# REMI pour Home Assistant — fork de Mins95
 
-> **Unofficial** Home Assistant integration for the [UrbanHello Remi](https://www.urbanhello.com/) smart alarm clock.
+> Intégration **non officielle** du réveil connecté [UrbanHello Remi](https://www.urbanhello.com/) dans Home Assistant.
 
-[![Open in Marketplace](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=Mins95&repository=ha-remi&category=integration)
+[![Ouvrir dans Marketplace](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=Mins95&repository=ha-remi&category=integration)
 
-This fork is maintained by [Mins95](https://github.com/Mins95), based on
-[timoa/ha-remi](https://github.com/timoa/ha-remi). It keeps the original integration
-domain and entity unique IDs. The MIT license and original credits are retained.
+Ce fork est maintenu par [Mins95](https://github.com/Mins95), à partir de
+[timoa/ha-remi](https://github.com/timoa/ha-remi). Il conserve le domaine de
+l’intégration et les identifiants uniques des entités d’origine, ainsi que la
+licence MIT et les crédits des auteurs.
 
-Use `main` for the maintained version and the published releases for updates.
-The contribution branch `fix/remi-state-and-alarm-reliability` is kept separate
-for the [upstream PR](https://github.com/timoa/ha-remi/pull/40).
+La version maintenue se trouve sur `main`. Utilisez les versions publiées pour
+les mises à jour. La branche `fix/remi-state-and-alarm-reliability` reste séparée
+pour la [proposition de contribution au projet d’origine](https://github.com/timoa/ha-remi/pull/40).
 
-This is a community-maintained integration and is **not affiliated with or endorsed by UrbanHello**.
-
----
-
-## Features
-
-- **Sensors**: Room temperature, WiFi signal strength, firmware version, IP address, current face
-- **Binary Sensors**: Online status, alive status, firmware update available
-- **Select**: Clock face (Off / Awake / Sleepy / Semi-Awake / Smiley), clock format (12h / 24h), music mode
-- **Number**: Volume, noise alert threshold, brightness, night face brightness
-- **Switch**: Per-alarm enable/disable toggles (one switch per alarm)
-- **Time**: Edit each alarm's hour and minute directly in Home Assistant
-- **Lights**: App background color (RGB)
-- **Alarm CRUD**: Create, update and delete alarms via HA services
+Cette intégration communautaire n’est **ni affiliée à UrbanHello ni approuvée par UrbanHello**.
 
 ---
 
-## Requirements
+## Fonctionnalités
 
-- Home Assistant 2024.1 or newer
-- An UrbanHello account (username + password from the Remi app)
+- **Capteurs** : température de la pièce, puissance du signal Wi-Fi, version du firmware, adresse IP, visage affiché
+- **Capteurs binaires** : connexion, activité de l’appareil, disponibilité d’une mise à jour du firmware
+- **Sélecteurs** : visage du réveil (éteint, éveillé, endormi, à moitié réveillé, souriant), format de l’heure (12 h ou 24 h), mode de lecture musicale
+- **Curseurs** : volume, seuil d’alerte sonore, luminosité, luminosité du visage la nuit
+- **Interrupteurs** : activation ou désactivation de chaque alarme
+- **Horaires** : modification de l’heure et des minutes de chaque alarme dans Home Assistant
+- **Lumière RGB** : couleur de fond de l’application
+- **Gestion des alarmes** : création, modification et suppression via les services Home Assistant
+
+---
+
+## Prérequis
+
+- Home Assistant 2024.1 ou une version plus récente
+- Un compte UrbanHello, avec l’identifiant et le mot de passe utilisés dans l’application Remi
 
 ---
 
 ## Installation
 
-### Home Assistant 2026.11+: Marketplace
+### Home Assistant 2026.11 et versions suivantes : Marketplace
 
-1. Open **Settings → Marketplace → Add from link**.
-2. Enter `https://github.com/Mins95/ha-remi` and select **Add**.
-3. Connect GitHub if the Marketplace asks; custom repositories require this connection.
-4. Open **Remi (Mins95)** and install the published release.
-5. Restart Home Assistant after updating an already loaded integration.
+1. Ouvrez **Paramètres → Marketplace → Ajouter à partir d’un lien**.
+2. Saisissez `https://github.com/Mins95/ha-remi`, puis sélectionnez **Ajouter**.
+3. Connectez votre compte GitHub si Marketplace le demande : cette connexion est nécessaire pour les dépôts personnalisés.
+4. Ouvrez **Remi (Mins95)** et installez la version publiée.
+5. Redémarrez Home Assistant après la mise à jour d’une intégration déjà chargée.
 
-The Marketplace is built into Home Assistant 2026.11 and replaces HACS. See the
-[Marketplace documentation](https://www.home-assistant.io/integrations/marketplace/#custom-repositories).
+Marketplace est intégré à Home Assistant depuis la version 2026.11 et remplace
+HACS. Consultez la [documentation de Marketplace](https://www.home-assistant.io/integrations/marketplace/#custom-repositories).
 
-### Older Home Assistant versions using HACS
+### Anciennes versions de Home Assistant avec HACS
 
-Add `https://github.com/Mins95/ha-remi` under **Custom repositories**, with type
-**Integration**, then download the release and restart Home Assistant.
+Ajoutez `https://github.com/Mins95/ha-remi` dans les **Dépôts personnalisés**, avec
+le type **Intégration**, puis téléchargez la version publiée et redémarrez Home Assistant.
 
-### Existing REMI installations
+### Installations REMI existantes
 
-This fork and the upstream repository both use `urbanhello_remi_unofficial`.
-Marketplace does not allow two installed repositories to provide the same domain.
-Keep the existing REMI setup when planning a change of code source.
-Marketplace **Delete and uninstall** also removes the setup and its devices and
-entities; it is not a source-switch operation.
+Ce fork et le dépôt d’origine utilisent tous deux le domaine
+`urbanhello_remi_unofficial`. Marketplace refuse l’installation simultanée de
+deux dépôts fournissant le même domaine. Préservez votre configuration REMI
+existante lors d’un changement de source du code. L’action **Supprimer et
+désinstaller** de Marketplace supprime aussi la configuration, les appareils et
+les entités associés ; elle ne sert pas à changer de dépôt source.
 
-This repository is ready to be added from its URL. Migrating an existing
-Marketplace installation from another source is a separate step; preparing or
-publishing this fork does not change the installed repository automatically.
+Ce dépôt est prêt à être ajouté depuis son URL. Le passage d’une installation
+Marketplace existante à ce fork constitue une étape distincte. Préparer ou
+publier ce fork ne modifie pas automatiquement le dépôt déjà installé.
 
-### Manual
+### Installation manuelle
 
-1. Copy the `custom_components/urbanhello_remi_unofficial/` folder into your HA `config/custom_components/` directory
-2. Restart Home Assistant
+1. Copiez le dossier `custom_components/urbanhello_remi_unofficial/` dans le répertoire `config/custom_components/` de Home Assistant.
+2. Redémarrez Home Assistant.
 
 ---
 
 ## Configuration
 
-1. Go to **Settings → Integrations → Add Integration**
-2. Search for **Remi**
-3. Enter your UrbanHello account **username** and **password**
-4. The integration will authenticate and discover your Remi device automatically
+1. Ouvrez **Paramètres → Appareils et services → Ajouter une intégration**.
+2. Recherchez **Remi**.
+3. Saisissez l’**identifiant** et le **mot de passe** de votre compte UrbanHello.
+4. L’intégration s’authentifie et découvre automatiquement votre Remi.
 
 ---
 
-## Entities
+## Entités
 
-| Entity | Type | Description |
+| Entité | Type | Description |
 |--------|------|-------------|
-| Temperature | Sensor | Room temperature (°C) |
-| WiFi Signal | Sensor | RSSI in dBm |
-| Firmware Version | Sensor | Current firmware version |
-| IP Address | Sensor | Local IP address |
-| Current Face | Sensor | Active face name |
-| Online | Binary Sensor | Device online status |
-| Alive | Binary Sensor | Device alive status |
-| Firmware Update Available | Binary Sensor | Whether a firmware update is available |
-| Check firmware status | Button | Refresh device firmware status without installing firmware |
-| Clock Face | Select | Change the displayed face |
-| Clock Format | Select | 12h or 24h format |
-| Music Mode | Select | Normal / Single track / Repeat track / Repeat playlist |
-| Volume | Number | Speaker volume (0–100) |
-| Brightness | Number | Upper light brightness (0–100) |
-| Night face brightness | Number | Face brightness in the dark (1–10), matching the app setting |
-| Noise Alert Threshold | Number | Noise notification threshold (0–250) |
-| App Background Color | Light | Color associated with the REMI in the official app |
-| Alarm (per alarm) | Switch | Enable/disable individual alarms |
-| Alarm time (per alarm) | Time | Edit the alarm in the REMI's local time zone |
+| Température | Capteur | Température de la pièce en °C |
+| Signal Wi-Fi | Capteur | Puissance du signal RSSI en dBm |
+| Version du firmware | Capteur | Version actuellement installée |
+| Adresse IP | Capteur | Adresse IP locale |
+| Visage actuel | Capteur | Nom du visage affiché |
+| En ligne | Capteur binaire | État de connexion de l’appareil |
+| Activité | Capteur binaire | État d’activité de l’appareil |
+| Mise à jour du firmware disponible | Capteur binaire | Présence d’une mise à jour destinée à cet appareil |
+| Vérifier le firmware | Bouton | Actualise les informations du firmware sans installer de mise à jour |
+| Visage du réveil | Sélecteur | Modifie le visage affiché |
+| Format de l’heure | Sélecteur | Format 12 h ou 24 h |
+| Mode de lecture musicale | Sélecteur | Normal, piste unique, répétition d’une piste ou de la liste |
+| Volume | Curseur numérique | Volume du haut-parleur, de 0 à 100 |
+| Luminosité | Curseur numérique | Luminosité de l’éclairage supérieur, de 0 à 100 |
+| Luminosité du visage la nuit | Curseur numérique | Luminosité du visage dans l’obscurité, de 1 à 10, comme dans l’application |
+| Seuil d’alerte sonore | Curseur numérique | Seuil de déclenchement des notifications sonores, de 0 à 250 |
+| Couleur de fond de l’application | Lumière | Couleur associée au REMI dans l’application officielle |
+| Alarme, une par horaire | Interrupteur | Active ou désactive chaque alarme |
+| Heure de l’alarme, une par horaire | Heure | Modifie l’horaire dans le fuseau horaire du REMI |
 
 ---
 
+## Évolution des entités RGB
 
-## RGB entity changes
+L’entité `App Background Color` règle la couleur associée à un REMI dans
+l’application officielle UrbanHello. Elle reste une entité RGB de type `light`,
+avec les mêmes identifiants et commandes. Les automatisations existantes
+continuent de cibler la même entité. Home Assistant conserve les noms
+personnalisés par l’utilisateur.
 
-`App Background Color` changes the color associated with a REMI in the official
-UrbanHello app. It remains an RGB `light` with the same unique ID, existing
-entity ID and commands. Existing automations continue to target the same entity;
-a user-defined display name is preserved by Home Assistant.
+L’ancienne entité RGB `Night Light` a été supprimée. Les commandes envoyées à
+`lightnight` n’avaient aucun effet physique observable sur les deux REMI testés,
+équipés des firmwares 329 et 332. Ce champ était initialement absent sur l’un
+des appareils et est apparu après des essais d’écriture RGB. Ces observations
+ne permettent pas de conclure à sa prise en charge par d’autres modèles.
+L’intégration n’écrit plus dans `lightnight` et ne supprime ni ne réinitialise
+les valeurs déjà présentes sur les serveurs UrbanHello.
 
-The former RGB `Night Light` entity has been removed. Commands to `lightnight`
-had no observable physical effect on two tested REMIs running firmware 329 and
-332. The field was initially absent on one device and appeared after RGB write
-experiments. These observations do not establish hardware support on other
-models. This integration no longer writes `lightnight` and does not delete or
-reset existing values on UrbanHello's servers.
+Au chargement, l’ancienne entité `Night Light` est retirée du registre des
+entités de cette intégration. Supprimez ses références dans vos tableaux de
+bord, scripts et automatisations. La couleur de fond de l’application ne
+commande pas un éclairage physique.
 
-On load, the obsolete Night Light entity is removed from this integration's
-entity registry entries. Remove references to it from dashboards, scripts and
-automations; the app background color is not a replacement for a physical light.
+## Réglages de luminosité et migration
 
-## Brightness migration
+### Luminosité du visage la nuit
 
-### Night face brightness
+Le curseur **Luminosité du visage la nuit** utilise la même échelle de **1 à 10**
+que le réglage correspondant dans les paramètres de l’application REMI. Il
+règle la luminosité du visage dans l’obscurité, conformément au
+[guide UrbanHello](https://www.urbanhello.com/fr/faq/faqs/gerer-la-luminosite-de-remi).
+Il est distinct du curseur **Luminosité** existant, gradué de **0 à 100**.
 
-The **Night face brightness** slider (French: **Luminosité du visage la nuit**)
-uses the same 1–10 scale as **Settings → Night face brightness** in the REMI app.
-It sets the face brightness in the dark, as described in the
-[UrbanHello guide](https://www.urbanhello.com/fr/faq/faqs/gerer-la-luminosite-de-remi).
-This is a separate control from the existing 0–100 **Brightness** slider.
+Le réglage est lu et écrit dans `light_min`. Une modification n’envoie que ce
+champ, puis actualise l’état de l’appareil. Elle ne modifie ni le visage, ni
+les horaires des alarmes, ni l’étalonnage de la lumière. Une valeur absente ou
+invalide est affichée comme inconnue. L’entité est ajoutée automatiquement au
+chargement du code mis à jour. Son effet sur un REMI physique n’a pas encore
+été testé avec ce fork.
 
-The setting is read from and written to `light_min`. A change sends only this
-field and then refreshes the device state; it does not change the face, alarm
-schedule or light calibration. Missing or invalid readings are shown as unknown.
-The entity is added automatically when the integration loads the updated code.
-Its effect on a physical REMI has not yet been tested with this fork.
+### Commande de luminosité existante
 
-### Existing brightness control
+La luminosité est un curseur de type `number`, sur l’échelle REMI de 0 à 100,
+comme le volume et le seuil d’alerte sonore. Il commande toujours le même
+réglage `luminosity` de l’API.
 
-Brightness is a `number` slider on the REMI brightness scale (0–100), like
-Volume and Noise Alert Threshold. It drives the same API `luminosity` setting
-as before.
+Les versions précédentes exposaient ce réglage sous la forme d’une lumière
+`light` à intensité variable. Auparavant, il apparaissait comme un `number`
+nommé `Screen Brightness`, accompagné d’un capteur incorrectement étiqueté en
+lux. Ces anciennes entités sont retirées du registre de l’intégration au
+chargement. Les références présentes dans les automatisations ne sont pas
+réécrites. Aucun capteur d’éclairement ambiant n’est fourni.
 
-Earlier releases exposed that setting as a dimmable `light`, and before that as
-a `number` named "Screen Brightness" next to an incorrectly labelled lux
-sensor. Both obsolete entities are removed from this integration's entity
-registry entries when it loads. Their automation references are not rewritten.
-No ambient illuminance sensor is provided.
-
-Update automations that used `light.*_brightness` to target the number entity
-shown on the REMI device page. Entity IDs can differ between installations; the
-following IDs are examples only.
+Modifiez les automatisations qui utilisaient `light.*_brightness` pour cibler
+l’entité numérique affichée sur la page de votre REMI. Les identifiants varient
+selon les installations ; ceux ci-dessous sont uniquement des exemples.
 
 ```yaml
-# Previously
+# Avant
 service: light.turn_on
 target:
   entity_id: light.example_brightness
@@ -169,7 +175,7 @@ data:
 ```
 
 ```yaml
-# Now
+# Maintenant
 service: number.set_value
 target:
   entity_id: number.example_brightness
@@ -177,141 +183,165 @@ data:
   value: 40
 ```
 
-The number uses the REMI 0–100 scale, so a former `brightness_pct` value maps
-to the same number. `0` switches the upper light off.
+Le curseur utilise l’échelle REMI de 0 à 100 : une ancienne valeur
+`brightness_pct` correspond donc au même nombre. La valeur `0` éteint
+l’éclairage supérieur.
 
-The light entity's "last nonzero intensity" behaviour is gone: the number has
-no separate on/off state, so a slider left at `0` stays at `0`. For state
-conditions, use the number's 0–100 state, not the former light's 0–255
-`brightness` attribute. A stored reference to the old lux sensor must be
-removed or replaced with an actual ambient light sensor. Historical values are
-not converted or reinterpreted.
+La mémorisation de la dernière intensité non nulle, propre à l’ancienne entité
+`light`, a disparu. Le curseur n’a pas d’état marche/arrêt séparé : s’il est
+réglé sur `0`, il reste à `0`. Dans les conditions d’état, utilisez sa valeur
+de 0 à 100, au lieu de l’ancien attribut `brightness` de la lumière, qui allait
+de 0 à 255. Supprimez les références à l’ancien capteur en lux ou remplacez-les
+par celles d’un véritable capteur de lumière ambiante. Les valeurs historiques
+ne sont ni converties ni réinterprétées.
 
-Missing, invalid or out-of-range API values leave the number unknown instead
-of inventing a brightness.
+Une valeur d’API absente, invalide ou hors plage laisse le curseur à l’état
+inconnu ; aucune luminosité par défaut n’est inventée.
 
+## Conversion de la température
 
-## Temperature conversion
+La conversion en degrés Celsius est `(raw - 50) / 5`. Elle a été vérifiée dans
+la version 3.4.23 de l’application Android fournie (`com.app.urbanhello`). Ainsi,
+une valeur brute de `160` correspond à **22,0 °C**, et non à 20,0 °C.
+L’intégration conserve les décimales et suggère un affichage avec une décimale.
+L’application officielle tronque son affichage à l’entier. Conserver les
+décimales ne garantit pas la précision physique du capteur. Les mesures
+absentes ou invalides restent inconnues. La valeur brute et la formule de
+conversion sont disponibles dans les attributs de diagnostic du capteur.
 
-The Celsius conversion is `(raw - 50) / 5`, verified in the supplied
-Android app build 3.4.23 (`com.app.urbanhello`). For example, raw `160` is **22.0 °C**, not 20.0 °C.
-This integration preserves the fractional result and suggests one decimal place;
-the app truncates its display to a whole number. Keeping decimals does not
-establish the physical sensor's accuracy. Missing or invalid measurements remain
-unknown. The sensor exposes the raw value and conversion as diagnostic attributes.
+L’historique des températures n’est pas réécrit. Une variation du graphique au
+moment de la mise à jour peut donc venir de la conversion corrigée, sans
+changement réel de température dans la pièce. Les éléments vérifiés dans le
+protocole figurent dans les [notes d’analyse](docs/protocol-3.4.23.json).
 
-Existing temperature history is not rewritten. A change in the graph at upgrade
-time can reflect the corrected conversion rather than a change in the room.
-Protocol evidence is recorded in [the analysis notes](docs/protocol-3.4.23.json).
+## Correction du mode de lecture musicale
 
-## Music mode correction
+L’application utilise `musicMode` pour le comportement de lecture : `0` = normal,
+`1` = piste unique, `2` = répétition d’une piste, `3` = répétition de la liste.
+Les anciens libellés `Off`, `Music` et `White Noise` étaient incorrects.
+Le sélecteur conserve son identifiant unique, mais les automatisations qui
+sélectionnent ou comparent les anciens noms d’options doivent être adaptées.
+Ce réglage ne sélectionne pas de fichier audio et ne lance pas la lecture.
 
-The app uses `musicMode` for playback behaviour: `0` = Normal, `1` = Single track,
-`2` = Repeat track, `3` = Repeat playlist. The previous Off / Music / White Noise
-labels were incorrect. The select entity retains its unique ID, but automations
-that select or compare the old option names must be updated. This setting does
-not select an audio file or start playback.
+## État du firmware et reprise de connexion
 
-## Firmware status and connection recovery
+L’alerte de firmware utilise l’indicateur `firmware_need_update` de l’appareil
+ou la version cible `update_firmware_version` qui lui est attribuée. La version
+par défaut du serveur est informative : elle ne prouve pas qu’une nouvelle
+version a été attribuée à ce REMI. Si les informations propres à l’appareil
+manquent, l’état est inconnu, sans annoncer de mise à jour.
 
-The firmware alert uses the device's `firmware_need_update` flag or its
-`update_firmware_version` target. The server-wide default version is informational:
-it does not prove that a newer version has been assigned to this REMI. Missing
-device firmware information is reported as unknown rather than as an update.
+L’alerte expose dans ses attributs la version installée, la version cible
+attribuée et la version par défaut du serveur. Le bouton **Vérifier le firmware**
+actualise les informations de l’appareil et du cloud, sans installer de firmware.
+UrbanHello gère automatiquement les mises à jour habituelles lorsque REMI est
+connecté au Wi-Fi. Consultez les
+[instructions de mise à jour du fabricant](https://www.urbanhello.com/fr/faq/faqs/comment-mettre-a-jour-remi-manuellement-).
 
-The firmware alert includes installed, assigned target and server default versions
-as attributes. **Check firmware status** refreshes the device and cloud metadata;
-it does not install firmware. UrbanHello manages normal firmware updates
-automatically while REMI is connected to Wi-Fi. See the
-[manufacturer's update instructions](https://www.urbanhello.com/fr/faq/faqs/comment-mettre-a-jour-remi-manuellement-).
+Les lectures du cloud utilisent un délai maximal de 15 secondes par requête et
+jusqu’à trois tentatives en cas d’erreur de connexion ou de réponse HTTP
+500/502/503/504. Les commandes envoyées à l’appareil, ainsi que la création ou
+la suppression d’alarmes, ne sont pas rejouées automatiquement après ces
+erreurs. Le renouvellement de session conserve le REMI sélectionné. Les services
+d’alarme utilisent l’intégration actuellement chargée : un rechargement ne
+laisse plus les actions rattachées à un ancien client.
 
-Cloud reads use a 15-second request timeout and at most three attempts for
-connection failures or HTTP 500/502/503/504 responses. Device writes and alarm
-creation/deletion are not automatically replayed after such failures. Session
-renewal preserves the selected REMI. Alarm services resolve the currently loaded
-integration, so reloading it does not leave actions attached to an old client.
-
-Alarm creation without an explicit device selector is supported when exactly one
-REMI is loaded. With several devices it now fails explicitly instead of silently
-using the first one. Update/delete actions locate the loaded device by event ID.
+La création d’une alarme sans sélection explicite d’appareil est possible
+lorsqu’un seul REMI est chargé. Avec plusieurs appareils, elle échoue désormais
+avec une erreur explicite au lieu de choisir silencieusement le premier. Les
+actions de modification et de suppression retrouvent l’appareil chargé à partir
+de l’identifiant de l’alarme.
 
 ## Validation
 
-Before adding the night face brightness control, the reliability changes passed
-with Python 3.14.9 and Home Assistant 2026.10.4: 248 passed, 2 skipped,
-1 non-strict XPASS; coverage 97.32%. The face control adds tests for native
-values, invalid input, isolated commands and the Home Assistant service path.
-The repository's Tests and Release workflows run the full suite for new releases.
+Avant l’ajout du réglage de luminosité du visage, les corrections de fiabilité
+ont été testées avec Python 3.14.9 et Home Assistant 2026.10.4 : 248 tests
+réussis, 2 ignorés et 1 réussite inattendue non bloquante (`XPASS`), avec une
+couverture de 97,32 %. Le nouveau réglage ajoute des tests sur les valeurs
+natives, les entrées invalides, l’envoi du seul champ concerné et l’appel du
+service Home Assistant. Les procédures GitHub Actions **Tests** et **Release**
+exécutent la suite complète pour les nouvelles versions.
 
-After installation and a full restart on Home Assistant 2026.11.0, one REMI
-running firmware 332 reported 22.0 °C for raw temperature 160, no pending
-firmware update, the correct weekdays and four editable alarm times. Existing
-entity identifiers, alarm times and enabled states were preserved. No integration
-errors were observed in the startup logs. Alarm writes were tested with a mocked
-API; the deployment checks did not change the physical device's schedule.
+Après installation et redémarrage complet sous Home Assistant 2026.11.0, un
+REMI équipé du firmware 332 a indiqué 22,0 °C pour une température brute de 160,
+aucune mise à jour de firmware en attente, les bons jours de la semaine et
+quatre horaires d’alarme modifiables. Les identifiants d’entités, les horaires
+et les états d’activation existants ont été conservés. Aucune erreur de
+l’intégration n’a été observée dans les journaux de démarrage. Les écritures
+d’alarmes ont été testées avec une API simulée ; les vérifications après
+installation n’ont pas modifié les horaires de l’appareil physique.
 
-## Alarm Services
+## Services de gestion des alarmes
 
-Alarms are managed via HA services (callable from automations or Developer Tools → Services).
+Les alarmes se gèrent avec les services Home Assistant, appelables depuis les
+automatisations ou **Outils de développement → Actions**.
 
 ### `urbanhello_remi_unofficial.create_alarm`
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `name` | ✅ | Alarm label |
-| `time` | ✅ | Local clock time in the REMI time zone (e.g. `07:00`) |
-| `enabled` | — | Active/inactive (default: `true`) |
-| `repeat` | — | Days to repeat: `[0=Sun, 1=Mon, …, 6=Sat]` |
-| `face_define` | — | Face at alarm time (e.g. `FACE_DAY`) |
-| `volume` | — | Volume override (0–100) |
+| Champ | Obligatoire | Description |
+|-------|-------------|-------------|
+| `name` | ✅ | Nom de l’alarme |
+| `time` | ✅ | Heure locale dans le fuseau horaire du REMI, par exemple `07:00` |
+| `enabled` | — | Activation ou désactivation ; valeur par défaut : `true` |
+| `repeat` | — | Jours de répétition : 0 = dimanche, 1 = lundi, …, 6 = samedi |
+| `face_define` | — | Visage à afficher à l’heure de l’alarme, par exemple `FACE_DAY` |
+| `volume` | — | Volume propre à cette alarme, de 0 à 100 |
 
-The time entity and services write the actual `event_time` clock array used by
-the app. ISO datetime inputs are now rejected: these alarms use a local clock
-time, not a UTC date. Update existing service calls to use `HH:MM` (or
-`HH:MM:00`). Nonzero seconds are rejected rather than silently discarded.
+Les entités d’heure et les services écrivent dans le tableau `event_time`
+réellement utilisé par l’application. Les entrées combinant une date et une
+heure au format ISO sont désormais refusées : ces alarmes utilisent une heure
+locale, sans date UTC. Adaptez vos appels existants au format `HH:MM` ou
+`HH:MM:00`. Les secondes non nulles sont refusées au lieu d’être ignorées.
 
-The cloud's `recurrence` array starts on Monday. Alarm attributes now display
-the correct weekdays. The existing service input convention (`repeat`,
-Sunday=0) is preserved and converted to that cloud array.
+Le tableau `recurrence` du cloud commence le lundi. Les attributs des alarmes
+affichent maintenant les bons jours. La convention existante du service
+(`repeat`, avec dimanche = 0) est conservée, puis convertie vers ce tableau.
 
 ### `urbanhello_remi_unofficial.update_alarm`
 
-Same fields as `create_alarm`, plus `event_id` (required) — the `objectId` of the alarm to update.
+Mêmes champs que `create_alarm`, avec le champ obligatoire `event_id` en plus :
+il correspond à l’`objectId` de l’alarme à modifier.
 
 ### `urbanhello_remi_unofficial.delete_alarm`
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `event_id` | ✅ | The `objectId` of the alarm to delete |
+| Champ | Obligatoire | Description |
+|-------|-------------|-------------|
+| `event_id` | ✅ | L’`objectId` de l’alarme à supprimer |
 
 ---
 
-## Credits
+## Crédits
 
-This fork builds on [timoa/ha-remi](https://github.com/timoa/ha-remi), including
-the work of its original author and contributors.
+Ce fork s’appuie sur [timoa/ha-remi](https://github.com/timoa/ha-remi), ainsi que
+sur le travail de son auteur et de ses contributeurs.
 
-This integration was inspired by [Remi_UrbanHello_hass](https://github.com/pdruart/Remi_UrbanHello_hass) by [@pdruart](https://github.com/pdruart), which provided valuable insights into the alarm toggle functionality and brightness control.
+L’intégration s’inspire également de
+[Remi_UrbanHello_hass](https://github.com/pdruart/Remi_UrbanHello_hass), de
+[@pdruart](https://github.com/pdruart), qui a apporté des éléments utiles sur
+l’activation des alarmes et le réglage de luminosité.
 
-## Development and releases
+## Développement et publication des versions
 
-Create feature branches from `main`, add focused commits and open a pull request
-back to `Mins95/ha-remi`. Run `pytest --cov --cov-report=term-missing` before merging.
-The upstream contribution branch is reserved for the existing upstream PR.
+Créez vos branches de développement à partir de `main`, faites des commits
+ciblés et ouvrez une pull request vers `Mins95/ha-remi`. Exécutez
+`pytest --cov --cov-report=term-missing` avant de fusionner. La branche de
+contribution au projet d’origine reste réservée à la pull request déjà ouverte.
 
-For a release, update the integration's `manifest.json` version and `CHANGELOG.md`
-in a reviewed change. Once the checks pass on `main`, run the **Release** workflow
-with that exact version. It verifies the version, runs the tests, and publishes
-a GitHub release at the checked commit. It uses the repository's standard
-`GITHUB_TOKEN`; no credentials from the upstream maintainer are required.
+Pour publier une version, préparez une modification relue du numéro de version
+dans `manifest.json` et des notes dans `CHANGELOG.md`. Lorsque les vérifications
+réussissent sur `main`, lancez la procédure GitHub Actions **Release** avec ce
+numéro exact. Elle vérifie la version, exécute les tests et publie une version
+GitHub correspondant au commit vérifié. Elle utilise le `GITHUB_TOKEN` standard
+du dépôt et ne nécessite aucun identifiant du mainteneur d’origine.
 
 ---
 
-## Disclaimer
+## Avertissement
 
-This integration uses the official UrbanHello cloud API. It may break if UrbanHello changes their API. Use at your own risk.
+Cette intégration utilise l’API cloud officielle d’UrbanHello. Une modification
+de cette API peut affecter son fonctionnement. Son utilisation se fait sous
+votre responsabilité.
 
-## License
+## Licence
 
 MIT
-
