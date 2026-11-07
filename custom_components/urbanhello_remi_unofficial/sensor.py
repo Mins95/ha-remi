@@ -52,7 +52,6 @@ SENSOR_DESCRIPTIONS: tuple[RemiSensorEntityDescription, ...] = (
     RemiSensorEntityDescription(
         key="temperature",
         translation_key="temperature",
-        name="Temperature",
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -62,7 +61,6 @@ SENSOR_DESCRIPTIONS: tuple[RemiSensorEntityDescription, ...] = (
     RemiSensorEntityDescription(
         key="rssi",
         translation_key="rssi",
-        name="WiFi Signal",
         device_class=SensorDeviceClass.SIGNAL_STRENGTH,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
@@ -72,14 +70,12 @@ SENSOR_DESCRIPTIONS: tuple[RemiSensorEntityDescription, ...] = (
     RemiSensorEntityDescription(
         key="firmware_version",
         translation_key="firmware_version",
-        name="Firmware Version",
         icon="mdi:chip",
         value_fn=lambda remi: remi.get("current_firmware_version"),
     ),
     RemiSensorEntityDescription(
         key="ip_address",
         translation_key="ip_address",
-        name="IP Address",
         icon="mdi:ip-network",
         entity_registry_enabled_default=False,
         value_fn=lambda remi: remi.get("ipv4Address"),
@@ -87,13 +83,14 @@ SENSOR_DESCRIPTIONS: tuple[RemiSensorEntityDescription, ...] = (
     RemiSensorEntityDescription(
         key="current_face",
         translation_key="current_face",
-        name="Current Face",
+        device_class=SensorDeviceClass.ENUM,
+        options=list(FACE_DEFINE_TO_NAME.values()),
         icon="mdi:emoticon-outline",
         value_fn=lambda remi: FACE_DEFINE_TO_NAME.get(
             FACE_OBJECT_ID_TO_DEFINE.get(
                 (remi.get("face") or {}).get("objectId", ""), ""
             ),
-            "Unknown",
+            None,
         ),
     ),
 )

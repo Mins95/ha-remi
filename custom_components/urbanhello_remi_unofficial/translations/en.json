@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "Remi (Unofficial) - Connect to your device",
+        "title": "Remi - Connect to your device",
         "description": "Enter your UrbanHello account credentials.",
         "data": {
           "username": "Username",
@@ -28,39 +28,209 @@
   },
   "entity": {
     "button": {
-      "check_firmware": { "name": "Check firmware status" }
+      "check_firmware": {
+        "name": "Check firmware status"
+      }
     },
     "time": {
-      "alarm_time": { "name": "{name} time" }
+      "alarm_time": {
+        "name": "{name} time",
+        "state_attributes": {
+          "event_id": {
+            "name": "Alarm ID"
+          }
+        }
+      }
     },
     "sensor": {
-      "temperature": { "name": "Temperature" },
-      "rssi": { "name": "WiFi Signal" },
-      "firmware_version": { "name": "Firmware Version" },
-      "ip_address": { "name": "IP Address" },
-      "current_face": { "name": "Current Face" }
+      "temperature": {
+        "name": "Temperature",
+        "state_attributes": {
+          "raw_value": {
+            "name": "Raw temperature"
+          },
+          "conversion": {
+            "name": "Conversion formula"
+          }
+        }
+      },
+      "rssi": {
+        "name": "WiFi Signal"
+      },
+      "firmware_version": {
+        "name": "Firmware Version"
+      },
+      "ip_address": {
+        "name": "IP Address"
+      },
+      "current_face": {
+        "name": "Current Face",
+        "state": {
+          "off": "Off",
+          "awake": "Awake",
+          "sleepy": "Sleepy",
+          "semi_awake": "Semi-Awake",
+          "smiley": "Smiley"
+        }
+      }
     },
     "binary_sensor": {
-      "online": { "name": "Online" },
-      "alive": { "name": "Alive" },
-      "firmware_update": { "name": "Firmware Update Available" }
+      "online": {
+        "name": "Online"
+      },
+      "alive": {
+        "name": "Alive"
+      },
+      "firmware_update": {
+        "name": "Firmware Update Available",
+        "state_attributes": {
+          "installed_version": {
+            "name": "Installed version"
+          },
+          "target_version": {
+            "name": "Assigned version"
+          },
+          "server_default_version": {
+            "name": "Server default version"
+          },
+          "update_requested": {
+            "name": "Update requested"
+          },
+          "update_method": {
+            "name": "Update method",
+            "state": {
+              "automatic_wifi": "Automatic over Wi-Fi"
+            }
+          }
+        }
+      }
     },
     "select": {
-      "face": { "name": "Clock Face" },
-      "clock_format": { "name": "Clock Format" },
-      "music_mode": { "name": "Music Mode" }
+      "face": {
+        "name": "Clock Face",
+        "state": {
+          "off": "Off",
+          "awake": "Awake",
+          "sleepy": "Sleepy",
+          "semi_awake": "Semi-Awake",
+          "smiley": "Smiley"
+        }
+      },
+      "clock_format": {
+        "name": "Clock Format",
+        "state": {
+          "12h": "12-hour",
+          "24h": "24-hour"
+        }
+      },
+      "music_mode": {
+        "name": "Music Mode",
+        "state": {
+          "normal": "Normal",
+          "single_track": "Single track",
+          "repeat_track": "Repeat track",
+          "repeat_playlist": "Repeat playlist"
+        }
+      }
     },
     "number": {
-      "volume": { "name": "Volume" },
-      "noise_threshold": { "name": "Noise Alert Threshold" },
-      "brightness": { "name": "Brightness" },
-      "face_brightness": { "name": "Night face brightness" }
+      "volume": {
+        "name": "Volume"
+      },
+      "noise_threshold": {
+        "name": "Noise Alert Threshold"
+      },
+      "brightness": {
+        "name": "Brightness"
+      },
+      "face_brightness": {
+        "name": "Night face brightness"
+      }
     },
     "switch": {
-      "alarm": { "name": "{name}" }
+      "alarm": {
+        "name": "{name}",
+        "state_attributes": {
+          "time": {
+            "name": "Time"
+          },
+          "recurrence": {
+            "name": "Repeat days",
+            "state": {
+              "mon": "Monday",
+              "tue": "Tuesday",
+              "wed": "Wednesday",
+              "thu": "Thursday",
+              "fri": "Friday",
+              "sat": "Saturday",
+              "sun": "Sunday"
+            }
+          },
+          "brightness": {
+            "name": "Brightness"
+          },
+          "volume": {
+            "name": "Volume"
+          },
+          "length_min": {
+            "name": "Duration in minutes"
+          },
+          "face": {
+            "name": "Face",
+            "state": {
+              "off": "Off",
+              "awake": "Awake",
+              "sleepy": "Sleepy",
+              "semi_awake": "Semi-Awake",
+              "smiley": "Smiley"
+            }
+          }
+        }
+      },
+      "unnamed_alarm": {
+        "name": "Alarm {name}",
+        "state_attributes": {
+          "time": {
+            "name": "Time"
+          },
+          "recurrence": {
+            "name": "Repeat days",
+            "state": {
+              "mon": "Monday",
+              "tue": "Tuesday",
+              "wed": "Wednesday",
+              "thu": "Thursday",
+              "fri": "Friday",
+              "sat": "Saturday",
+              "sun": "Sunday"
+            }
+          },
+          "brightness": {
+            "name": "Brightness"
+          },
+          "volume": {
+            "name": "Volume"
+          },
+          "length_min": {
+            "name": "Duration in minutes"
+          },
+          "face": {
+            "name": "Face",
+            "state": {
+              "off": "Off",
+              "awake": "Awake",
+              "sleepy": "Sleepy",
+              "semi_awake": "Semi-Awake",
+              "smiley": "Smiley"
+            }
+          }
+        }
+      }
     },
     "light": {
-      "background_color": { "name": "App Background Color" }
+      "background_color": {
+        "name": "App Background Color"
+      }
     }
   },
   "services": {
@@ -102,12 +272,30 @@
           "name": "Event ID",
           "description": "The objectId of the alarm to update."
         },
-        "name": { "name": "Name", "description": "New label for the alarm." },
-        "time": { "name": "Time", "description": "Clock time in the REMI time zone (HH:MM, minute precision)." },
-        "enabled": { "name": "Enabled", "description": "Enable or disable the alarm." },
-        "repeat": { "name": "Repeat Days", "description": "New repeat days list." },
-        "face_define": { "name": "Face", "description": "New face define string." },
-        "volume": { "name": "Volume", "description": "New volume override." }
+        "name": {
+          "name": "Name",
+          "description": "New label for the alarm."
+        },
+        "time": {
+          "name": "Time",
+          "description": "Clock time in the REMI time zone (HH:MM, minute precision)."
+        },
+        "enabled": {
+          "name": "Enabled",
+          "description": "Enable or disable the alarm."
+        },
+        "repeat": {
+          "name": "Repeat Days",
+          "description": "New repeat days list."
+        },
+        "face_define": {
+          "name": "Face",
+          "description": "New face define string."
+        },
+        "volume": {
+          "name": "Volume",
+          "description": "New volume override."
+        }
       }
     },
     "delete_alarm": {
@@ -118,6 +306,67 @@
           "name": "Event ID",
           "description": "The objectId of the alarm to delete."
         }
+      }
+    }
+  },
+  "exceptions": {
+    "alarm_target_not_unique": {
+      "message": "Cannot identify a single loaded REMI for this alarm action"
+    },
+    "alarm_not_found": {
+      "message": "This REMI alarm no longer exists"
+    },
+    "invalid_alarm_clock_time": {
+      "message": "Use hours and minutes in the REMI time zone (HH:MM)"
+    },
+    "api_invalid_auth": {
+      "message": "Invalid UrbanHello username or password"
+    },
+    "api_login_failed": {
+      "message": "UrbanHello login failed (status {status})"
+    },
+    "api_invalid_login_response": {
+      "message": "The UrbanHello login response is incomplete"
+    },
+    "api_request_failed": {
+      "message": "The UrbanHello request failed; its result could not be confirmed"
+    },
+    "api_http_error": {
+      "message": "UrbanHello returned an error (status {status})"
+    },
+    "api_reauthentication_failed": {
+      "message": "UrbanHello authentication failed after reconnecting"
+    },
+    "api_device_not_found": {
+      "message": "No REMI device was found"
+    },
+    "api_wrong_device": {
+      "message": "The response does not match the selected REMI"
+    },
+    "invalid_face_brightness": {
+      "message": "Night face brightness must be an integer from 1 to 10"
+    },
+    "unknown_music_mode": {
+      "message": "Unknown REMI playback mode"
+    },
+    "cannot_refresh_device": {
+      "message": "Could not refresh the REMI device state"
+    },
+    "cannot_check_firmware": {
+      "message": "Could not check REMI firmware metadata"
+    },
+    "cannot_refresh_firmware": {
+      "message": "Could not refresh REMI firmware status"
+    }
+  },
+  "selector": {
+    "alarm_face": {
+      "options": {
+        "off": "Off",
+        "awake": "Awake",
+        "sleepy": "Sleepy",
+        "semi_awake": "Semi-Awake",
+        "smiley": "Smiley"
       }
     }
   }

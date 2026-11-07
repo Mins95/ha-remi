@@ -92,7 +92,7 @@ class RemiRgbLightEntity(RemiEntity, LightEntity):
 class RemiBackgroundLightEntity(RemiRgbLightEntity):
     """Color associated with the Remi in the official app."""
 
-    _attr_name = "App Background Color"
+    _attr_translation_key = "background_color"
     _attr_icon = "mdi:palette"
     _field = "background_color"
 

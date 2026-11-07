@@ -70,7 +70,10 @@ class RemiAlarmSwitchEntity(RemiEntity, SwitchEntity):
         super().__init__(coordinator)
         self._event_id: str = event["objectId"]
         self._attr_unique_id = f"{self._remi_id}_alarm_{self._event_id}"
-        self._attr_name = event.get("name") or f"Alarm {self._event_id}"
+        self._attr_translation_key = "alarm" if event.get("name") else "unnamed_alarm"
+        self._attr_translation_placeholders = {
+            "name": event.get("name") or self._event_id
+        }
 
     def _get_event(self) -> dict[str, Any]:
         """Return the current event data from the coordinator."""

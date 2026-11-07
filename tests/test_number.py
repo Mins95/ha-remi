@@ -79,7 +79,7 @@ class TestRemiNumberEntity:
 
     def test_volume_entity_properties(self, mock_coordinator):
         entity = RemiNumberEntity(mock_coordinator, NUMBER_DESCRIPTIONS[0])
-        assert entity.entity_description.name == "Volume"
+        assert entity.translation_key == "volume"
         assert entity.icon == "mdi:volume-high"
         assert entity.native_min_value == 0
         assert entity.native_max_value == 100
@@ -103,7 +103,7 @@ class TestRemiNumberEntity:
 
     def test_noise_threshold_entity_properties(self, mock_coordinator):
         entity = RemiNumberEntity(mock_coordinator, NUMBER_DESCRIPTIONS[1])
-        assert entity.entity_description.name == "Noise Alert Threshold"
+        assert entity.translation_key == "noise_threshold"
         assert entity.icon == "mdi:microphone"
         assert entity.native_min_value == 0
         assert entity.native_max_value == 250
@@ -144,7 +144,7 @@ class TestRemiBrightnessNumber:
 
     def test_brightness_entity_properties(self, mock_coordinator):
         entity = RemiNumberEntity(mock_coordinator, NUMBER_DESCRIPTIONS[2])
-        assert entity.entity_description.name == "Brightness"
+        assert entity.translation_key == "brightness"
         assert entity.icon == "mdi:brightness-6"
         assert entity.mode == NumberMode.SLIDER
         assert entity.native_min_value == 0
@@ -223,8 +223,9 @@ class TestRemiFaceBrightnessNumber:
     async def test_rejects_invalid_commands_before_cloud_write(
         self, entity, mock_coordinator, value,
     ):
-        with pytest.raises(ServiceValidationError, match="integer from 1 to 10"):
+        with pytest.raises(ServiceValidationError) as raised:
             await entity.async_set_native_value(value)
+        assert raised.value.translation_key == "invalid_face_brightness"
         mock_coordinator.client.update_remi.assert_not_awaited()
         mock_coordinator.async_request_refresh.assert_not_awaited()
 

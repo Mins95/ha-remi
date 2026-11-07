@@ -7,6 +7,7 @@ import pytest
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
 from custom_components.urbanhello_remi_unofficial.api import RemiApiError
+from custom_components.urbanhello_remi_unofficial.const import DOMAIN
 from custom_components.urbanhello_remi_unofficial.coordinator import (
     RemiDataUpdateCoordinator,
 )
@@ -68,8 +69,10 @@ class TestAsyncUpdateData:
     async def test_update_data_api_error_raises_update_failed(self, coordinator, mock_api_client):
         mock_api_client.get_remi.side_effect = RemiApiError("Connection refused")
 
-        with pytest.raises(UpdateFailed, match="Error communicating with Remi API"):
+        with pytest.raises(UpdateFailed) as raised:
             await coordinator._async_update_data()
+        assert raised.value.translation_domain == DOMAIN
+        assert raised.value.translation_key == "cannot_refresh_device"
 
 
 class TestAsyncSetup:

@@ -10,13 +10,20 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, Platform
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers import entity_registry as er
 import homeassistant.helpers.config_validation as cv
 
 from .api import RemiApiClient
-from .const import CONF_INSTALLATION_ID, CONF_REMI_ID, CONF_SESSION_TOKEN, DOMAIN
+from .const import (
+    CONF_INSTALLATION_ID,
+    CONF_REMI_ID,
+    CONF_SESSION_TOKEN,
+    DOMAIN,
+    FACE_DEFINE_TO_NAME,
+    FACE_DEFINE_TO_OBJECT_ID,
+)
 from .coordinator import RemiDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -35,13 +42,19 @@ PLATFORMS: list[Platform] = [
 SERVICE_CREATE_ALARM = "create_alarm"
 SERVICE_UPDATE_ALARM = "update_alarm"
 SERVICE_DELETE_ALARM = "delete_alarm"
+ALARM_FACE_NAME_TO_DEFINE = {
+    name: define for define, name in FACE_DEFINE_TO_NAME.items()
+}
 
 
 def _alarm_clock_time(value: str) -> list[int]:
     """Validate a minute-precision local clock time, without an invented date."""
     match = re.fullmatch(r"([01][0-9]|2[0-3]):([0-5][0-9])(?::00)?", value)
     if match is None:
-        raise vol.Invalid("Use HH:MM in the REMI's local time zone")
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="invalid_alarm_clock_time",
+        )
     return [int(match[1]), int(match[2])]
 
 
@@ -140,13 +153,14 @@ def _register_services(hass: HomeAssistant) -> None:
             coordinators = [c for c in coordinators
                             if any(e.get("objectId") == event_id for e in c.events)]
         if len(coordinators) != 1:
-            raise HomeAssistantError("Cannot identify a single loaded REMI for this alarm action")
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="alarm_target_not_unique",
+            )
         return coordinators[0]
 
     async def handle_create_alarm(call: ServiceCall) -> None:
         """Handle create_alarm service call."""
-        from .const import FACE_DEFINE_TO_OBJECT_ID
-
         coordinator = resolve_coordinator()
         event_data: dict[str, Any] = {
             "name": call.data["name"],
@@ -155,6 +169,7 @@ def _register_services(hass: HomeAssistant) -> None:
             "recurrence": _alarm_recurrence(call.data.get("repeat", [])),
         }
         face_define = call.data.get("face_define")
+        face_define = ALARM_FACE_NAME_TO_DEFINE.get(face_define, face_define)
         if face_define and face_define in FACE_DEFINE_TO_OBJECT_ID:
             event_data["face"] = {
                 "__type": "Pointer",
@@ -169,8 +184,6 @@ def _register_services(hass: HomeAssistant) -> None:
 
     async def handle_update_alarm(call: ServiceCall) -> None:
         """Handle update_alarm service call."""
-        from .const import FACE_DEFINE_TO_OBJECT_ID
-
         event_id = call.data["event_id"]
         coordinator = resolve_coordinator(event_id)
         fields: dict[str, Any] = {}
@@ -186,6 +199,7 @@ def _register_services(hass: HomeAssistant) -> None:
         if "volume" in call.data:
             fields["volume"] = call.data["volume"]
         face_define = call.data.get("face_define")
+        face_define = ALARM_FACE_NAME_TO_DEFINE.get(face_define, face_define)
         if face_define and face_define in FACE_DEFINE_TO_OBJECT_ID:
             fields["face"] = {
                 "__type": "Pointer",

@@ -79,7 +79,7 @@ class TestRemiFaceSelectEntity:
 
     def test_name_attr(self, mock_coordinator):
         entity = RemiFaceSelectEntity(mock_coordinator)
-        assert entity._attr_name == "Clock Face"
+        assert entity.translation_key == "face"
 
     def test_icon(self, mock_coordinator):
         entity = RemiFaceSelectEntity(mock_coordinator)
@@ -91,7 +91,7 @@ class TestRemiFaceSelectEntity:
 
     def test_current_option_returns_face_name(self, mock_coordinator):
         entity = RemiFaceSelectEntity(mock_coordinator)
-        assert entity.current_option == "Awake"
+        assert entity.current_option == "awake"
 
     def test_current_option_returns_none_for_unknown_face(self, mock_coordinator):
         mock_coordinator.remi["face"] = {"objectId": "unknown_id"}
@@ -105,7 +105,7 @@ class TestRemiFaceSelectEntity:
 
     async def test_select_option_updates_face(self, mock_coordinator):
         entity = RemiFaceSelectEntity(mock_coordinator)
-        await entity.async_select_option("Sleepy")
+        await entity.async_select_option("sleepy")
 
         mock_coordinator.client.update_remi.assert_awaited_once_with(
             {
@@ -134,7 +134,7 @@ class TestRemiClockFormatSelectEntity:
 
     def test_name_attr(self, mock_coordinator):
         entity = RemiClockFormatSelectEntity(mock_coordinator)
-        assert entity._attr_name == "Clock Format"
+        assert entity.translation_key == "clock_format"
 
     def test_icon(self, mock_coordinator):
         entity = RemiClockFormatSelectEntity(mock_coordinator)
@@ -180,7 +180,7 @@ class TestRemiMusicModeSelectEntity:
 
     def test_name_attr(self, mock_coordinator):
         entity = RemiMusicModeSelectEntity(mock_coordinator)
-        assert entity._attr_name == "Music Mode"
+        assert entity.translation_key == "music_mode"
 
     def test_icon(self, mock_coordinator):
         entity = RemiMusicModeSelectEntity(mock_coordinator)
@@ -200,7 +200,7 @@ class TestRemiMusicModeSelectEntity:
         assert entity.current_option is None
 
     @pytest.mark.parametrize("mode, label", [
-        (0, "Normal"), (1, "Single track"), (2, "Repeat track"), (3, "Repeat playlist")
+        (0, "normal"), (1, "single_track"), (2, "repeat_track"), (3, "repeat_playlist")
     ])
     async def test_official_repeat_modes(self, mock_coordinator, mode, label):
         mock_coordinator.remi["musicMode"] = mode

@@ -37,7 +37,7 @@ async def async_setup_entry(
 class RemiFaceSelectEntity(RemiEntity, SelectEntity):
     """Select entity for the Remi clock face."""
 
-    _attr_name = "Clock Face"
+    _attr_translation_key = "face"
     _attr_icon = "mdi:emoticon-outline"
     _attr_options = list(FACE_DEFINE_TO_NAME.values())
 
@@ -78,7 +78,7 @@ class RemiFaceSelectEntity(RemiEntity, SelectEntity):
 class RemiClockFormatSelectEntity(RemiEntity, SelectEntity):
     """Select entity for the Remi clock format (12h / 24h)."""
 
-    _attr_name = "Clock Format"
+    _attr_translation_key = "clock_format"
     _attr_icon = "mdi:clock-outline"
     _attr_options = ["12h", "24h"]
 
@@ -102,7 +102,7 @@ class RemiClockFormatSelectEntity(RemiEntity, SelectEntity):
 class RemiMusicModeSelectEntity(RemiEntity, SelectEntity):
     """Select entity for the Remi music mode."""
 
-    _attr_name = "Music Mode"
+    _attr_translation_key = "music_mode"
     _attr_icon = "mdi:music"
     _attr_options = list(MUSIC_MODE_OPTIONS.values())
 
@@ -124,6 +124,9 @@ class RemiMusicModeSelectEntity(RemiEntity, SelectEntity):
             (k for k, v in MUSIC_MODE_OPTIONS.items() if v == option), None
         )
         if mode is None:
-            raise ServiceValidationError("Unknown REMI playback mode")
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="unknown_music_mode",
+            )
         await self.coordinator.client.update_remi({"musicMode": mode})
         await self.coordinator.async_request_refresh()

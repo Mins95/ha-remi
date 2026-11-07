@@ -73,7 +73,7 @@ class TestRemiBackgroundLightEntity:
 
     def test_name(self, mock_coordinator_with_lights):
         entity = RemiBackgroundLightEntity(mock_coordinator_with_lights)
-        assert entity.name == "App Background Color"
+        assert entity.translation_key == "background_color"
 
     def test_icon(self, mock_coordinator_with_lights):
         entity = RemiBackgroundLightEntity(mock_coordinator_with_lights)

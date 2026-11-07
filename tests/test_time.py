@@ -46,16 +46,20 @@ async def test_missing_alarm_cannot_be_edited(coordinator):
     entity = RemiAlarmTime(coordinator, coordinator.events[0])
     coordinator.events = []
     assert not entity.available
-    with pytest.raises(ServiceValidationError):
+    with pytest.raises(ServiceValidationError) as error:
         await entity.async_set_value(time(8))
+    assert error.value.translation_domain == DOMAIN
+    assert error.value.translation_key == "alarm_not_found"
     coordinator.client.update_event.assert_not_called()
 
 
 @pytest.mark.parametrize("value", [time(8, 0, 1), time(8, tzinfo=timezone.utc)])
 async def test_precision_or_timezone_not_silently_discarded(coordinator, value):
     entity = RemiAlarmTime(coordinator, coordinator.events[0])
-    with pytest.raises(ServiceValidationError):
+    with pytest.raises(ServiceValidationError) as error:
         await entity.async_set_value(value)
+    assert error.value.translation_domain == DOMAIN
+    assert error.value.translation_key == "invalid_alarm_clock_time"
     coordinator.client.update_event.assert_not_called()
 
 

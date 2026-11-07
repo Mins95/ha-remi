@@ -15,6 +15,7 @@ from custom_components.urbanhello_remi_unofficial.api import (
 from custom_components.urbanhello_remi_unofficial.const import (
     API_APP_ID,
     API_BASE_URL,
+    DOMAIN,
 )
 
 from .conftest import (
@@ -115,28 +116,35 @@ class TestLogin:
     async def test_login_401_raises_auth_error(self, client: RemiApiClient, mock_session: MagicMock) -> None:
         mock_session.post.return_value = _make_response(401, {"error": "Unauthorized"})
 
-        with pytest.raises(RemiAuthError):
+        with pytest.raises(RemiAuthError) as error:
             await client.login()
+        assert error.value.translation_domain == DOMAIN
+        assert error.value.translation_key == "api_invalid_auth"
 
     async def test_login_500_raises_api_error(self, client: RemiApiClient, mock_session: MagicMock) -> None:
         mock_session.post.return_value = _make_response(500, {"error": "Server Error"})
 
-        with pytest.raises(RemiApiError):
+        with pytest.raises(RemiApiError) as error:
             await client.login()
+        assert error.value.translation_domain == DOMAIN
+        assert error.value.translation_key == "api_login_failed"
+        assert error.value.translation_placeholders == {"status": "500"}
 
     async def test_login_missing_session_token_raises_auth_error(self, client: RemiApiClient, mock_session: MagicMock) -> None:
         response = {**MOCK_LOGIN_RESPONSE, "sessionToken": None}
         mock_session.post.return_value = _make_response(200, response)
 
-        with pytest.raises(RemiAuthError):
+        with pytest.raises(RemiAuthError) as error:
             await client.login()
+        assert error.value.translation_key == "api_invalid_login_response"
 
     async def test_login_missing_current_remi_raises_auth_error(self, client: RemiApiClient, mock_session: MagicMock) -> None:
         response = {**MOCK_LOGIN_RESPONSE, "currentRemi": {}}
         mock_session.post.return_value = _make_response(200, response)
 
-        with pytest.raises(RemiAuthError):
+        with pytest.raises(RemiAuthError) as error:
             await client.login()
+        assert error.value.translation_key == "api_invalid_login_response"
 
 
 class TestRequest:
@@ -159,8 +167,11 @@ class TestRequest:
     async def test_request_non_200_raises_api_error(self, client: RemiApiClient, mock_session: MagicMock) -> None:
         mock_session.request.return_value = _make_response(400, {"error": "Bad Request"})
 
-        with pytest.raises(RemiApiError, match="400"):
+        with pytest.raises(RemiApiError) as error:
             await client._request("GET", "/parse/test")
+        assert error.value.translation_domain == DOMAIN
+        assert error.value.translation_key == "api_http_error"
+        assert error.value.translation_placeholders == {"status": "400"}
 
     async def test_request_401_triggers_reauth(self, client: RemiApiClient, mock_session: MagicMock) -> None:
         """On 401, the client should re-login and retry once."""
@@ -178,8 +189,9 @@ class TestRequest:
         """With retry_auth=False, a 401 should raise immediately."""
         mock_session.request.return_value = _make_response(401, {"error": "Unauthorized"})
 
-        with pytest.raises(RemiApiError):
+        with pytest.raises(RemiApiError) as error:
             await client._request("GET", "/parse/test", retry_auth=False)
+        assert error.value.translation_key == "api_reauthentication_failed"
 
 
 class TestGetRemi:
@@ -195,8 +207,10 @@ class TestGetRemi:
     async def test_get_remi_empty_results_raises(self, client: RemiApiClient, mock_session: MagicMock) -> None:
         mock_session.request.return_value = _make_response(200, {"results": []})
 
-        with pytest.raises(RemiApiError, match="No Remi device found"):
+        with pytest.raises(RemiApiError) as error:
             await client.get_remi()
+        assert error.value.translation_domain == DOMAIN
+        assert error.value.translation_key == "api_device_not_found"
 
 
 class TestGetEvents:

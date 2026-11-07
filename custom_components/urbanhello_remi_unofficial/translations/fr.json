@@ -1,23 +1,372 @@
 {
-  "entity": {
-    "number": {
-      "face_brightness": {
-        "name": "Luminosité du visage la nuit"
+  "config": {
+    "step": {
+      "user": {
+        "title": "Remi — Connexion à votre appareil",
+        "description": "Saisissez les identifiants de votre compte UrbanHello.",
+        "data": {
+          "username": "Identifiant",
+          "password": "Mot de passe"
+        }
+      },
+      "device": {
+        "title": "Sélectionner votre Remi",
+        "description": "Plusieurs Remi sont associés à ce compte. Choisissez celui à ajouter.",
+        "data": {
+          "remi_id": "Appareil"
+        }
       }
     },
+    "error": {
+      "invalid_auth": "Identifiant ou mot de passe incorrect.",
+      "cannot_connect": "Impossible de joindre le serveur Remi.",
+      "unknown": "Une erreur inattendue s’est produite."
+    },
+    "abort": {
+      "already_configured": "Ce Remi est déjà configuré."
+    }
+  },
+  "entity": {
     "button": {
       "check_firmware": {
         "name": "Vérifier le firmware"
       }
     },
-    "binary_sensor": {
-      "firmware_update": {
-        "name": "Mise à jour du firmware disponible"
-      }
-    },
     "time": {
       "alarm_time": {
-        "name": "Heure de {name}"
+        "name": "Heure de {name}",
+        "state_attributes": {
+          "event_id": {
+            "name": "Identifiant de l’alarme"
+          }
+        }
+      }
+    },
+    "sensor": {
+      "temperature": {
+        "name": "Température",
+        "state_attributes": {
+          "raw_value": {
+            "name": "Température brute"
+          },
+          "conversion": {
+            "name": "Formule de conversion"
+          }
+        }
+      },
+      "rssi": {
+        "name": "Signal Wi-Fi"
+      },
+      "firmware_version": {
+        "name": "Version du firmware"
+      },
+      "ip_address": {
+        "name": "Adresse IP"
+      },
+      "current_face": {
+        "name": "Visage actuel",
+        "state": {
+          "off": "Éteint",
+          "awake": "Éveillé",
+          "sleepy": "Endormi",
+          "semi_awake": "À moitié réveillé",
+          "smiley": "Souriant"
+        }
+      }
+    },
+    "binary_sensor": {
+      "online": {
+        "name": "Connexion"
+      },
+      "alive": {
+        "name": "Activité"
+      },
+      "firmware_update": {
+        "name": "Mise à jour du firmware disponible",
+        "state_attributes": {
+          "installed_version": {
+            "name": "Version installée"
+          },
+          "target_version": {
+            "name": "Version attribuée"
+          },
+          "server_default_version": {
+            "name": "Version par défaut du serveur"
+          },
+          "update_requested": {
+            "name": "Mise à jour demandée"
+          },
+          "update_method": {
+            "name": "Méthode de mise à jour",
+            "state": {
+              "automatic_wifi": "Automatique par Wi-Fi"
+            }
+          }
+        }
+      }
+    },
+    "select": {
+      "face": {
+        "name": "Visage du réveil",
+        "state": {
+          "off": "Éteint",
+          "awake": "Éveillé",
+          "sleepy": "Endormi",
+          "semi_awake": "À moitié réveillé",
+          "smiley": "Souriant"
+        }
+      },
+      "clock_format": {
+        "name": "Format de l’heure",
+        "state": {
+          "12h": "12 heures",
+          "24h": "24 heures"
+        }
+      },
+      "music_mode": {
+        "name": "Mode de lecture musicale",
+        "state": {
+          "normal": "Normal",
+          "single_track": "Piste unique",
+          "repeat_track": "Répéter la piste",
+          "repeat_playlist": "Répéter la liste"
+        }
+      }
+    },
+    "number": {
+      "volume": {
+        "name": "Volume"
+      },
+      "noise_threshold": {
+        "name": "Seuil d’alerte sonore"
+      },
+      "brightness": {
+        "name": "Luminosité"
+      },
+      "face_brightness": {
+        "name": "Luminosité du visage la nuit"
+      }
+    },
+    "switch": {
+      "alarm": {
+        "name": "{name}",
+        "state_attributes": {
+          "time": {
+            "name": "Heure"
+          },
+          "recurrence": {
+            "name": "Jours de répétition",
+            "state": {
+              "mon": "Lundi",
+              "tue": "Mardi",
+              "wed": "Mercredi",
+              "thu": "Jeudi",
+              "fri": "Vendredi",
+              "sat": "Samedi",
+              "sun": "Dimanche"
+            }
+          },
+          "brightness": {
+            "name": "Luminosité"
+          },
+          "volume": {
+            "name": "Volume"
+          },
+          "length_min": {
+            "name": "Durée en minutes"
+          },
+          "face": {
+            "name": "Visage",
+            "state": {
+              "off": "Éteint",
+              "awake": "Éveillé",
+              "sleepy": "Endormi",
+              "semi_awake": "À moitié réveillé",
+              "smiley": "Souriant"
+            }
+          }
+        }
+      },
+      "unnamed_alarm": {
+        "name": "Alarme {name}",
+        "state_attributes": {
+          "time": {
+            "name": "Heure"
+          },
+          "recurrence": {
+            "name": "Jours de répétition",
+            "state": {
+              "mon": "Lundi",
+              "tue": "Mardi",
+              "wed": "Mercredi",
+              "thu": "Jeudi",
+              "fri": "Vendredi",
+              "sat": "Samedi",
+              "sun": "Dimanche"
+            }
+          },
+          "brightness": {
+            "name": "Luminosité"
+          },
+          "volume": {
+            "name": "Volume"
+          },
+          "length_min": {
+            "name": "Durée en minutes"
+          },
+          "face": {
+            "name": "Visage",
+            "state": {
+              "off": "Éteint",
+              "awake": "Éveillé",
+              "sleepy": "Endormi",
+              "semi_awake": "À moitié réveillé",
+              "smiley": "Souriant"
+            }
+          }
+        }
+      }
+    },
+    "light": {
+      "background_color": {
+        "name": "Couleur de fond de l’application"
+      }
+    }
+  },
+  "services": {
+    "create_alarm": {
+      "name": "Créer une alarme",
+      "description": "Crée une nouvelle alarme sur le Remi.",
+      "fields": {
+        "name": {
+          "name": "Nom",
+          "description": "Nom de l’alarme."
+        },
+        "time": {
+          "name": "Heure",
+          "description": "Heure locale dans le fuseau horaire du REMI (HH:MM, à la minute près)."
+        },
+        "enabled": {
+          "name": "Activée",
+          "description": "Active ou désactive l’alarme."
+        },
+        "repeat": {
+          "name": "Jours de répétition",
+          "description": "Liste des jours : 0 = dimanche, 1 = lundi, 2 = mardi, 3 = mercredi, 4 = jeudi, 5 = vendredi, 6 = samedi."
+        },
+        "face_define": {
+          "name": "Visage",
+          "description": "Visage à afficher à l’heure de l’alarme."
+        },
+        "volume": {
+          "name": "Volume",
+          "description": "Volume propre à cette alarme, de 0 à 100."
+        }
+      }
+    },
+    "update_alarm": {
+      "name": "Modifier une alarme",
+      "description": "Modifie une alarme existante sur le Remi.",
+      "fields": {
+        "event_id": {
+          "name": "Identifiant de l’alarme",
+          "description": "L’objectId de l’alarme concernée."
+        },
+        "name": {
+          "name": "Nom",
+          "description": "Nom de l’alarme."
+        },
+        "time": {
+          "name": "Heure",
+          "description": "Heure locale dans le fuseau horaire du REMI (HH:MM, à la minute près)."
+        },
+        "enabled": {
+          "name": "Activée",
+          "description": "Active ou désactive l’alarme."
+        },
+        "repeat": {
+          "name": "Jours de répétition",
+          "description": "Liste des jours : 0 = dimanche, 1 = lundi, 2 = mardi, 3 = mercredi, 4 = jeudi, 5 = vendredi, 6 = samedi."
+        },
+        "face_define": {
+          "name": "Visage",
+          "description": "Visage à afficher à l’heure de l’alarme."
+        },
+        "volume": {
+          "name": "Volume",
+          "description": "Volume propre à cette alarme, de 0 à 100."
+        }
+      }
+    },
+    "delete_alarm": {
+      "name": "Supprimer une alarme",
+      "description": "Supprime une alarme du Remi.",
+      "fields": {
+        "event_id": {
+          "name": "Identifiant de l’alarme",
+          "description": "L’objectId de l’alarme concernée."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "alarm_target_not_unique": {
+      "message": "Impossible d’identifier un seul REMI chargé pour cette action sur les alarmes"
+    },
+    "alarm_not_found": {
+      "message": "Cette alarme REMI n’existe plus"
+    },
+    "invalid_alarm_clock_time": {
+      "message": "Indiquez l’heure et les minutes dans le fuseau horaire du REMI (HH:MM)"
+    },
+    "api_invalid_auth": {
+      "message": "Identifiant ou mot de passe UrbanHello incorrect"
+    },
+    "api_login_failed": {
+      "message": "La connexion au compte UrbanHello a échoué (code {status})"
+    },
+    "api_invalid_login_response": {
+      "message": "La réponse de connexion d’UrbanHello est incomplète"
+    },
+    "api_request_failed": {
+      "message": "La requête UrbanHello a échoué ; son résultat n’a pas pu être confirmé"
+    },
+    "api_http_error": {
+      "message": "UrbanHello a renvoyé une erreur (code {status})"
+    },
+    "api_reauthentication_failed": {
+      "message": "L’authentification UrbanHello a échoué après la reconnexion"
+    },
+    "api_device_not_found": {
+      "message": "Aucun appareil REMI n’a été trouvé"
+    },
+    "api_wrong_device": {
+      "message": "La réponse ne correspond pas au REMI sélectionné"
+    },
+    "invalid_face_brightness": {
+      "message": "La luminosité du visage la nuit doit être un entier de 1 à 10"
+    },
+    "unknown_music_mode": {
+      "message": "Mode de lecture REMI inconnu"
+    },
+    "cannot_refresh_device": {
+      "message": "Impossible d’actualiser l’état du REMI"
+    },
+    "cannot_check_firmware": {
+      "message": "Impossible de vérifier les informations du firmware REMI"
+    },
+    "cannot_refresh_firmware": {
+      "message": "Impossible d’actualiser l’état du firmware REMI"
+    }
+  },
+  "selector": {
+    "alarm_face": {
+      "options": {
+        "off": "Éteint",
+        "awake": "Éveillé",
+        "sleepy": "Endormi",
+        "semi_awake": "À moitié réveillé",
+        "smiley": "Souriant"
       }
     }
   }

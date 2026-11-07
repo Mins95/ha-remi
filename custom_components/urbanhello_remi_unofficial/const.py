@@ -17,11 +17,11 @@ CONF_SESSION_TOKEN = "session_token"
 CONF_INSTALLATION_ID = "installation_id"
 
 FACE_DEFINE_TO_NAME = {
-    "FACE_OFF": "Off",
-    "FACE_DAY": "Awake",
-    "FACE_NIGHT": "Sleepy",
-    "FACE_SEMI_AWAKE": "Semi-Awake",
-    "FACE_SMILY": "Smiley",
+    "FACE_OFF": "off",
+    "FACE_DAY": "awake",
+    "FACE_NIGHT": "sleepy",
+    "FACE_SEMI_AWAKE": "semi_awake",
+    "FACE_SMILY": "smiley",
 }
 
 FACE_OBJECT_ID_TO_DEFINE = {
@@ -35,10 +35,10 @@ FACE_OBJECT_ID_TO_DEFINE = {
 FACE_DEFINE_TO_OBJECT_ID = {v: k for k, v in FACE_OBJECT_ID_TO_DEFINE.items()}
 
 MUSIC_MODE_OPTIONS = {
-    0: "Normal",
-    1: "Single track",
-    2: "Repeat track",
-    3: "Repeat playlist",
+    0: "normal",
+    1: "single_track",
+    2: "repeat_track",
+    3: "repeat_playlist",
 }
 
 # The REMI recurrence array starts on Monday (unlike the legacy service input).

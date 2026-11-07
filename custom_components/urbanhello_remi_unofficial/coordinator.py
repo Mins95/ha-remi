@@ -46,7 +46,9 @@ class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     _LOGGER.debug("Could not refresh REMI firmware metadata")
             return {"remi": remi, "events": events}
         except RemiApiError as err:
-            raise UpdateFailed(f"Error communicating with Remi API: {err}") from err
+            raise UpdateFailed(
+                translation_domain=DOMAIN, translation_key="cannot_refresh_device"
+            ) from err
 
     async def async_setup(self) -> None:
         """Fetch static data (faces, config) once at setup."""
@@ -67,10 +69,14 @@ class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             await self._async_refresh_config()
         except RemiApiError as err:
-            raise HomeAssistantError("Could not check REMI firmware metadata") from err
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="cannot_check_firmware"
+            ) from err
         await self.async_refresh()
         if not self.last_update_success:
-            raise HomeAssistantError("Could not refresh REMI firmware status")
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="cannot_refresh_firmware"
+            )
 
     @property
     def remi(self) -> dict[str, Any]:

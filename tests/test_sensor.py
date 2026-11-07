@@ -106,41 +106,41 @@ class TestCurrentFaceSensor:
     def test_face_awake(self):
         desc = _get_description("current_face")
         remi = {"face": {"objectId": "fIjF0yWRxX"}}
-        assert desc.value_fn(remi) == "Awake"
+        assert desc.value_fn(remi) == "awake"
 
     def test_face_sleepy(self):
         desc = _get_description("current_face")
         remi = {"face": {"objectId": "rnAltoFwYC"}}
-        assert desc.value_fn(remi) == "Sleepy"
+        assert desc.value_fn(remi) == "sleepy"
 
     def test_face_off(self):
         desc = _get_description("current_face")
         remi = {"face": {"objectId": "GDaZOVdRqj"}}
-        assert desc.value_fn(remi) == "Off"
+        assert desc.value_fn(remi) == "off"
 
     def test_face_semi_awake(self):
         desc = _get_description("current_face")
         remi = {"face": {"objectId": "9faiiPGBVv"}}
-        assert desc.value_fn(remi) == "Semi-Awake"
+        assert desc.value_fn(remi) == "semi_awake"
 
     def test_face_smiley(self):
         desc = _get_description("current_face")
         remi = {"face": {"objectId": "d712mdpZ0v"}}
-        assert desc.value_fn(remi) == "Smiley"
+        assert desc.value_fn(remi) == "smiley"
 
     def test_face_unknown_object_id(self):
         desc = _get_description("current_face")
         remi = {"face": {"objectId": "unknown_id"}}
-        assert desc.value_fn(remi) == "Unknown"
+        assert desc.value_fn(remi) is None
 
     def test_face_missing_field(self):
         desc = _get_description("current_face")
-        assert desc.value_fn({}) == "Unknown"
+        assert desc.value_fn({}) is None
 
     def test_face_none_value(self):
         desc = _get_description("current_face")
-        assert desc.value_fn({"face": None}) == "Unknown"
+        assert desc.value_fn({"face": None}) is None
 
     def test_face_from_mock_data(self):
         desc = _get_description("current_face")
-        assert desc.value_fn(MOCK_REMI_DATA) == "Awake"
+        assert desc.value_fn(MOCK_REMI_DATA) == "awake"

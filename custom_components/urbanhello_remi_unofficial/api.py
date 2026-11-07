@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 import aiohttp
+from homeassistant.exceptions import HomeAssistantError
 
 from .const import (
     API_APP_BUILD_VERSION,
@@ -15,12 +16,13 @@ from .const import (
     API_CLIENT_VERSION,
     API_OS_VERSION,
     API_USER_AGENT,
+    DOMAIN,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class RemiApiError(Exception):
+class RemiApiError(HomeAssistantError):
     """Raised when an API call fails."""
 
 
@@ -89,9 +91,16 @@ class RemiApiClient:
             timeout=self._timeout,
         ) as resp:
             if resp.status == 401:
-                raise RemiAuthError("Invalid username or password")
+                raise RemiAuthError(
+                    translation_domain=DOMAIN,
+                    translation_key="api_invalid_auth",
+                )
             if resp.status != 200:
-                raise RemiApiError(f"Login failed with status {resp.status}")
+                raise RemiApiError(
+                    translation_domain=DOMAIN,
+                    translation_key="api_login_failed",
+                    translation_placeholders={"status": str(resp.status)},
+                )
             data = await resp.json()
 
         session_token = data.get("sessionToken")
@@ -100,7 +109,10 @@ class RemiApiClient:
         all_remi_ids: list[str] = data.get("remis", [])
 
         if not session_token or not current_remi_id:
-            raise RemiAuthError("Login response missing sessionToken or currentRemi")
+            raise RemiAuthError(
+                translation_domain=DOMAIN,
+                translation_key="api_invalid_login_response",
+            )
 
         if not all_remi_ids:
             all_remi_ids = [current_remi_id]
@@ -126,8 +138,10 @@ class RemiApiClient:
                 return await self._request_once(method, path, payload, retry_auth)
             except (_TransientApiError, aiohttp.ClientError, TimeoutError) as err:
                 if not is_read or attempt == 2:
-                    detail = str(err) if isinstance(err, _TransientApiError) else type(err).__name__
-                    raise RemiApiError(f"REMI request failed on {path}: {detail}") from err
+                    raise RemiApiError(
+                        translation_domain=DOMAIN,
+                        translation_key="api_request_failed",
+                    ) from err
                 await asyncio.sleep(0.5 * (attempt + 1))
 
     async def _request_once(self, method, path, payload, retry_auth):
@@ -140,14 +154,25 @@ class RemiApiClient:
             status = resp.status
             if status != 401:
                 if status in (500, 502, 503, 504):
-                    raise _TransientApiError(f"API error {status} on {path}")
+                    raise _TransientApiError(
+                        translation_domain=DOMAIN,
+                        translation_key="api_http_error",
+                        translation_placeholders={"status": str(status)},
+                    )
                 if status not in (200, 201):
-                    raise RemiApiError(f"API error {status} on {path}")
+                    raise RemiApiError(
+                        translation_domain=DOMAIN,
+                        translation_key="api_http_error",
+                        translation_placeholders={"status": str(status)},
+                    )
                 return await resp.json()
         # Release the response before logging in; concurrent expired reads share
         # one refreshed session instead of racing two logins against each other.
         if not retry_auth:
-            raise RemiAuthError("REMI authentication failed after reconnecting")
+            raise RemiAuthError(
+                translation_domain=DOMAIN,
+                translation_key="api_reauthentication_failed",
+            )
         async with self._auth_lock:
             if self._session_token == token_used:
                 await self.login()
@@ -166,9 +191,15 @@ class RemiApiClient:
         )
         results = data.get("results", [])
         if not results:
-            raise RemiApiError("No Remi device found")
+            raise RemiApiError(
+                translation_domain=DOMAIN,
+                translation_key="api_device_not_found",
+            )
         if len(results) != 1 or results[0].get("objectId") != self._remi_id:
-            raise RemiApiError("REMI response does not match the selected device")
+            raise RemiApiError(
+                translation_domain=DOMAIN,
+                translation_key="api_wrong_device",
+            )
         return results[0]
 
     async def update_remi(self, fields: dict[str, Any]) -> dict[str, Any]:

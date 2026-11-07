@@ -1,115 +1,81 @@
 create_alarm:
-  name: Create Alarm
-  description: Create a new alarm on the Remi device.
   fields:
     name:
-      name: Name
-      description: Label for the alarm.
       required: true
-      example: "Wake up"
+      example: Wake up
       selector:
-        text:
+        text: null
     time:
-      name: Time
-      description: Clock time in the REMI time zone (HH:MM, minute precision).
       required: true
-      example: "07:00"
+      example: 07:00
       selector:
-        time:
+        time: null
     enabled:
-      name: Enabled
-      description: Whether the alarm is active.
       default: true
       selector:
-        boolean:
+        boolean: null
     repeat:
-      name: Repeat Days
-      description: List of day numbers to repeat (0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat).
       default: []
-      example: "[1, 2, 3, 4, 5]"
+      example: '[1, 2, 3, 4, 5]'
       selector:
-        object:
+        object: null
     face_define:
-      name: Face
-      description: Face to show at alarm time.
-      example: "FACE_DAY"
+      example: awake
       selector:
         select:
           options:
-            - "FACE_OFF"
-            - "FACE_DAY"
-            - "FACE_NIGHT"
-            - "FACE_SEMI_AWAKE"
-            - "FACE_SMILY"
+          - 'off'
+          - awake
+          - sleepy
+          - semi_awake
+          - smiley
+          translation_key: alarm_face
     volume:
-      name: Volume
-      description: Alarm volume override (0–100).
       selector:
         number:
           min: 0
           max: 100
           step: 1
-
 update_alarm:
-  name: Update Alarm
-  description: Update an existing alarm on the Remi device.
   fields:
     event_id:
-      name: Event ID
-      description: The objectId of the alarm to update.
       required: true
-      example: "abc123XYZ"
+      example: abc123XYZ
       selector:
-        text:
+        text: null
     name:
-      name: Name
-      description: New label for the alarm.
       selector:
-        text:
+        text: null
     time:
-      name: Time
-      description: Clock time in the REMI time zone (HH:MM, minute precision).
-      example: "07:00"
+      example: 07:00
       selector:
-        time:
+        time: null
     enabled:
-      name: Enabled
-      description: Enable or disable the alarm.
       selector:
-        boolean:
+        boolean: null
     repeat:
-      name: Repeat Days
-      description: New repeat days list.
       selector:
-        object:
+        object: null
     face_define:
-      name: Face
-      description: New face define string.
       selector:
         select:
           options:
-            - "FACE_OFF"
-            - "FACE_DAY"
-            - "FACE_NIGHT"
-            - "FACE_SEMI_AWAKE"
-            - "FACE_SMILY"
+          - 'off'
+          - awake
+          - sleepy
+          - semi_awake
+          - smiley
+          translation_key: alarm_face
     volume:
-      name: Volume
-      description: New volume override (0–100).
       selector:
         number:
           min: 0
           max: 100
           step: 1
-
 delete_alarm:
-  name: Delete Alarm
-  description: Delete an alarm from the Remi device.
   fields:
     event_id:
-      name: Event ID
-      description: The objectId of the alarm to delete.
       required: true
-      example: "abc123XYZ"
+      example: abc123XYZ
       selector:
-        text:
+        text: null

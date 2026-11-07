@@ -45,12 +45,13 @@ class TestRemiAlarmSwitchEntity:
         assert alarm_switch.unique_id == f"{MOCK_REMI_ID}_alarm_{MOCK_EVENT['objectId']}"
 
     def test_name_from_event(self, alarm_switch):
-        assert alarm_switch.name == MOCK_EVENT["name"]
+        assert alarm_switch.translation_placeholders["name"] == MOCK_EVENT["name"]
 
     def test_name_fallback_when_no_name(self, coordinator):
         event = {"objectId": "ev_no_name"}
         entity = RemiAlarmSwitchEntity(coordinator, event)
-        assert entity.name == f"Alarm ev_no_name"
+        assert entity.translation_key == "unnamed_alarm"
+        assert entity.translation_placeholders["name"] == "ev_no_name"
 
     def test_is_on_when_enabled(self, alarm_switch, coordinator):
         coordinator.events = [{"objectId": MOCK_EVENT["objectId"], "enabled": True}]
@@ -87,7 +88,7 @@ class TestRemiAlarmSwitchEntity:
             {**MOCK_EVENT, "face": {"objectId": "fIjF0yWRxX"}}
         ]
         attrs = alarm_switch.extra_state_attributes
-        assert attrs["face"] == "Awake"
+        assert attrs["face"] == "awake"
 
     def test_extra_state_attributes_volume(self, alarm_switch, coordinator):
         coordinator.events = [{**MOCK_EVENT, "volume": 80}]

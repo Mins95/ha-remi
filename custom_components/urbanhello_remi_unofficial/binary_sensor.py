@@ -30,14 +30,12 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[RemiBinarySensorEntityDescription, ...] = (
     RemiBinarySensorEntityDescription(
         key="online",
         translation_key="online",
-        name="Online",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
         value_fn=lambda remi: remi.get("online", False),
     ),
     RemiBinarySensorEntityDescription(
         key="alive",
         translation_key="alive",
-        name="Alive",
         device_class=BinarySensorDeviceClass.RUNNING,
         entity_registry_enabled_default=False,
         value_fn=lambda remi: remi.get("alive", False),
@@ -45,7 +43,6 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[RemiBinarySensorEntityDescription, ...] = (
     RemiBinarySensorEntityDescription(
         key="firmware_update",
         translation_key="firmware_update",
-        name="Firmware Update Available",
         device_class=BinarySensorDeviceClass.UPDATE,
         value_fn=firmware_update_available,
     ),

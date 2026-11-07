@@ -170,8 +170,10 @@ async def test_relogin_preserves_selected_device(api_pair):
 async def test_wrong_device_response_is_rejected(api_pair):
     client, session = api_pair
     session.request.return_value = _make_response(200, {"results": [{"objectId": "wrong"}]})
-    with pytest.raises(RemiApiError, match="selected device"):
+    with pytest.raises(RemiApiError) as error:
         await client.get_remi()
+    assert error.value.translation_domain == DOMAIN
+    assert error.value.translation_key == "api_wrong_device"
 
 
 async def test_simultaneous_expired_reads_share_one_login(api_pair):
@@ -221,8 +223,10 @@ async def test_services_refuse_missing_alarm(hass):
     coordinator.events = []
     hass.data[DOMAIN] = {"entry": coordinator}
     _register_services(hass)
-    with pytest.raises(HomeAssistantError):
+    with pytest.raises(HomeAssistantError) as error:
         await hass.services.async_call(DOMAIN, "delete_alarm", {"event_id": "stale"}, blocking=True)
+    assert error.value.translation_domain == DOMAIN
+    assert error.value.translation_key == "alarm_target_not_unique"
     coordinator.client.delete_event.assert_not_called()
 
 

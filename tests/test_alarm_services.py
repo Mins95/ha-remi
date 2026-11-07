@@ -2,7 +2,7 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-import voluptuous as vol
+from homeassistant.exceptions import ServiceValidationError
 
 from custom_components.urbanhello_remi_unofficial import _register_services
 from custom_components.urbanhello_remi_unofficial.const import DOMAIN
@@ -39,11 +39,37 @@ async def test_update_weekend_and_time_without_overwriting_other_fields(hass, co
     })
 
 
+@pytest.mark.parametrize("face_define", ["awake", "FACE_DAY"])
+async def test_create_face_selector_and_legacy_value(hass, coordinator, face_define):
+    """Translated selectors and existing automations send the same cloud face."""
+    await hass.services.async_call(DOMAIN, "create_alarm", {
+        "name": "Morning", "time": "07:30", "face_define": face_define,
+    }, blocking=True)
+    coordinator.client.create_event.assert_awaited_once_with({
+        "name": "Morning", "event_time": [7, 30], "enabled": True,
+        "recurrence": [0, 0, 0, 0, 0, 0, 0],
+        "face": {"__type": "Pointer", "className": "Face", "objectId": "fIjF0yWRxX"},
+    })
+
+
+@pytest.mark.parametrize("face_define", ["awake", "FACE_DAY"])
+async def test_update_face_selector_and_legacy_value(hass, coordinator, face_define):
+    """A translated face choice only updates the existing alarm's face."""
+    await hass.services.async_call(DOMAIN, "update_alarm", {
+        "event_id": "alarm", "face_define": face_define,
+    }, blocking=True)
+    coordinator.client.update_event.assert_awaited_once_with("alarm", {
+        "face": {"__type": "Pointer", "className": "Face", "objectId": "fIjF0yWRxX"},
+    })
+
+
 @pytest.mark.parametrize("value", ["invalid", "24:00", "07:60", "07:30:15",
                                    "2026-02-20T07:00:00Z", "07:30+02:00"])
 async def test_invalid_or_ambiguous_time_does_not_write(hass, coordinator, value):
-    with pytest.raises(vol.Invalid):
+    with pytest.raises(ServiceValidationError) as error:
         await hass.services.async_call(DOMAIN, "update_alarm", {
             "event_id": "alarm", "time": value
         }, blocking=True)
+    assert error.value.translation_domain == DOMAIN
+    assert error.value.translation_key == "invalid_alarm_clock_time"
     coordinator.client.update_event.assert_not_called()

@@ -91,9 +91,15 @@ class RemiAlarmTime(RemiEntity, TimeEntity):
 
     async def async_set_value(self, value: time) -> None:
         if not self._event():
-            raise ServiceValidationError("This REMI alarm no longer exists")
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="alarm_not_found",
+            )
         if value.second or value.microsecond or value.tzinfo is not None:
-            raise ServiceValidationError("Use hours and minutes in the REMI time zone")
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="invalid_alarm_clock_time",
+            )
         await self.coordinator.client.update_event(
             self._event_id, {"event_time": [value.hour, value.minute]}
         )

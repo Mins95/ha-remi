@@ -56,7 +56,10 @@ def _face_brightness_command(value: float) -> int:
     """Reject invalid face levels before sending any command to REMI."""
     level = _face_brightness_value({"light_min": value})
     if level is None:
-        raise ServiceValidationError("Night face brightness must be an integer from 1 to 10")
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="invalid_face_brightness",
+        )
     return level
 
 
@@ -64,7 +67,6 @@ NUMBER_DESCRIPTIONS: tuple[RemiNumberEntityDescription, ...] = (
     RemiNumberEntityDescription(
         key="volume",
         translation_key="volume",
-        name="Volume",
         icon="mdi:volume-high",
         native_min_value=0,
         native_max_value=100,
@@ -76,7 +78,6 @@ NUMBER_DESCRIPTIONS: tuple[RemiNumberEntityDescription, ...] = (
     RemiNumberEntityDescription(
         key="noise_threshold",
         translation_key="noise_threshold",
-        name="Noise Alert Threshold",
         icon="mdi:microphone",
         native_min_value=0,
         native_max_value=250,
@@ -88,7 +89,6 @@ NUMBER_DESCRIPTIONS: tuple[RemiNumberEntityDescription, ...] = (
     RemiNumberEntityDescription(
         key="brightness",
         translation_key="brightness",
-        name="Brightness",
         icon="mdi:brightness-6",
         native_min_value=0,
         native_max_value=100,
@@ -100,7 +100,6 @@ NUMBER_DESCRIPTIONS: tuple[RemiNumberEntityDescription, ...] = (
     RemiNumberEntityDescription(
         key="face_brightness",
         translation_key="face_brightness",
-        name="Night face brightness",
         icon="mdi:brightness-4",
         native_min_value=1,
         native_max_value=10,
