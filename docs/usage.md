@@ -4,7 +4,7 @@
 
 This guide covers the public Mins95 integration, its Home Assistant actions and changes from earlier versions. It requires an UrbanHello account and internet access. Example entity IDs and alarm IDs are placeholders: use the IDs from your own installation.
 
-**Stable 0.5.1 requires Home Assistant 2026.11.0 or newer.** Pre-release versions do not need to be enabled. Start with the [included dashboard card](card.md) for a visual interface to the features below.
+**Stable 0.5.2 requires Home Assistant 2026.11.0 or newer.** Pre-release versions do not need to be enabled. Start with the [included dashboard card](card.md) for a visual interface to the features below.
 
 ## Installation
 
@@ -17,7 +17,7 @@ You need a REMI already configured in the official app, its UrbanHello account c
 1. Open **Settings → Marketplace → Add from link**.
 2. Enter `https://github.com/Mins95/ha-remi`.
 3. Connect your GitHub account if Marketplace requests it for custom repositories.
-4. Open **Remi (Mins95)** and install stable **0.5.1** or newer.
+4. Open **Remi (Mins95)** and install stable **0.5.2** or newer.
 5. Restart Home Assistant, then configure the integration below.
 
 See the [official Marketplace instructions](https://www.home-assistant.io/integrations/marketplace/#custom-repositories).
@@ -26,7 +26,7 @@ See the [official Marketplace instructions](https://www.home-assistant.io/integr
 
 [Open this repository in HACS](https://my.home-assistant.io/redirect/hacs_repository/?owner=Mins95&repository=ha-remi&category=integration).
 
-Add `https://github.com/Mins95/ha-remi` under **Custom repositories**, choose **Integration**, install stable **0.5.1** or newer and restart Home Assistant. **Show beta versions** is not required. The same Home Assistant 2026.11.0 minimum applies.
+Add `https://github.com/Mins95/ha-remi` under **Custom repositories**, choose **Integration**, install stable **0.5.2** or newer and restart Home Assistant. **Show beta versions** is not required. The same Home Assistant 2026.11.0 minimum applies.
 
 ### Manual installation
 
@@ -103,6 +103,12 @@ data:
 
 The [UrbanHello brightness guide](https://www.urbanhello.com/fr/faq/faqs/gerer-la-luminosite-de-remi) describes the night face setting. The implementation is covered by API tests; its physical effect has not yet been verified with this fork.
 
+### Optional light with brightness memory
+
+Version 0.5.2 adds a **Light / Éclairage** entity, disabled by default to keep the existing device page unchanged. Enable it from the device's entity list if you want standard Home Assistant light controls or HomeKit exposure. The existing Brightness number remains available with its original ID.
+
+The light controls only `luminosity`; turning it off never changes the face. Turning it on without a brightness value restores the last nonzero level confirmed by a successful cloud read, including after a Home Assistant restart. If no saved or current level is known, it requests 50%. Current confirmed device data takes precedence over saved data. An accepted write alone is not treated as proof of the physical light's state.
+
 ### Face and music options
 
 In the card's main tab, a display on/off control and **Awake/Sleepy** buttons provide quick face changes. The control affects the displayed face, not power to the device. Off selects `off`; On restores the last non-off face observed by that card for the selected REMI, or uses `awake` when no previous face is known. All expressions remain available through the native select entity below.
@@ -164,6 +170,14 @@ Attributes expose the installed version, assigned target and server default when
 **Check firmware never installs firmware.** Use the official app and [UrbanHello's update instructions](https://www.urbanhello.com/fr/faq/faqs/comment-mettre-a-jour-remi-manuellement-) for firmware installation.
 
 ## Alarm actions
+
+### Preserving alarms after cloud changes
+
+From 0.5.2, Home Assistant keeps a persistent mapping between each alarm's existing identity and its current cloud ID. When a previous ID disappears and a new ID appears with the same exact, nonempty name, the integration associates them only if that name was unique across both complete snapshots. Existing entity IDs, unique IDs and custom names are retained; switches, time entities and the card then target the new cloud ID.
+
+Renaming an alarm while its cloud ID stays unchanged is supported. A simultaneous rename and ID change, duplicate names or blank names cannot be associated safely. A delete/recreate with the same unique name between polls is indistinguishable from an ID rotation and may keep the previous identity. No uncertain association is made from Home Assistant display names.
+
+The first successful snapshot establishes the mapping. Changes that happened before this upgrade cannot be reconstructed automatically. The mapping survives reloads and restarts; a storage failure prevents unsafe reconciliation rather than replacing existing entities. Keep Home Assistant's normal configuration storage when migrating to another host.
 
 Each discovered schedule provides a switch and a time entity. A switch's default name includes its time and name, for example **07:30 · Weekday morning**. Existing entity IDs and user-assigned names are preserved. New, renamed or deleted cloud schedules are reconciled after a successful refresh; a temporary read failure does not remove them.
 
@@ -398,6 +412,12 @@ To edit a profile, get its `nap_id` with `list_naps` and supply only the fields 
 
 <a id="upgrading-from-030"></a>
 
+### 0.5.2: alarm identities and optional controls
+
+Keep the configured integration and its entities. Restart Home Assistant after updating and reload the card page. The card editor now controls section visibility, while existing cards keep all sections visible by default. Enable the optional Light entity only if you want on/off brightness restoration in standard Home Assistant controls.
+
+Alarm identity tracking starts with the first successful snapshot on this version. It preserves existing identifiers when a later cloud replacement can be matched unambiguously. The old brightness number and all original credits remain intact.
+
 ### 0.5.1: sleep periods and explicit history refresh
 
 Update normally, restart Home Assistant and reload the browser or Companion app page. Existing entity IDs and card configurations are preserved.
@@ -546,6 +566,16 @@ The 0.5.1 history export command was separately tested on a physical REMI and re
 Automated tests cover cloud responses, validation, command payloads and Home Assistant actions. Consult the [current workflow results](https://github.com/Mins95/ha-remi/actions/workflows/tests.yml) and [changelog](../CHANGELOG.md) for release-specific results.
 
 ## Troubleshooting
+
+### Connection diagnostics
+
+Use **Download diagnostics** in Home Assistant's REMI integration menu to share a small connection-health report. It contains cloud-read and alarm-read success, reported online/alive flags, history-read success and supported optional connection counters. It excludes account credentials, tokens, device IDs, names, addresses, schedules and raw API responses.
+
+Some REMIs supply a `dataBundle` with additional metrics. Two diagnostic sensors, disabled by default, expose a reported daily reconnection count and a reported clock shift in seconds. If the device omits a metric, its value stays unknown; absence is not zero. These values are reported by the device and are not an independent measurement of its connection.
+
+The download also includes known `*_s` values in seconds. `day_disconnection_time` remains a raw value with an unconfirmed unit; no duration sensor or conversion is invented for it. Unknown keys and non-numeric values are excluded. The device used for development did not provide this optional bundle, so decoding is covered by synthetic tests rather than a hardware validation of those metrics.
+
+### Common issues
 
 - **Cloud unavailable or expired login:** check Home Assistant's internet connection and reauthenticate when requested. The configured REMI selection is retained.
 - **Temperature changed after an update:** review the [corrected conversion](#temperature). Recorded history is not rewritten, and decimal display does not establish physical accuracy.

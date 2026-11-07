@@ -2,11 +2,11 @@
 
 [Back to the README](../README.md) · [Actions and usage](usage.md)
 
-The included **REMI card** brings everyday controls, schedules, sleep reports and timer profiles together. **0.5.1** improves the sleep view and requires **Home Assistant 2026.11.0 or newer**. The interface follows your Home Assistant language, with English and French included.
+The included **REMI card** brings everyday controls, schedules, sleep reports and timer profiles together. **0.5.2** adds display settings and keeps alarm commands attached to their current cloud identifiers. It requires **Home Assistant 2026.11.0 or newer**. The interface follows your Home Assistant language, with English and French included.
 
 ## Add the card
 
-1. [Install stable 0.5.1 or newer](usage.md#installation), restart Home Assistant and reload the browser page.
+1. [Install stable 0.5.2 or newer](usage.md#installation), restart Home Assistant and reload the browser page.
 2. Open the dashboard where you want to use REMI and choose **Edit dashboard**.
 3. Choose **Add card** and find **REMI** in the card picker.
 4. If you have several REMI devices, choose one in the visual editor.
@@ -18,7 +18,15 @@ The integration loads the bundled card resource automatically. You do not need a
 
 The card is updated with the integration. Its resource URL includes the integration version and a fingerprint of the bundled source, so source changes also invalidate the old cache. After an upgrade, restart Home Assistant and reload the browser or Companion app page. An already-open page keeps its loaded card until it is reloaded; the integration never forces a reload while you are editing a form.
 
-If you already use the card from 0.5.0 or its betas, keep your existing dashboard configuration. Updating to 0.5.1 preserves the card configuration and entity IDs; a page reload loads the updated resource. Pre-release versions do not need to be enabled for this release.
+If you already use the card from 0.5.0 or newer, keep your existing dashboard configuration. Updating to 0.5.2 preserves the card configuration and entity IDs; a page reload loads the updated resource. Pre-release versions do not need to be enabled for this release.
+
+## Choose what to display
+
+Open the card's visual editor to show or hide the face selector, each brightness control, temperature, connection status, Music and the Schedules, Sleep or Timers tabs. All options default to visible, so an existing card keeps its layout. Music starts collapsed.
+
+For a compact everyday card, keep the face and brightness controls and hide the secondary tabs you do not use. Hiding a section changes only this card; entities, schedules and device settings remain available elsewhere in Home Assistant. The main REMI tab is always available.
+
+The optional YAML keys are `show_face`, `show_brightness`, `show_face_brightness`, `show_temperature`, `show_connection`, `show_music`, `show_alarms`, `show_sleep` and `show_naps`. Each accepts `true` or `false`; no YAML is required when using the visual editor.
 
 ## Four tabs
 

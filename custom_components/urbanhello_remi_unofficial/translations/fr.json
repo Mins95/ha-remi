@@ -206,6 +206,12 @@
             "name": "Fuseau horaire"
           }
         }
+      },
+      "daily_reconnections": {
+        "name": "Reconnexions quotidiennes signalées"
+      },
+      "reported_clock_shift": {
+        "name": "Décalage d’horloge signalé"
       }
     },
     "binary_sensor": {
@@ -323,7 +329,7 @@
             "name": "Nom de l’alarme"
           },
           "event_id": {
-            "name": "Identifiant de l’alarme"
+            "name": "Identifiant cloud actuel de l’alarme"
           },
           "music_path": {
             "name": "Fichier musical"
@@ -374,7 +380,7 @@
             "name": "Nom de l’alarme"
           },
           "event_id": {
-            "name": "Identifiant de l’alarme"
+            "name": "Identifiant cloud actuel de l’alarme"
           },
           "music_path": {
             "name": "Fichier musical"
@@ -388,6 +394,9 @@
     "light": {
       "background_color": {
         "name": "Couleur de fond de l’application"
+      },
+      "physical_brightness": {
+        "name": "Éclairage"
       }
     },
     "media_player": {
@@ -787,6 +796,15 @@
     },
     "unknown_alarm_play_settings": {
       "message": "Enregistrez cette alarme dans l’application Rémi avant de modifier son bouton de lecture, afin de préserver ses autres réglages."
+    },
+    "invalid_brightness": {
+      "message": "La luminosité doit être comprise entre 0 et 255."
+    },
+    "device_unavailable": {
+      "message": "Rémi est indisponible. Actualisez son état avant de réessayer."
+    },
+    "alarm_identity_storage_invalid": {
+      "message": "Les identités enregistrées des alarmes Rémi n’ont pas pu être chargées de manière sûre."
     }
   },
   "selector": {

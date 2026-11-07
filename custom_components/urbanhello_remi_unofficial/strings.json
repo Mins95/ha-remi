@@ -206,6 +206,12 @@
             "name": "Time zone"
           }
         }
+      },
+      "daily_reconnections": {
+        "name": "Reported daily reconnections"
+      },
+      "reported_clock_shift": {
+        "name": "Reported clock shift"
       }
     },
     "binary_sensor": {
@@ -323,7 +329,7 @@
             "name": "Alarm name"
           },
           "event_id": {
-            "name": "Alarm ID"
+            "name": "Current cloud alarm ID"
           },
           "music_path": {
             "name": "Music file"
@@ -374,7 +380,7 @@
             "name": "Alarm name"
           },
           "event_id": {
-            "name": "Alarm ID"
+            "name": "Current cloud alarm ID"
           },
           "music_path": {
             "name": "Music file"
@@ -388,6 +394,9 @@
     "light": {
       "background_color": {
         "name": "App Background Color"
+      },
+      "physical_brightness": {
+        "name": "Light"
       }
     },
     "media_player": {
@@ -787,6 +796,15 @@
     },
     "unknown_alarm_play_settings": {
       "message": "Save this alarm in the REMI app before changing its Play button setting, so its other settings can be preserved."
+    },
+    "invalid_brightness": {
+      "message": "Brightness must be between 0 and 255."
+    },
+    "device_unavailable": {
+      "message": "REMI is unavailable. Refresh its status before trying again."
+    },
+    "alarm_identity_storage_invalid": {
+      "message": "The saved REMI alarm identities could not be loaded safely."
     }
   },
   "selector": {
