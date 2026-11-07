@@ -15,14 +15,17 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     UnitOfTemperature,
+    UnitOfTime,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity import EntityCategory
 
 from .const import DOMAIN, FACE_OBJECT_ID_TO_DEFINE, FACE_DEFINE_TO_NAME
 from .coordinator import RemiDataUpdateCoordinator
 from .entity import RemiEntity
 from .history_sensor import HISTORY_SENSOR_DESCRIPTIONS, RemiHistorySensor
+from .telemetry import parse_connection_telemetry
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -58,6 +61,19 @@ def _face_value(remi: dict[str, Any]) -> str | None:
 
 
 SENSOR_DESCRIPTIONS: tuple[RemiSensorEntityDescription, ...] = (
+    RemiSensorEntityDescription(
+        key="daily_reconnections", translation_key="daily_reconnections",
+        icon="mdi:wifi-refresh", entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda remi: parse_connection_telemetry(remi.get("dataBundle")).get("day_reconnection_count"),
+    ),
+    RemiSensorEntityDescription(
+        key="reported_clock_shift", translation_key="reported_clock_shift",
+        icon="mdi:clock-alert-outline", entity_category=EntityCategory.DIAGNOSTIC,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        entity_registry_enabled_default=False,
+        value_fn=lambda remi: parse_connection_telemetry(remi.get("dataBundle")).get("gettime_shift_s"),
+    ),
     RemiSensorEntityDescription(
         key="temperature",
         translation_key="temperature",
@@ -135,7 +151,7 @@ class RemiSensorEntity(RemiEntity, SensorEntity):
     @property
     def available(self) -> bool:
         """Live readings cannot be trusted when REMI explicitly reports offline."""
-        if self.entity_description.key in {"temperature", "rssi", "current_face"}:
+        if self.entity_description.key in {"temperature", "rssi", "current_face", "daily_reconnections", "reported_clock_shift"}:
             return self.device_available
         return super().available
 
