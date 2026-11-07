@@ -36,6 +36,30 @@ create_alarm:
           min: 0
           max: 100
           step: 1
+    brightness:
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          mode: slider
+    music_path:
+      selector:
+        text: {}
+    music_duration_minutes:
+      selector:
+        number:
+          min: 0
+          max: 1440
+          step: 1
+          mode: box
+          unit_of_measurement: min
+    play_button_enabled:
+      selector:
+        boolean: {}
+    remi_id:
+      selector:
+        text: {}
 update_alarm:
   fields:
     event_id:
@@ -72,6 +96,30 @@ update_alarm:
           min: 0
           max: 100
           step: 1
+    brightness:
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          mode: slider
+    music_path:
+      selector:
+        text: {}
+    music_duration_minutes:
+      selector:
+        number:
+          min: 0
+          max: 1440
+          step: 1
+          mode: box
+          unit_of_measurement: min
+    play_button_enabled:
+      selector:
+        boolean: {}
+    remi_id:
+      selector:
+        text: {}
 delete_alarm:
   fields:
     event_id:
@@ -79,3 +127,189 @@ delete_alarm:
       example: abc123XYZ
       selector:
         text: null
+    remi_id:
+      selector:
+        text: {}
+get_history:
+  fields:
+    remi_id:
+      selector:
+        text: {}
+    limit:
+      default: 2
+      selector:
+        number:
+          min: 1
+          max: 2
+          step: 1
+          mode: box
+list_naps:
+  fields:
+    remi_id:
+      selector:
+        text: {}
+create_nap:
+  fields:
+    remi_id:
+      selector:
+        text: {}
+    name:
+      selector:
+        text: {}
+      required: true
+    duration_minutes:
+      selector:
+        number:
+          min: 1
+          max: 1439
+          step: 1
+          mode: box
+          unit_of_measurement: min
+      required: true
+    face:
+      selector:
+        select:
+          options:
+          - 'off'
+          - awake
+          - sleepy
+          - semi_awake
+          - smiley
+          translation_key: alarm_face
+    brightness:
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          mode: slider
+          unit_of_measurement: '%'
+    sleep_aid:
+      selector:
+        boolean: {}
+    music_path_start:
+      selector:
+        text: {}
+    music_path_end:
+      selector:
+        text: {}
+    volume_start:
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          mode: slider
+          unit_of_measurement: '%'
+    volume_end:
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          mode: slider
+          unit_of_measurement: '%'
+    music_duration_start_minutes:
+      selector:
+        number:
+          min: 0
+          max: 1440
+          step: 1
+          mode: box
+          unit_of_measurement: min
+    music_duration_end_minutes:
+      selector:
+        number:
+          min: 0
+          max: 1440
+          step: 1
+          mode: box
+          unit_of_measurement: min
+update_nap:
+  fields:
+    nap_id:
+      required: true
+      selector:
+        text: {}
+    remi_id:
+      selector:
+        text: {}
+    name:
+      selector:
+        text: {}
+    duration_minutes:
+      selector:
+        number:
+          min: 1
+          max: 1439
+          step: 1
+          mode: box
+          unit_of_measurement: min
+    face:
+      selector:
+        select:
+          options:
+          - 'off'
+          - awake
+          - sleepy
+          - semi_awake
+          - smiley
+          translation_key: alarm_face
+    brightness:
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          mode: slider
+          unit_of_measurement: '%'
+    sleep_aid:
+      selector:
+        boolean: {}
+    music_path_start:
+      selector:
+        text: {}
+    music_path_end:
+      selector:
+        text: {}
+    volume_start:
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          mode: slider
+          unit_of_measurement: '%'
+    volume_end:
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          mode: slider
+          unit_of_measurement: '%'
+    music_duration_start_minutes:
+      selector:
+        number:
+          min: 0
+          max: 1440
+          step: 1
+          mode: box
+          unit_of_measurement: min
+    music_duration_end_minutes:
+      selector:
+        number:
+          min: 0
+          max: 1440
+          step: 1
+          mode: box
+          unit_of_measurement: min
+delete_nap:
+  fields:
+    nap_id:
+      required: true
+      selector:
+        text: {}
+    remi_id:
+      selector:
+        text: {}

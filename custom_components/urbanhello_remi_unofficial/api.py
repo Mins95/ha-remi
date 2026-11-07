@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from typing import Any
 
 import aiohttp
@@ -18,6 +19,9 @@ from .const import (
     API_USER_AGENT,
     DOMAIN,
 )
+from .history_api import RemiHistoryApiMixin
+from .media_api import RemiMediaApiMixin
+from .nap_api import RemiNapApiMixin
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,7 +38,7 @@ class _TransientApiError(RemiApiError):
     """A transient response that may only be retried for read operations."""
 
 
-class RemiApiClient:
+class RemiApiClient(RemiHistoryApiMixin, RemiMediaApiMixin, RemiNapApiMixin):
     """Client for the UrbanHello Remi Parse Server API."""
 
     def __init__(self, username: str, password: str, session: aiohttp.ClientSession, installation_id: str = "") -> None:
@@ -165,7 +169,19 @@ class RemiApiClient:
                         translation_key="api_http_error",
                         translation_placeholders={"status": str(status)},
                     )
-                return await resp.json()
+                try:
+                    data = await resp.json()
+                except ValueError as err:
+                    raise RemiApiError(
+                        translation_domain=DOMAIN,
+                        translation_key="api_invalid_response",
+                    ) from err
+                if not isinstance(data, dict):
+                    raise RemiApiError(
+                        translation_domain=DOMAIN,
+                        translation_key="api_invalid_response",
+                    )
+                return data
         # Release the response before logging in; concurrent expired reads share
         # one refreshed session instead of racing two logins against each other.
         if not retry_auth:
@@ -189,7 +205,9 @@ class RemiApiClient:
                 "_method": "GET",
             },
         )
-        results = data.get("results", [])
+        results = data.get("results") if isinstance(data, dict) else None
+        if not isinstance(results, list) or any(not isinstance(item, dict) for item in results):
+            raise RemiApiError(translation_domain=DOMAIN, translation_key="api_invalid_response")
         if not results:
             raise RemiApiError(
                 translation_domain=DOMAIN,
@@ -224,22 +242,45 @@ class RemiApiClient:
         return await self._request("GET", "/parse/config")
 
     async def get_events(self) -> list[dict[str, Any]]:
-        """Fetch all alarms/events for this Remi."""
-        data = await self._request(
-            "POST",
-            "/parse/classes/Event",
-            {
-                "where": {
-                    "remi": {
-                        "__type": "Pointer",
-                        "className": "Remi",
-                        "objectId": self._remi_id,
-                    }
-                },
-                "_method": "GET",
-            },
-        )
-        return data.get("results", [])
+        """Return a complete, validated alarm snapshot before registry cleanup.
+
+        Keyset pagination avoids skipping an existing alarm if an earlier page
+        changes during the read. A malformed or oversized result is an error,
+        never an empty snapshot that could remove the user's entities.
+        """
+        events: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        cursor: str | None = None
+        for _ in range(10):
+            where: dict[str, Any] = {"remi": {
+                "__type": "Pointer", "className": "Remi", "objectId": self._remi_id,
+            }}
+            if cursor is not None:
+                where["objectId"] = {"$gt": cursor}
+            data = await self._request("POST", "/parse/classes/Event", {
+                "where": where, "order": "objectId", "limit": 100, "_method": "GET",
+            })
+            page = data.get("results") if isinstance(data, dict) else None
+            if not isinstance(page, list) or len(page) > 100:
+                raise RemiApiError(translation_domain=DOMAIN, translation_key="api_invalid_response")
+            for event in page:
+                event_id = event.get("objectId") if isinstance(event, dict) else None
+                if not isinstance(event_id, str) or not event_id or event_id in seen:
+                    raise RemiApiError(translation_domain=DOMAIN, translation_key="api_invalid_response")
+                if cursor is not None and event_id <= cursor:
+                    raise RemiApiError(translation_domain=DOMAIN, translation_key="api_invalid_response")
+                owner = event.get("remi")
+                if owner is not None and not (
+                    isinstance(owner, dict) and owner.get("className") == "Remi"
+                    and owner.get("objectId") == self._remi_id
+                ):
+                    raise RemiApiError(translation_domain=DOMAIN, translation_key="api_wrong_device")
+                seen.add(event_id)
+                events.append(event)
+            if len(page) < 100:
+                return events
+            cursor = max(event["objectId"] for event in page)
+        raise RemiApiError(translation_domain=DOMAIN, translation_key="api_invalid_response")
 
     async def create_event(self, event_data: dict[str, Any]) -> dict[str, Any]:
         """Create a new alarm event."""
@@ -255,8 +296,16 @@ class RemiApiClient:
 
     async def update_event(self, event_id: str, fields: dict[str, Any]) -> dict[str, Any]:
         """Update an existing alarm event."""
+        self._validate_object_id(event_id)
         return await self._request("PUT", f"/parse/classes/Event/{event_id}", fields)
 
     async def delete_event(self, event_id: str) -> None:
         """Delete an alarm event."""
+        self._validate_object_id(event_id)
         await self._request("DELETE", f"/parse/classes/Event/{event_id}")
+
+    @staticmethod
+    def _validate_object_id(object_id: str) -> None:
+        """Keep object identifiers inside their intended API path segment."""
+        if not isinstance(object_id, str) or re.fullmatch(r"[A-Za-z0-9_-]{1,128}", object_id) is None:
+            raise RemiApiError(translation_domain=DOMAIN, translation_key="api_invalid_response")

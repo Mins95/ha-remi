@@ -15,15 +15,34 @@
         "data": {
           "remi_id": "Appareil"
         }
+      },
+      "reauth_confirm": {
+        "title": "Se reconnecter à UrbanHello",
+        "description": "Mettez à jour les identifiants du compte auquel appartient ce Rémi.",
+        "data": {
+          "username": "Identifiant",
+          "password": "Mot de passe"
+        }
+      },
+      "reconfigure": {
+        "title": "Modifier les identifiants UrbanHello",
+        "description": "Le Rémi sélectionné et ses entités seront conservés.",
+        "data": {
+          "username": "Identifiant",
+          "password": "Mot de passe"
+        }
       }
     },
     "error": {
       "invalid_auth": "Identifiant ou mot de passe incorrect.",
       "cannot_connect": "Impossible de joindre le serveur Remi.",
-      "unknown": "Une erreur inattendue s’est produite."
+      "unknown": "Une erreur inattendue s’est produite.",
+      "device_not_in_account": "Ce Rémi n’appartient pas au compte renseigné."
     },
     "abort": {
-      "already_configured": "Ce Remi est déjà configuré."
+      "already_configured": "Ce Remi est déjà configuré.",
+      "reauth_successful": "La reconnexion à UrbanHello a réussi.",
+      "reconfigure_successful": "Les identifiants UrbanHello ont été modifiés."
     }
   },
   "entity": {
@@ -71,6 +90,121 @@
           "sleepy": "Endormi",
           "semi_awake": "À moitié réveillé",
           "smiley": "Souriant"
+        }
+      },
+      "sleep_duration": {
+        "name": "Durée du dernier sommeil",
+        "state_attributes": {
+          "source": {
+            "name": "Source",
+            "state": {
+              "cloud_history": "Historique cloud"
+            }
+          },
+          "log_timestamp": {
+            "name": "Date du bilan"
+          },
+          "report_age_days": {
+            "name": "Ancienneté du bilan en jours"
+          },
+          "stale": {
+            "name": "Bilan ancien ou non daté"
+          },
+          "timezone": {
+            "name": "Fuseau horaire"
+          }
+        }
+      },
+      "sleep_score": {
+        "name": "Score du dernier sommeil",
+        "state_attributes": {
+          "source": {
+            "name": "Source",
+            "state": {
+              "cloud_history": "Historique cloud"
+            }
+          },
+          "log_timestamp": {
+            "name": "Date du bilan"
+          },
+          "report_age_days": {
+            "name": "Ancienneté du bilan en jours"
+          },
+          "stale": {
+            "name": "Bilan ancien ou non daté"
+          },
+          "timezone": {
+            "name": "Fuseau horaire"
+          }
+        }
+      },
+      "sleep_bedtime": {
+        "name": "Dernière heure de coucher",
+        "state_attributes": {
+          "source": {
+            "name": "Source",
+            "state": {
+              "cloud_history": "Historique cloud"
+            }
+          },
+          "log_timestamp": {
+            "name": "Date du bilan"
+          },
+          "report_age_days": {
+            "name": "Ancienneté du bilan en jours"
+          },
+          "stale": {
+            "name": "Bilan ancien ou non daté"
+          },
+          "timezone": {
+            "name": "Fuseau horaire"
+          }
+        }
+      },
+      "sleep_wake_time": {
+        "name": "Dernière heure de réveil",
+        "state_attributes": {
+          "source": {
+            "name": "Source",
+            "state": {
+              "cloud_history": "Historique cloud"
+            }
+          },
+          "log_timestamp": {
+            "name": "Date du bilan"
+          },
+          "report_age_days": {
+            "name": "Ancienneté du bilan en jours"
+          },
+          "stale": {
+            "name": "Bilan ancien ou non daté"
+          },
+          "timezone": {
+            "name": "Fuseau horaire"
+          }
+        }
+      },
+      "sleep_report_timestamp": {
+        "name": "Date du bilan de sommeil",
+        "state_attributes": {
+          "source": {
+            "name": "Source",
+            "state": {
+              "cloud_history": "Historique cloud"
+            }
+          },
+          "log_timestamp": {
+            "name": "Date du bilan"
+          },
+          "report_age_days": {
+            "name": "Ancienneté du bilan en jours"
+          },
+          "stale": {
+            "name": "Bilan ancien ou non daté"
+          },
+          "timezone": {
+            "name": "Fuseau horaire"
+          }
         }
       }
     },
@@ -149,7 +283,7 @@
     },
     "switch": {
       "alarm": {
-        "name": "{name}",
+        "name": "{time} · {name}",
         "state_attributes": {
           "time": {
             "name": "Heure"
@@ -184,11 +318,23 @@
               "semi_awake": "À moitié réveillé",
               "smiley": "Souriant"
             }
+          },
+          "alarm_name": {
+            "name": "Nom de l’alarme"
+          },
+          "event_id": {
+            "name": "Identifiant de l’alarme"
+          },
+          "music_path": {
+            "name": "Fichier musical"
+          },
+          "play_button_enabled": {
+            "name": "Bouton de lecture activé"
           }
         }
       },
       "unnamed_alarm": {
-        "name": "Alarme {name}",
+        "name": "{time} · Alarme",
         "state_attributes": {
           "time": {
             "name": "Heure"
@@ -223,6 +369,18 @@
               "semi_awake": "À moitié réveillé",
               "smiley": "Souriant"
             }
+          },
+          "alarm_name": {
+            "name": "Nom de l’alarme"
+          },
+          "event_id": {
+            "name": "Identifiant de l’alarme"
+          },
+          "music_path": {
+            "name": "Fichier musical"
+          },
+          "play_button_enabled": {
+            "name": "Bouton de lecture activé"
           }
         }
       }
@@ -230,6 +388,11 @@
     "light": {
       "background_color": {
         "name": "Couleur de fond de l’application"
+      }
+    },
+    "media_player": {
+      "music_player": {
+        "name": "Musique"
       }
     }
   },
@@ -256,11 +419,31 @@
         },
         "face_define": {
           "name": "Visage",
-          "description": "Visage à afficher à l’heure de l’alarme."
+          "description": "Visage affiché à l’heure de l’alarme."
         },
         "volume": {
           "name": "Volume",
           "description": "Volume propre à cette alarme, de 0 à 100."
+        },
+        "brightness": {
+          "name": "Luminosité",
+          "description": "Luminosité à l’heure de l’alarme (0–100)."
+        },
+        "music_path": {
+          "name": "Fichier musical",
+          "description": "Chemin relatif d’un fichier stocké sur Rémi ; vide pour retirer la musique."
+        },
+        "music_duration_minutes": {
+          "name": "Durée de la musique",
+          "description": "Durée en minutes ; 0 correspond à une lecture unique dans l’application."
+        },
+        "play_button_enabled": {
+          "name": "Bouton de lecture activé",
+          "description": "Activer le bouton physique de lecture après cette alarme. Les autres réglages sont conservés."
+        },
+        "remi_id": {
+          "name": "Identifiant du Rémi",
+          "description": "Facultatif lorsqu’un seul Rémi est chargé dans Home Assistant."
         }
       }
     },
@@ -290,11 +473,31 @@
         },
         "face_define": {
           "name": "Visage",
-          "description": "Visage à afficher à l’heure de l’alarme."
+          "description": "Visage affiché à l’heure de l’alarme."
         },
         "volume": {
           "name": "Volume",
           "description": "Volume propre à cette alarme, de 0 à 100."
+        },
+        "brightness": {
+          "name": "Luminosité",
+          "description": "Luminosité à l’heure de l’alarme (0–100)."
+        },
+        "music_path": {
+          "name": "Fichier musical",
+          "description": "Chemin relatif d’un fichier stocké sur Rémi ; vide pour retirer la musique."
+        },
+        "music_duration_minutes": {
+          "name": "Durée de la musique",
+          "description": "Durée en minutes ; 0 correspond à une lecture unique dans l’application."
+        },
+        "play_button_enabled": {
+          "name": "Bouton de lecture activé",
+          "description": "Activer le bouton physique de lecture après cette alarme. Les autres réglages sont conservés."
+        },
+        "remi_id": {
+          "name": "Identifiant du Rémi",
+          "description": "Facultatif lorsqu’un seul Rémi est chargé dans Home Assistant."
         }
       }
     },
@@ -305,6 +508,160 @@
         "event_id": {
           "name": "Identifiant de l’alarme",
           "description": "L’objectId de l’alarme concernée."
+        },
+        "remi_id": {
+          "name": "Identifiant du Rémi",
+          "description": "Facultatif lorsqu’un seul Rémi est chargé dans Home Assistant."
+        }
+      }
+    },
+    "get_history": {
+      "name": "Consulter l’historique du sommeil et de l’environnement",
+      "description": "Renvoie jusqu’à deux bilans cloud récents, les estimations de sommeil et les courbes d’environnement. Les bilans peuvent être anciens : vérifiez log_timestamp et stale. Les heures des échantillons suivent la grille midi-midi de l’application ; leurs dates absolues ne sont pas établies. Le bruit et la lumière n’ont pas d’unité physique étalonnée.",
+      "fields": {
+        "limit": {
+          "name": "Bilans",
+          "description": "Nombre de bilans récents à renvoyer (1 ou 2)."
+        },
+        "remi_id": {
+          "name": "Identifiant du Rémi",
+          "description": "Facultatif lorsqu’un seul Rémi est chargé dans Home Assistant."
+        }
+      }
+    },
+    "list_naps": {
+      "name": "Lister les profils de minuteur",
+      "description": "Lire les profils enregistrés dans le cloud. Cette action ne fournit pas de compte à rebours en cours.",
+      "fields": {
+        "remi_id": {
+          "name": "Identifiant du REMI",
+          "description": "Facultatif lorsqu’une seule intégration REMI est chargée."
+        }
+      }
+    },
+    "create_nap": {
+      "name": "Créer un profil de minuteur",
+      "description": "Créer l’un des cinq profils enregistrés du REMI. Utilisez son bouton physique pour le lancer.",
+      "fields": {
+        "remi_id": {
+          "name": "Identifiant du REMI",
+          "description": "Facultatif lorsqu’une seule intégration REMI est chargée."
+        },
+        "name": {
+          "name": "Nom",
+          "description": "Nom du profil enregistré."
+        },
+        "duration_minutes": {
+          "name": "Durée du minuteur",
+          "description": "Durée en minutes. Le profil se lance avec le bouton physique du REMI."
+        },
+        "face": {
+          "name": "Visage",
+          "description": "Visage affiché pendant le minuteur."
+        },
+        "brightness": {
+          "name": "Luminosité de la veilleuse",
+          "description": "Luminosité de 0 à 100 %."
+        },
+        "sleep_aid": {
+          "name": "Aide à l’endormissement",
+          "description": "Activer l’aide à l’endormissement du profil."
+        },
+        "music_path_start": {
+          "name": "Musique au début",
+          "description": "Chemin relatif d’un fichier déjà présent sur REMI ; vide pour retirer la musique."
+        },
+        "music_path_end": {
+          "name": "Musique à la fin",
+          "description": "Chemin relatif d’un fichier déjà présent sur REMI ; vide pour retirer la musique."
+        },
+        "volume_start": {
+          "name": "Volume de la musique au début",
+          "description": "Volume de 0 à 100 %."
+        },
+        "volume_end": {
+          "name": "Volume de la musique à la fin",
+          "description": "Volume de 0 à 100 %."
+        },
+        "music_duration_start_minutes": {
+          "name": "Durée de la musique au début",
+          "description": "Minutes ; 0 conserve le réglage de lecture simple de l’application."
+        },
+        "music_duration_end_minutes": {
+          "name": "Durée de la musique à la fin",
+          "description": "Minutes ; 0 conserve le réglage de lecture simple de l’application."
+        }
+      }
+    },
+    "update_nap": {
+      "name": "Modifier un profil de minuteur",
+      "description": "Modifier uniquement les champs renseignés d’un profil enregistré.",
+      "fields": {
+        "remi_id": {
+          "name": "Identifiant du REMI",
+          "description": "Facultatif lorsqu’une seule intégration REMI est chargée."
+        },
+        "nap_id": {
+          "name": "Identifiant du profil",
+          "description": "Identifiant obtenu avec l’action Lister les profils de minuteur."
+        },
+        "name": {
+          "name": "Nom",
+          "description": "Nom du profil enregistré."
+        },
+        "duration_minutes": {
+          "name": "Durée du minuteur",
+          "description": "Durée en minutes. Le profil se lance avec le bouton physique du REMI."
+        },
+        "face": {
+          "name": "Visage",
+          "description": "Visage affiché pendant le minuteur."
+        },
+        "brightness": {
+          "name": "Luminosité de la veilleuse",
+          "description": "Luminosité de 0 à 100 %."
+        },
+        "sleep_aid": {
+          "name": "Aide à l’endormissement",
+          "description": "Activer l’aide à l’endormissement du profil."
+        },
+        "music_path_start": {
+          "name": "Musique au début",
+          "description": "Chemin relatif d’un fichier déjà présent sur REMI ; vide pour retirer la musique."
+        },
+        "music_path_end": {
+          "name": "Musique à la fin",
+          "description": "Chemin relatif d’un fichier déjà présent sur REMI ; vide pour retirer la musique."
+        },
+        "volume_start": {
+          "name": "Volume de la musique au début",
+          "description": "Volume de 0 à 100 %."
+        },
+        "volume_end": {
+          "name": "Volume de la musique à la fin",
+          "description": "Volume de 0 à 100 %."
+        },
+        "music_duration_start_minutes": {
+          "name": "Durée de la musique au début",
+          "description": "Minutes ; 0 conserve le réglage de lecture simple de l’application."
+        },
+        "music_duration_end_minutes": {
+          "name": "Durée de la musique à la fin",
+          "description": "Minutes ; 0 conserve le réglage de lecture simple de l’application."
+        }
+      }
+    },
+    "delete_nap": {
+      "name": "Supprimer un profil de minuteur",
+      "description": "Supprimer un profil enregistré appartenant au REMI sélectionné.",
+      "fields": {
+        "nap_id": {
+          "name": "Identifiant du profil",
+          "description": "Identifiant obtenu avec l’action Lister les profils de minuteur."
+        },
+        "remi_id": {
+          "name": "Identifiant du REMI",
+          "description": "Facultatif lorsqu’une seule intégration REMI est chargée."
         }
       }
     }
@@ -357,6 +714,63 @@
     },
     "cannot_refresh_firmware": {
       "message": "Impossible d’actualiser l’état du firmware REMI"
+    },
+    "history_request_failed": {
+      "message": "Impossible de lire l’historique de REMI. Réessayez plus tard."
+    },
+    "invalid_music_path": {
+      "message": "Utilisez un chemin de fichier relatif sur REMI, sans URL, suffixe de commande ni dossier parent."
+    },
+    "missing_remi_target": {
+      "message": "Aucun appareil REMI n’est sélectionné."
+    },
+    "invalid_profile_id": {
+      "message": "L’identifiant du profil est invalide."
+    },
+    "invalid_cloud_response": {
+      "message": "Le cloud a renvoyé des données incomplètes ou incohérentes. Aucune valeur de remplacement n’a été supposée."
+    },
+    "unsupported_media_command": {
+      "message": "Cette commande musicale n’est pas prise en charge."
+    },
+    "unsupported_media_selection": {
+      "message": "Sélectionnez un fichier musical dans la bibliothèque de ce REMI."
+    },
+    "music_track_not_found": {
+      "message": "Le fichier sélectionné est absent de la bibliothèque musicale cloud de ce REMI."
+    },
+    "music_track_not_selected": {
+      "message": "Sélectionnez un fichier avant de lancer la lecture ou de changer de piste."
+    },
+    "music_track_boundary": {
+      "message": "Il n’y a pas de piste voisine dans ce dossier."
+    },
+    "invalid_media_volume": {
+      "message": "Le volume doit être un nombre compris entre 0 et 1."
+    },
+    "invalid_nap_value": {
+      "message": "Un champ du profil de minuteur est invalide. Vérifiez son type et sa plage autorisée."
+    },
+    "nap_not_found": {
+      "message": "Ce profil de minuteur n’appartient pas au REMI sélectionné ou n’existe plus."
+    },
+    "nap_profile_limit": {
+      "message": "REMI accepte jusqu’à cinq profils de minuteur. Supprimez-en un avant d’en créer un autre."
+    },
+    "empty_nap_update": {
+      "message": "Renseignez au moins un champ du profil à modifier."
+    },
+    "nap_target_not_unique": {
+      "message": "Précisez l’identifiant du REMI lorsque la cible ne peut pas être déterminée de façon unique."
+    },
+    "reauth_required": {
+      "message": "Les identifiants UrbanHello doivent être mis à jour"
+    },
+    "api_invalid_response": {
+      "message": "UrbanHello a renvoyé des données incomplètes ou incohérentes"
+    },
+    "unknown_alarm_play_settings": {
+      "message": "Enregistrez cette alarme dans l’application Rémi avant de modifier son bouton de lecture, afin de préserver ses autres réglages."
     }
   },
   "selector": {

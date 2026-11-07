@@ -26,6 +26,8 @@ def coordinator(hass, mock_api_client):
     coord.data = {"remi": MOCK_REMI_DATA, "events": list(MOCK_EVENT_DATA)}
     coord.remi = MOCK_REMI_DATA
     coord.events = list(MOCK_EVENT_DATA)
+    coord.events_available = True
+    coord.last_update_success = True
     coord.async_request_refresh = AsyncMock()
     coord.async_add_listener = MagicMock(return_value=lambda: None)
     return coord

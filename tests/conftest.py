@@ -93,6 +93,11 @@ def mock_api_client() -> MagicMock:
     client.create_event = AsyncMock(return_value={"objectId": "new_event_id"})
     client.update_event = AsyncMock(return_value={})
     client.delete_event = AsyncMock(return_value=None)
+    client.get_history_logs = AsyncMock(return_value=[])
+    client.get_history_sleep_info = AsyncMock(return_value=[])
+    client.get_history_file = AsyncMock(return_value=b"")
+    client.get_music_library = AsyncMock(return_value=[])
+    client.get_naps = AsyncMock(return_value=[])
     return client
 
 
