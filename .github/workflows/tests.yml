@@ -51,3 +51,6 @@ jobs:
 
       - name: Test bundled card and loader
         run: node --test tests/*.test.mjs
+
+      - name: Build and validate installable release ZIP
+        run: python scripts/build_release.py

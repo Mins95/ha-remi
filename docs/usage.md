@@ -4,24 +4,85 @@
 
 This guide covers the public Mins95 integration, its Home Assistant actions and changes from earlier versions. It requires an UrbanHello account and internet access. Example entity IDs and alarm IDs are placeholders: use the IDs from your own installation.
 
-**0.5.0-beta.2 requires Home Assistant 2026.11.0 or newer.** It is an opt-in beta; 0.4.0 remains the latest stable release. Start with the [included dashboard card](card.md) for a visual interface to the features below.
+**Stable 0.5.0 requires Home Assistant 2026.11.0 or newer.** Pre-release versions do not need to be enabled. Start with the [included dashboard card](card.md) for a visual interface to the features below.
+
+## Installation
+
+You need a REMI already configured in the official app, its UrbanHello account credentials, and internet access from Home Assistant. Development and release checks target **Home Assistant 2026.11.0 exactly**.
+
+### Marketplace
+
+[Open this repository in Marketplace](https://my.home-assistant.io/redirect/marketplace_repository/?owner=Mins95&repository=ha-remi&category=integration).
+
+1. Open **Settings → Marketplace → Add from link**.
+2. Enter `https://github.com/Mins95/ha-remi`.
+3. Connect your GitHub account if Marketplace requests it for custom repositories.
+4. Open **Remi (Mins95)** and install stable **0.5.0** or newer.
+5. Restart Home Assistant, then configure the integration below.
+
+See the [official Marketplace instructions](https://www.home-assistant.io/integrations/marketplace/#custom-repositories).
+
+### HACS
+
+[Open this repository in HACS](https://my.home-assistant.io/redirect/hacs_repository/?owner=Mins95&repository=ha-remi&category=integration).
+
+Add `https://github.com/Mins95/ha-remi` under **Custom repositories**, choose **Integration**, install stable **0.5.0** or newer and restart Home Assistant. **Show beta versions** is not required. The same Home Assistant 2026.11.0 minimum applies.
+
+### Manual installation
+
+1. Download **[urbanhello_remi_unofficial.zip](https://github.com/Mins95/ha-remi/releases/latest/download/urbanhello_remi_unofficial.zip)** from the latest stable release. This packaged asset is available from 0.5.0.
+2. Create `config/custom_components/urbanhello_remi_unofficial/` if it does not exist.
+3. Extract the ZIP into that directory. Its root contains `manifest.json`, `www/`, `translations/` and the integration's Python files, so the result must include `config/custom_components/urbanhello_remi_unofficial/manifest.json`.
+4. Restart Home Assistant. For a new installation, continue with configuration below; for an update, keep the existing configured integration and reload the browser or Companion app page.
+
+The ZIP contains the integration files directly, without a parent `custom_components` directory. Do not extract it directly into `config/custom_components/`.
+
+### Configure REMI
+
+1. Open **Settings → Devices & services → Add integration**.
+2. Search for **Remi**.
+3. Enter the username and password used in the UrbanHello app.
+4. Select the REMI to configure if your account contains several devices.
+
+Then [add the REMI card](card.md) through your dashboard's card picker. No separate frontend download or YAML is required.
+
+**Already using another REMI repository?** Both forks provide `urbanhello_remi_unofficial`. Do not delete the configured integration just to change the installed code: Marketplace's **Delete and uninstall** also removes devices and entities. Read [existing installations and repository changes](#existing-installations-and-repository-changes) first.
 
 ## Everyday controls
 
 Open **Settings → Devices & services → Remi**, then select your device, or add the REMI card to your dashboard. Its entities also work in standard Home Assistant cards and automations.
 
-| Setting | Range or values | Behavior |
-| --- | --- | --- |
-| Brightness | Integer 0–100 | Upper light; 0 turns it off |
-| Night face brightness | Integer 1–10 | Face brightness in darkness |
-| Volume | 0–100 | Speaker volume |
-| Noise notification threshold | 0–250 | Threshold used for sound notifications |
-| Clock face | `off`, `awake`, `sleepy`, `semi_awake`, `smiley` | Displayed expression |
-| Clock format | `12h`, `24h` | Clock display format |
-| Music mode | `normal`, `single_track`, `repeat_track`, `repeat_playlist` | Playback repeat behavior |
-| App background color | RGB color | Color associated with REMI in the official app |
+| Setting | Entity type | Range or values | Behavior |
+| --- | --- | --- | --- |
+| Brightness | Number | Integer 0–100 | Upper light; 0 turns it off |
+| Night face brightness | Number | Integer 1–10 | Face brightness in darkness |
+| Volume | Number | 0–100 | Speaker volume |
+| Noise notification threshold | Number | 0–250 | Threshold used for sound notifications |
+| Clock face | Select | `off`, `awake`, `sleepy`, `semi_awake`, `smiley` | Displayed expression |
+| Clock format | Select | `12h`, `24h` | Clock display format |
+| Music mode | Select | `normal`, `single_track`, `repeat_track`, `repeat_playlist` | Playback repeat behavior |
+| App background color | RGB light | RGB color | Official app background; not a physical multicolor light |
+| Each alarm | Switch | On / Off | Enable or disable that schedule |
+| Each alarm time | Time | Hours and minutes | Schedule time in REMI's time zone |
+| Music player | Media player | Files associated with REMI | Library, playback commands, volume and repeat |
 
-The interface translates supported labels into English or French according to your Home Assistant language. Use the raw codes above in YAML and templates. Changing your interface language does not change these codes.
+The tables use English display names. Entity names follow Home Assistant's configured language and refresh when the integration reloads; menus and state labels follow your interface language. English and French are included. Existing entity IDs and user-assigned names are preserved during ordinary updates. Use the raw codes above in YAML and templates. Changing your interface language does not change these codes.
+
+| Information | Entity type | Purpose |
+| --- | --- | --- |
+| Temperature | Sensor | Degrees Celsius, retaining decimal values |
+| Current face | Sensor | Reported clock face |
+| Firmware version | Sensor | Installed firmware |
+| Online / Alive | Binary sensors | Connection and activity reported by REMI |
+| Firmware update available | Binary sensor | Update indication or target assigned to this device |
+| Check firmware status | Button | Refresh firmware information; does not install an update |
+| Wi-Fi signal | Sensor | RSSI in dBm; disabled by default |
+| IP address | Sensor | Reported address; disabled by default |
+| Last sleep duration / score | Sensors | Estimates from the latest available cloud report |
+| Last bedtime / wake-up time | Sensors | Clock times from that report |
+| Sleep report date | Timestamp sensor | Report date, which may be older than last night |
+
+Missing or invalid measurements remain unknown. Sleep reports include their age; they do not replace live device readings.
 
 ### Brightness
 
@@ -68,7 +129,7 @@ data:
 
 ### Music player
 
-Expand **Music** in the REMI card to reveal its controls. The section is collapsed by default in beta.2 to keep the main view compact.
+Expand **Music** in the REMI card to reveal its controls. The section is collapsed by default to keep the main view compact.
 
 The separate media player browses the cloud library associated with the selected REMI. Choose a track from its media browser to play an existing file. The integration does not upload files, stream arbitrary URLs or expose baby monitor audio.
 
@@ -82,7 +143,7 @@ The separate media player browses the cloud library associated with the selected
 | Volume | Sets speaker volume |
 | Repeat | Off, one track or all tracks; the separate music-mode selector also exposes single-track mode |
 
-**Playback state stays unknown.** A cloud-selected path does not confirm that the speaker is playing, paused or stopped. The player does not manufacture a duration or playback position. Commands are implemented from the app protocol, but their physical effect remains to be validated in this beta.
+**Playback state stays unknown.** A cloud-selected path does not confirm that the speaker is playing, paused or stopped. The player does not manufacture a duration or playback position. Commands are implemented from the app protocol, but their physical effect remains to be validated on a device.
 
 If the library is empty, check the tracks available in the official app. A missing selection raises a clear error; Play does not guess a file.
 
@@ -292,6 +353,20 @@ To edit a profile, get its `nap_id` with `list_naps` and supply only the fields 
 
 <a id="upgrading-from-030"></a>
 
+### 0.5.0: stable release
+
+Install **0.5.0** through the normal Marketplace or HACS update process. It requires **Home Assistant 2026.11.0 or newer**; enabling pre-releases or beta versions is not necessary.
+
+**From 0.5.0-beta.1 or 0.5.0-beta.2:** update the integration, restart Home Assistant and reload the browser or Companion app page. Existing entities, custom names and dashboard card configurations are retained. The bundled card resource updates automatically; do not add a duplicate resource or recreate the card. You can disable pre-release updates if you want to receive only stable releases.
+
+**From 0.4.0:** existing IDs and action inputs remain supported. The update adds the bundled card, a music player, sleep reports, environmental charts and stored timer profiles. Existing dashboards are unchanged until you [add the REMI card](card.md). Alarm switches include their time in the default name while preserving user-assigned names.
+
+**From an earlier version or another repository:** review the [0.4.0 state mapping](#040-translated-interface-and-stable-state-codes), [earlier entity changes](#earlier-entity-and-behavior-changes) and [repository-change guidance](#existing-installations-and-repository-changes).
+
+The [music](#music-player), [history](#sleep-and-environmental-history) and [timer](#timer-profiles) limits still apply. A stable release does not add firmware installation, baby monitor audio or a command to start the physical timer.
+
+The following sections describe earlier releases as originally published.
+
 ### 0.5.0-beta.2: simpler everyday controls
 
 The card's main tab now focuses on the face display on/off control, **Awake/Sleepy** choices and brightness. Music is collapsed by default, making the card shorter. Turning the face display off does not power down REMI; turning it on restores the last known non-off face in the card, with Awake as the fallback.
@@ -411,8 +486,22 @@ An explicitly offline or inactive REMI makes live temperature, signal, face and 
 
 Commands, including alarm creation and deletion, are not automatically retried after these failures because the server may already have applied them. Check the resulting state before repeating an action manually. Reauthentication retains the selected REMI, and alarm action handlers resolve the currently loaded integration after a reload.
 
-Earlier installation checks on Home Assistant 2026.11.0 with firmware 332 confirmed corrected live temperature, device-specific firmware status, weekday display and alarm time entities while retaining existing IDs and schedules. Those checks do not establish physical validation of the beta's new music controls, timer behavior or night face brightness.
+Earlier installation checks on Home Assistant 2026.11.0 with firmware 332 confirmed corrected live temperature, device-specific firmware status, weekday display and alarm time entities while retaining existing IDs and schedules. Those checks do not establish physical validation of music commands, timer behavior or night face brightness.
 
 Automated tests cover cloud responses, validation, command payloads and Home Assistant actions. Consult the [current workflow results](https://github.com/Mins95/ha-remi/actions/workflows/tests.yml) and [changelog](../CHANGELOG.md) for release-specific results.
+
+## Troubleshooting
+
+- **Cloud unavailable or expired login:** check Home Assistant's internet connection and reauthenticate when requested. The configured REMI selection is retained.
+- **Temperature changed after an update:** review the [corrected conversion](#temperature). Recorded history is not rewritten, and decimal display does not establish physical accuracy.
+- **Firmware alert without an install action:** the check is read-only; follow the [firmware instructions](#firmware-status).
+- **A face or music automation stopped working:** use the [language-independent state codes](#040-translated-interface-and-stable-state-codes).
+- **An old brightness or Night Light entity disappeared:** follow the [entity migration guide](#earlier-entity-and-behavior-changes).
+- **The card is missing or still shows its old layout:** restart after installing the update, reload the page and see [card troubleshooting](card.md#troubleshooting).
+- **Sleep data is old, charts are empty or the library has no tracks:** check the report date and the data available in the official app. The integration cannot create missing reports or files.
+
+The cloud API may change independently of this integration. To report an issue, include the integration version, Home Assistant version and a redacted description of the failure in [GitHub issues](https://github.com/Mins95/ha-remi/issues). Do not include account credentials or session tokens.
+
+For test commands and contribution guidance, see [Development](development.md).
 
 [Back to the README](../README.md)

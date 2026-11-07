@@ -1,6 +1,6 @@
 {
   "analysis_date": "2026-11-07",
-  "scope": "Interoperability findings for live readings, schedules, cloud music, sleep reports and stored timer profiles. Device writes for beta features are verified with simulated API responses, not physical playback or timer execution.",
+  "scope": "Interoperability findings for live readings, schedules, cloud music, sleep reports and stored timer profiles. Device writes for the 0.5 features are verified with simulated API responses, not physical playback or timer execution.",
   "source": {
     "package": "com.app.urbanhello",
     "version_name": "3.4.23",
