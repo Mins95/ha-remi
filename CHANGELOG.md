@@ -1,3 +1,24 @@
+## 0.5.0 — Carte Rémi et fonctions cloud, version stable (2026-11-07)
+
+**Home Assistant 2026.11.0 minimum.** Installer la mise à jour, redémarrer
+Home Assistant puis recharger la page ou l’application Companion. Depuis
+0.4.0 ou les bêtas 0.5.0, conserver l’intégration et la carte existantes :
+les identifiants d’entités et la configuration du tableau de bord sont préservés.
+
+- Passage de la série 0.5.0 en version stable, disponible sans activer les préversions dans Marketplace ou HACS.
+- Carte intégrée avec quatre onglets : Rémi, Horaires, Sommeil et Minuteurs. Commande Allumé/Éteint du visage, choix directs Réveillé/Endormi, musique repliée par défaut et mises à jour automatiques des ressources.
+- Alarmes avec horaires lisibles, édition de la luminosité et des paramètres musicaux ; lecteur musical, bibliothèque et cinq profils de minuteur enregistrés.
+- Bilans de sommeil datés et courbes de température, bruit et lumière à la demande ; température en direct avec décimales.
+- Fiabilité du compte, des lectures cloud et de la détection des entités conservée depuis les bêtas ; interface française et anglaise selon Home Assistant.
+- README raccourci avec une capture réelle de la carte, badge de téléchargements et guides détaillés pour l’installation, les actions, les migrations et le développement.
+- Archive ZIP de l’intégration générée et contrôlée avant publication, utilisée par Marketplace et HACS. Le compteur GitHub suit les téléchargements de ces archives, sans reprendre les anciens téléchargements de sources.
+
+Les limites du protocole restent documentées : le cloud ne confirme pas la
+lecture audio et peut publier des bilans anciens ; les minuteurs se démarrent
+avec le bouton du Rémi. La mise à jour du firmware et l’audio du babyphone
+ne sont pas fournis. La validation des commandes sur un appareil physique
+reste distincte des tests automatisés sous Home Assistant 2026.11.0.
+
 ## 0.5.0-beta.2 — Commandes du visage simplifiées (2026-11-07)
 
 - Onglet « Rémi » plus compact, avec une commande pour allumer ou éteindre l’affichage du visage et deux choix directs : « Réveillé » et « Endormi ».
@@ -42,7 +63,7 @@ musicaux deviennent des codes indépendants de la langue. Les menus affichent
 toujours leur traduction. Dans les appels `select.select_option`, les modèles et
 les conditions portant sur ces états, remplacer les anciens libellés comme
 `Awake`, `Sleepy` ou `Repeat playlist` par `awake`, `sleepy` ou `repeat_playlist`.
-La liste complète figure dans [le guide de migration](docs/usage.md#upgrading-from-030).
+La liste complète figure dans [le guide de migration](docs/usage.md#040-translated-interface-and-stable-state-codes).
 Les constantes `FACE_*` des actions d'alarme restent acceptées.
 
 ## 0.3.0 — Fork Mins95 (2026-11-07)
