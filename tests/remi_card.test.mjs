@@ -35,7 +35,7 @@ globalThis.document = {
 };
 const source = await readFile(new URL("../custom_components/urbanhello_remi_unofficial/www/remi-card.js", import.meta.url), "utf8");
 const cardModule = await import(`data:text/javascript;base64,${Buffer.from(source).toString("base64")}`);
-const { DOMAIN, UrbanhelloRemiCard, discoverRemiDevices, indexEntities, makeAlarmPayload, makeNapPayload, serviceRequest } = cardModule;
+const { DOMAIN, UrbanhelloRemiCard, UrbanhelloRemiCardEditor, discoverRemiDevices, indexEntities, makeAlarmPayload, makeNapPayload, serviceRequest } = cardModule;
 const device = { id: "device-1", remiId: "REMI1", name: "Bedroom" };
 const registryDevice = { id: device.id, identifiers: [[DOMAIN, device.remiId]], name: device.name };
 const registryEntity = (domain, key, entityId = `${domain}.renamed_by_user`) => ({ device_id: device.id, platform: DOMAIN, unique_id: `${device.remiId}_${key}`, entity_id: entityId });
@@ -568,4 +568,172 @@ test("zero noise and zero light remain valid readings, while unavailable series 
     const chart = card._chart("temperature", { samples });
     assert.equal(chart.querySelectorAll("svg").length, 0); assert.match(chart.textContent, /Aucune courbe/);
   }
+});
+
+const displayKeys = ["show_face", "show_brightness", "show_face_brightness", "show_temperature", "show_connection", "show_music", "show_alarms", "show_sleep", "show_naps"];
+const displayInput = (editor, key) => editor.shadowRoot.querySelectorAll("input").find(input => input.dataset.option === key);
+
+test("all display controls default to visible and preserve the compact music disclosure", () => {
+  const { card, calls } = setup(); card.setConfig({ type: "custom:urbanhello-remi-card" });
+  assert.ok(card.shadowRoot.querySelector(".faces")); assert.ok(card.shadowRoot.querySelector(".temperature"));
+  assert.ok(card.shadowRoot.querySelector(".connection-status")); assert.equal(card.shadowRoot.querySelector(".music").open, false);
+  assert.equal(card.shadowRoot.querySelector(".tabs").querySelectorAll("button").length, 4);
+  assert.equal(calls.length, 0);
+});
+
+test("display settings remove selected controls and collapse a single remaining tab", () => {
+  const { card, calls } = setup(); card.setConfig(Object.fromEntries(displayKeys.map(key => [key, false])));
+  for (const selector of [".faces", ".face-toggle", ".temperature", ".connection-status", ".music", ".tabs", ".hero-top"]) assert.equal(card.shadowRoot.querySelector(selector), undefined);
+  const labels = card.shadowRoot.querySelectorAll("input,select").map(input => input.getAttribute("aria-label"));
+  for (const key of ["face", "brightness", "face_brightness", "volume", "musicMode"]) assert.ok(!labels.includes(card.t(key)), key);
+  assert.ok(card.shadowRoot.querySelector(".face-art"), "hiding the selector does not misrepresent the observed face illustration");
+  assert.equal(calls.length, 0);
+});
+
+for (const [locale, heading, connectionLabel] of [["fr", "Afficher sur la carte", "État de connexion"], ["en", "Show on the card", "Connection status"]]) {
+  test(`${locale} visual editor saves false booleans and preserves device, title and other options`, async () => {
+    const { hass } = setup(); const editor = new UrbanhelloRemiCardEditor();
+    editor.setConfig({ type: "custom:urbanhello-remi-card", device_id: "device-1", title: "Child", extra_option: 123 }); editor.hass = { ...hass, language: locale }; await flush();
+    assert.match(editor.shadowRoot.textContent, new RegExp(heading));
+    assert.equal(displayInput(editor, "show_connection").getAttribute("aria-label"), connectionLabel);
+    assert.ok(displayKeys.every(key => displayInput(editor, key).checked));
+    let saved; editor.addEventListener("config-changed", event => { saved = event.detail.config; });
+    const toggle = displayInput(editor, "show_music"); toggle.checked = false; toggle.dispatchEvent({ type: "change" });
+    assert.equal(saved.show_music, false); assert.equal(saved.device_id, "device-1"); assert.equal(saved.title, "Child"); assert.equal(saved.extra_option, 123);
+    editor.setConfig(saved); assert.equal(displayInput(editor, "show_music").checked, false);
+    displayInput(editor, "show_music").checked = true; displayInput(editor, "show_music").dispatchEvent({ type: "change" });
+    assert.equal(saved.show_music, true);
+  });
+}
+
+test("display configuration rejects strings, numbers, nulls and arrays without replacing valid settings", () => {
+  const { card } = setup(); card.setConfig({ show_music: false });
+  for (const value of ["false", 0, 1, null, undefined, [], {}]) assert.throws(() => card.setConfig({ show_music: value }), /activées ou désactivées/);
+  assert.equal(card._config.show_music, false);
+  for (const value of [null, [], "wrong"]) assert.throws(() => card.setConfig(value));
+  const editor = new UrbanhelloRemiCardEditor(); assert.throws(() => editor.setConfig({ show_sleep: "true" }));
+});
+
+test("an in-progress card form survives same-device config and Home Assistant state updates", () => {
+  const entry = registryEntity("switch", "alarm_original", "switch.alarm");
+  const { card, hass } = setup([entry], { [entry.entity_id]: { state: "on", attributes: { event_id: "cloud1", time: "07:00", alarm_name: "Wake" } } });
+  card._openForm("alarm", { event_id: "cloud1", time: "07:00", alarm_name: "Wake" }, entry.entity_id);
+  const draft = card._form; draft.inputs.get("time").value = "08:45"; draft.inputs.get("time").dispatchEvent({ type: "change" });
+  card.setConfig({ title: "Compact", show_temperature: false });
+  card.hass = { ...hass, states: { [entry.entity_id]: { state: "off", attributes: { event_id: "cloud2", time: "07:00" } } } };
+  assert.equal(card._form, draft); assert.equal(card.shadowRoot.querySelector("form"), draft.element);
+  assert.equal(draft.inputs.get("time").value, "08:45"); assert.ok(draft.dirty.has("time"));
+});
+
+test("the visual editor retains a focused unfinished text edit across state updates", async () => {
+  const { hass } = setup(); const editor = new UrbanhelloRemiCardEditor(); editor.setConfig({ title: "Initial" }); editor.hass = hass; await flush();
+  const input = editor.shadowRoot.querySelectorAll("input").find(node => node.type === "text");
+  input.value = "Unfinished"; editor.shadowRoot.activeElement = input; editor.hass = { ...hass, states: { changed: true } };
+  assert.equal(editor.shadowRoot.querySelectorAll("input").find(node => node.type === "text"), input);
+  assert.equal(input.value, "Unfinished");
+  input.dispatchEvent({ type: "change" }); editor.shadowRoot.activeElement = null; editor.shadowRoot.dispatchEvent({ type: "focusout" }); await flush();
+  assert.equal(editor._config.title, "Unfinished");
+});
+
+test("hiding the active tab returns to REMI and detached tab handlers cannot load hidden content", async () => {
+  const { card, calls } = setup(); const oldTabs = card.shadowRoot.querySelector(".tabs").querySelectorAll("button");
+  card._tab = "sleep"; card.setConfig({ show_alarms: false, show_sleep: false, show_naps: false });
+  assert.equal(card._tab, "remi"); assert.equal(card.shadowRoot.querySelector(".tabs"), undefined);
+  for (const tab of oldTabs.slice(1)) tab.dispatchEvent({ type: "click" });
+  await card._loadNaps(); await card._loadHistory({ refresh: true }); card._toggleHistoryCharts(); card._openForm("alarm"); card._openForm("nap");
+  assert.equal(card._tab, "remi"); assert.equal(card._form, null); assert.equal(calls.length, 0);
+});
+
+test("a hidden draft remains saved but cannot submit or delete until its tab is shown again", async () => {
+  const { card, calls } = setup(); card._tab = "alarms"; card._openForm("alarm", { event_id: "cloud1", time: "07:00", alarm_name: "Wake" });
+  const draft = card._form; draft.inputs.get("time").value = "08:15"; draft.inputs.get("time").dispatchEvent({ type: "change" });
+  card._confirmDelete(draft, draft.element); const deleteButton = draft.element.querySelector(".confirm").querySelector(".danger");
+  card.setConfig({ show_alarms: false }); assert.equal(card._tab, "remi"); assert.equal(card._form, draft); assert.equal(card.shadowRoot.querySelector("form"), undefined);
+  draft.element.dispatchEvent({ type: "submit", preventDefault() {} }); deleteButton.dispatchEvent({ type: "click" }); await flush();
+  assert.equal(calls.length, 0);
+  card.setConfig({ show_alarms: true }); assert.equal(card._tab, "alarms"); assert.equal(card._form, draft); assert.equal(draft.inputs.get("time").value, "08:15");
+});
+
+test("detached face, brightness and music controls cannot execute after being hidden", async () => {
+  const faceEntry = registryEntity("select", "face", "select.face"), playerEntry = registryEntity("media_player", "music_player", "media_player.remi");
+  const { card, calls } = setup([faceEntry, playerEntry], { "select.face": { state: "awake", attributes: { options: FACE_OPTIONS } }, "media_player.remi": { state: "unknown", attributes: {} } });
+  const faceButton = card.shadowRoot.querySelector(".faces").querySelector("button"), musicButton = card.shadowRoot.querySelector(".music-actions").querySelector("button");
+  const slider = card.shadowRoot.querySelectorAll("input").find(input => input.getAttribute("aria-label") === card.t("brightness"));
+  card.setConfig({ show_face: false, show_brightness: false, show_face_brightness: false, show_music: false });
+  faceButton.dispatchEvent({ type: "click" }); musicButton.dispatchEvent({ type: "click" }); slider.value = "55"; slider.dispatchEvent({ type: "change" });
+  card._entityAction("number", "face_brightness", "set_value", { value: 6 }); card._entityAction("number", "volume", "set_value", { value: 70 }); card._entityAction("select", "music_mode", "select_option", { option: "normal" }); card._browse(); await flush();
+  assert.equal(calls.length, 0);
+});
+
+test("music is collapsed again after hiding it and a late browser response cannot reopen it", async () => {
+  const player = registryEntity("media_player", "music_player"); const { card, hass } = setup([player]);
+  disclosure(card, "remi:music").open = true; card.setConfig({ show_music: false }); card.setConfig({ show_music: true });
+  assert.equal(disclosure(card, "remi:music").open, false);
+  let finish; hass.callWS = () => new Promise(resolve => { finish = resolve; }); card._browse(); card.setConfig({ show_music: false });
+  finish({ children: [{ title: "Track", can_play: true }] }); await flush();
+  assert.equal(card._library, null); assert.equal(card.shadowRoot.querySelector(".library"), undefined);
+});
+
+test("alarm edits use the current cloud event_id even if it rotates while the form is open", async () => {
+  const entry = registryEntity("switch", "alarm_original", "switch.user_alarm");
+  const { card, hass, calls } = setup([entry], { [entry.entity_id]: { state: "on", attributes: { event_id: "current1", time: "07:00", alarm_name: "Wake" } } });
+  card._tab = "alarms"; card._render(); card.shadowRoot.querySelector(".schedule").querySelector("button").dispatchEvent({ type: "click" });
+  const draft = card._form; assert.equal(draft.id, "current1"); assert.equal(draft.alarmEntityId, entry.entity_id);
+  draft.inputs.get("time").value = "08:30"; draft.inputs.get("time").dispatchEvent({ type: "change" });
+  card.hass = { ...hass, states: { [entry.entity_id]: { state: "on", attributes: { event_id: "current2", time: "07:00", alarm_name: "Wake" } } } };
+  draft.element.dispatchEvent({ type: "submit", preventDefault() {} }); await flush();
+  assert.deepEqual(calls[0].service_data, { remi_id: "REMI1", event_id: "current2", time: "08:30" });
+  assert.equal(entry.unique_id, "REMI1_alarm_original"); assert.equal(card._device().id, "device-1");
+});
+
+test("alarm deletion re-resolves the event_id after its confirmation was opened", async () => {
+  const entry = registryEntity("switch", "alarm_original", "switch.user_alarm");
+  const { card, hass, calls } = setup([entry], { [entry.entity_id]: { state: "on", attributes: { event_id: "current1" } } });
+  card._openForm("alarm", { event_id: "current1", time: "07:00" }, entry.entity_id); const draft = card._form; card._confirmDelete(draft, draft.element);
+  card.hass = { ...hass, states: { [entry.entity_id]: { state: "on", attributes: { event_id: "current2" } } } };
+  draft.element.querySelector(".confirm").querySelector(".danger").dispatchEvent({ type: "click" }); await flush();
+  assert.deepEqual(calls[0].service_data, { remi_id: "REMI1", event_id: "current2" });
+});
+
+test("alarm IDs use scoped time attributes or legacy suffixes only when the current attribute is absent", () => {
+  const main = registryEntity("switch", "alarm_original", "switch.alarm"), time = registryEntity("time", "alarm_original_time", "time.alarm");
+  const { card } = setup([main, time], { "switch.alarm": { state: "on", attributes: {} }, "time.alarm": { state: "07:00:00", attributes: { event_id: "current" } } });
+  assert.equal(card._alarmEventId("switch.alarm"), "current"); assert.equal(card._alarmEventId("time.alarm"), "current");
+  delete card._hass.states["time.alarm"].attributes.event_id; assert.equal(card._alarmEventId("switch.alarm"), "original"); assert.equal(card._alarmEventId("time.alarm"), "original");
+  for (const invalid of [null, "", 42, "../other", "a".repeat(129)]) { card._hass.states["switch.alarm"].attributes.event_id = invalid; assert.equal(card._alarmEventId("switch.alarm"), null); }
+  assert.equal(card._alarmEventId("switch.outside_registry"), null);
+});
+
+test("a removed or foreign-device alarm cannot be targeted from an old edit form", async () => {
+  const entry = registryEntity("switch", "alarm_original", "switch.alarm"), { card, calls } = setup([entry], { "switch.alarm": { state: "on", attributes: { event_id: "current" } } });
+  card._openForm("alarm", { event_id: "current", time: "07:00" }, entry.entity_id); const draft = card._form;
+  draft.inputs.get("time").value = "09:30"; draft.inputs.get("time").dispatchEvent({ type: "change" });
+  entry.device_id = "device-2";
+  draft.element.dispatchEvent({ type: "submit", preventDefault() {} }); await flush();
+  assert.equal(calls.length, 0); assert.equal(card._message.error, true); assert.match(card._message.text, /n’est plus disponible/);
+  assert.equal(card._form, draft);
+});
+
+test("a suspended alarm draft does not freeze REMI states or deferred focusout rendering", async () => {
+  const temperature = registryEntity("sensor", "temperature", "sensor.temperature"), online = registryEntity("binary_sensor", "online", "binary_sensor.online");
+  const alive = registryEntity("binary_sensor", "alive", "binary_sensor.alive");
+  const { card, hass } = setup([temperature, online, alive], {
+    "sensor.temperature": { state: "21.7", attributes: { unit_of_measurement: "°C" } },
+    "binary_sensor.online": { state: "on", attributes: {} }, "binary_sensor.alive": { state: "on", attributes: {} }
+  });
+  card._tab = "alarms"; card._openForm("alarm", { event_id: "cloud1", time: "07:00", alarm_name: "Wake" });
+  const draft = card._form; draft.inputs.get("time").value = "08:15"; draft.inputs.get("time").dispatchEvent({ type: "change" });
+  card.setConfig({ show_alarms: false });
+  card.hass = { ...hass, states: { ...hass.states, "sensor.temperature": { state: "22.3", attributes: { unit_of_measurement: "°C" } }, "binary_sensor.online": { state: "off", attributes: {} } } };
+  assert.equal(card.shadowRoot.querySelector(".temperature").textContent, "22.3 °C");
+  assert.match(card.shadowRoot.querySelector(".connection-status").textContent, /Déconnecté/);
+  assert.equal(card._form, draft); assert.equal(draft.inputs.get("time").value, "08:15");
+  card.shadowRoot.activeElement = card.shadowRoot.querySelector("input");
+  card.hass = { ...card.hass, states: { ...card.hass.states, "sensor.temperature": { state: "22.8", attributes: { unit_of_measurement: "°C" } } } };
+  assert.equal(card.shadowRoot.querySelector(".temperature").textContent, "22.3 °C");
+  assert.equal(card._renderPending, true);
+  card.shadowRoot.activeElement = null; card.shadowRoot.dispatchEvent({ type: "focusout" }); await flush();
+  assert.equal(card.shadowRoot.querySelector(".temperature").textContent, "22.8 °C");
+  assert.equal(card._form, draft); assert.equal(draft.inputs.get("time").value, "08:15"); assert.ok(draft.dirty.has("time"));
+  card.setConfig({ show_alarms: true }); assert.equal(card.shadowRoot.querySelector("form"), draft.element);
 });
