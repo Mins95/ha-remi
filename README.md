@@ -8,7 +8,7 @@
   <a href="https://www.home-assistant.io/"><img src="https://img.shields.io/badge/Home%20Assistant-Integration-41BDF5?style=for-the-badge&logo=home-assistant&logoColor=white" alt="Home Assistant integration"></a>
   <a href="https://my.home-assistant.io/redirect/marketplace_repository/?owner=Mins95&amp;repository=ha-remi&amp;category=integration"><img src="https://img.shields.io/badge/Marketplace-Custom-0080ff?style=for-the-badge" alt="Custom Marketplace repository"></a>
   <a href="https://github.com/Mins95/ha-remi/releases/latest"><img src="https://img.shields.io/github/v/release/Mins95/ha-remi?style=for-the-badge&amp;label=Latest%20release&amp;color=0080ff" alt="Latest release"></a>
-  <a href="https://github.com/Mins95/ha-remi/releases/tag/0.5.0-beta.1"><img src="https://img.shields.io/badge/0.5.0--beta.1-Opt--in%20beta-f59e0b?style=for-the-badge" alt="0.5.0-beta.1 opt-in beta"></a>
+  <a href="https://github.com/Mins95/ha-remi/releases/tag/0.5.0-beta.2"><img src="https://img.shields.io/badge/0.5.0--beta.2-Opt--in%20beta-f59e0b?style=for-the-badge" alt="0.5.0-beta.2 opt-in beta"></a>
 </p>
 
 <p align="center">
@@ -40,7 +40,7 @@
 Community integration maintained by [Mins95](https://github.com/Mins95), based on [timoa/ha-remi](https://github.com/timoa/ha-remi). It uses your UrbanHello account and requires an internet connection. It is not affiliated with or endorsed by UrbanHello.
 
 > [!IMPORTANT]
-> **0.5.0-beta.1 is an opt-in pre-release for Home Assistant 2026.11.0 or newer.** The latest stable release remains **0.4.0**. The beta adds a dashboard card, music controls, sleep reports, environmental charts and stored timer profiles. Read the [beta limitations](#-beta-limitations) before enabling it.
+> **0.5.0-beta.2 is an opt-in pre-release for Home Assistant 2026.11.0 or newer.** The latest stable release remains **0.4.0**. This update simplifies the card: a face display on/off control, Awake/Sleepy choices and music collapsed by default. The beta also includes sleep reports, environmental charts and stored timer profiles. Read the [beta limitations](#-beta-limitations) before enabling it.
 
 ---
 
@@ -49,6 +49,8 @@ Community integration maintained by [Mins95](https://github.com/Mins95), based o
 [Install and configure](#-installation) · [Add the REMI card](docs/card.md) · [Controls and actions](docs/usage.md) · [Upgrade guide](docs/usage.md#upgrading) · [Changelog](CHANGELOG.md)
 
 **Start with the included REMI card.** Add it through your dashboard's card picker, choose your device if needed, and use the four tabs: REMI, Schedules, Sleep and Timers. No YAML or separate frontend download is required. Existing dashboards are left as you configured them. [Card setup →](docs/card.md)
+
+The main tab is more compact: turn the **face display** on or off, choose **Awake** or **Sleepy**, and expand **Music** when needed. The display control changes the face shown on REMI; it does not switch off the device's power.
 
 **Upgrading from 0.3.x or the original integration?** Read the [0.4.0 migration notice](#-upgrading-to-040) before updating automations that compare face states or select music modes.
 
@@ -92,12 +94,12 @@ See the [official Marketplace instructions](https://www.home-assistant.io/integr
 
 If you manage custom integrations with HACS, add `https://github.com/Mins95/ha-remi` under **Custom repositories**, choose **Integration**, install the published release and restart Home Assistant. The beta still requires Home Assistant 2026.11.0 or newer.
 
-### Opt in to 0.5.0-beta.1
+### Opt in to 0.5.0-beta.2
 
-- **Marketplace:** open the repository's device under the Marketplace integration. Enable its disabled-by-default **Pre-release** switch, then turn that switch on. Check for updates and select **0.5.0-beta.1**.
-- **HACS:** enable **Show beta versions** for this repository, then select **0.5.0-beta.1** when downloading the update.
+- **Marketplace:** open the repository's device under the Marketplace integration. Enable its disabled-by-default **Pre-release** switch, then turn that switch on. Check for updates and select **0.5.0-beta.2**.
+- **HACS:** enable **Show beta versions** for this repository, then select **0.5.0-beta.2** when downloading the update.
 
-Restart Home Assistant after installation and reload the browser page. The beta does not replace 0.4.0 as the default stable release. [Upgrade details →](docs/usage.md#050-beta1-new-controls-and-dashboard-card)
+Restart Home Assistant after installation and reload the browser page. The beta does not replace 0.4.0 as the default stable release. [Upgrade details →](docs/usage.md#050-beta2-simpler-everyday-controls)
 
 ### Configure REMI
 

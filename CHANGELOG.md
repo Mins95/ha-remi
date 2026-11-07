@@ -1,3 +1,15 @@
+## 0.5.0-beta.2 — Commandes du visage simplifiées (2026-11-07)
+
+- Onglet « Rémi » plus compact, avec une commande pour allumer ou éteindre l’affichage du visage et deux choix directs : « Réveillé » et « Endormi ».
+- Le rallumage retrouve le dernier visage non éteint connu par la carte pour cet appareil, ou choisit « Réveillé » si aucun n’est connu. Cette commande agit sur l’affichage du visage, pas sur l’alimentation du Rémi.
+- Section « Musique » repliée par défaut ; ses commandes restent accessibles en la dépliant.
+- Les cinq expressions restent disponibles dans « Autres réglages ». Le dessin distingue le visage à moitié éveillé du visage endormi ; un état inconnu n’affiche plus de visage inventé.
+
+Après installation, redémarrer Home Assistant puis recharger la page ou
+l’application Companion pour charger la nouvelle carte. Les identifiants
+d’entités et la configuration des tableaux de bord sont conservés.
+Cette préversion reste facultative ; la version 0.4.0 demeure la dernière version stable.
+
 ## 0.5.0-beta.1 — Carte Rémi, musique et sommeil (2026-11-07)
 
 - Nouvelle carte de tableau de bord inspirée de Rémi : visage, température avec décimales, commandes et quatre onglets « Rémi », « Horaires », « Sommeil » et « Minuteurs ». Interface française ou anglaise selon Home Assistant, adaptée aux thèmes clair et sombre.
