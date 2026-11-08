@@ -183,7 +183,7 @@ test("display scales remain separate and current states are localized only for l
   const ranges = card.shadowRoot.querySelectorAll("input").filter(node => node.type === "range");
   assert.equal(ranges[0].getAttribute("min"), "0"); assert.equal(ranges[0].getAttribute("max"), "100");
   assert.equal(ranges[1].getAttribute("min"), "1"); assert.equal(ranges[1].getAttribute("max"), "10");
-  card.hass = { ...hass, language: "en" }; assert.match(card.shadowRoot.textContent, /Night face brightness/);
+  card.hass = { ...hass, language: "en" }; assert.match(card.shadowRoot.textContent, /Face brightness/);
   assert.equal(card._state("number", "face_brightness").state, "8");
 });
 
