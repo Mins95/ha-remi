@@ -2,11 +2,11 @@
 
 [Back to the README](../README.md) · [Actions and usage](usage.md)
 
-The included **REMI card** brings everyday controls, schedules, sleep reports and timer profiles together. **0.5.2** adds display settings and keeps alarm commands attached to their current cloud identifiers. It requires **Home Assistant 2026.11.0 or newer**. The interface follows your Home Assistant language, with English and French included.
+The included **REMI card** brings everyday controls, schedules, sleep reports and timer profiles together. **0.5.3** clarifies the nightlight brightness label while keeping the separate face brightness control. It requires **Home Assistant 2026.11.0 or newer**. The interface follows your Home Assistant language, with English and French included.
 
 ## Add the card
 
-1. [Install stable 0.5.2 or newer](usage.md#installation), restart Home Assistant and reload the browser page.
+1. [Install stable 0.5.3 or newer](usage.md#installation), restart Home Assistant and reload the browser page.
 2. Open the dashboard where you want to use REMI and choose **Edit dashboard**.
 3. Choose **Add card** and find **REMI** in the card picker.
 4. If you have several REMI devices, choose one in the visual editor.
@@ -18,7 +18,7 @@ The integration loads the bundled card resource automatically. You do not need a
 
 The card is updated with the integration. Its resource URL includes the integration version and a fingerprint of the bundled source, so source changes also invalidate the old cache. After an upgrade, restart Home Assistant and reload the browser or Companion app page. An already-open page keeps its loaded card until it is reloaded; the integration never forces a reload while you are editing a form.
 
-If you already use the card from 0.5.0 or newer, keep your existing dashboard configuration. Updating to 0.5.2 preserves the card configuration and entity IDs; a page reload loads the updated resource. Pre-release versions do not need to be enabled for this release.
+If you already use the card from 0.5.0 or newer, keep your existing dashboard configuration. Updating to 0.5.3 preserves the card configuration and entity IDs; a page reload loads the updated resource. Pre-release versions do not need to be enabled for this release.
 
 ## Choose what to display
 
@@ -38,6 +38,10 @@ The optional YAML keys are `show_face`, `show_brightness`, `show_face_brightness
 | Timers | Manage stored timer/nap profiles shared with the official app |
 
 The French labels are **Rémi**, **Horaires**, **Sommeil** and **Minuteurs**. For individual entities and advanced automation examples, see the [usage guide](usage.md).
+
+### Two separate brightness controls
+
+**Nightlight brightness** (**Luminosité de la veilleuse**) controls the nightlight on a 0–100 scale. The slider below, **Face brightness** (**Luminosité du visage**), keeps its separate 1–10 scale and behavior. Both labels appear in the visual editor; schedule and timer forms use **Nightlight brightness** for their 0–100 setting. Existing entity IDs and card settings are preserved.
 
 ### Everyday face controls
 

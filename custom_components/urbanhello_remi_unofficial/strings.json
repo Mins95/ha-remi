@@ -281,10 +281,10 @@
         "name": "Noise Alert Threshold"
       },
       "brightness": {
-        "name": "Brightness"
+        "name": "Nightlight brightness"
       },
       "face_brightness": {
-        "name": "Night face brightness"
+        "name": "Face brightness"
       }
     },
     "switch": {
@@ -307,7 +307,7 @@
             }
           },
           "brightness": {
-            "name": "Brightness"
+            "name": "Nightlight brightness"
           },
           "volume": {
             "name": "Volume"
@@ -358,7 +358,7 @@
             }
           },
           "brightness": {
-            "name": "Brightness"
+            "name": "Nightlight brightness"
           },
           "volume": {
             "name": "Volume"
@@ -396,7 +396,7 @@
         "name": "App Background Color"
       },
       "physical_brightness": {
-        "name": "Light"
+        "name": "Nightlight"
       }
     },
     "media_player": {
@@ -435,8 +435,8 @@
           "description": "Alarm volume override (0–100)."
         },
         "brightness": {
-          "name": "Brightness",
-          "description": "Brightness at alarm time (0–100)."
+          "name": "Nightlight brightness",
+          "description": "Nightlight brightness from 0 to 100%."
         },
         "music_path": {
           "name": "Music file",
@@ -489,8 +489,8 @@
           "description": "New volume override."
         },
         "brightness": {
-          "name": "Brightness",
-          "description": "Brightness at alarm time (0–100)."
+          "name": "Nightlight brightness",
+          "description": "Nightlight brightness from 0 to 100%."
         },
         "music_path": {
           "name": "Music file",
@@ -585,8 +585,8 @@
           "description": "Face displayed during the timer."
         },
         "brightness": {
-          "name": "Night-light brightness",
-          "description": "Brightness from 0 to 100%."
+          "name": "Nightlight brightness",
+          "description": "Nightlight brightness from 0 to 100%."
         },
         "sleep_aid": {
           "name": "Sleep aid",
@@ -643,8 +643,8 @@
           "description": "Face displayed during the timer."
         },
         "brightness": {
-          "name": "Night-light brightness",
-          "description": "Brightness from 0 to 100%."
+          "name": "Nightlight brightness",
+          "description": "Nightlight brightness from 0 to 100%."
         },
         "sleep_aid": {
           "name": "Sleep aid",
@@ -726,7 +726,7 @@
       "message": "The response does not match the selected REMI"
     },
     "invalid_face_brightness": {
-      "message": "Night face brightness must be an integer from 1 to 10"
+      "message": "Face brightness must be an integer from 1 to 10"
     },
     "unknown_music_mode": {
       "message": "Unknown REMI playback mode"
@@ -798,7 +798,7 @@
       "message": "Save this alarm in the REMI app before changing its Play button setting, so its other settings can be preserved."
     },
     "invalid_brightness": {
-      "message": "Brightness must be between 0 and 255."
+      "message": "Nightlight brightness must be between 0 and 255."
     },
     "device_unavailable": {
       "message": "REMI is unavailable. Refresh its status before trying again."

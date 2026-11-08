@@ -1,3 +1,13 @@
+## 0.5.3 — Libellés de luminosité de la veilleuse (2026-11-08)
+
+- Le curseur 0–100 est nommé « Luminosité de la veilleuse » dans la carte, son éditeur, l’entité numérique et les actions d’alarmes/minuteurs ; les libellés anglais sont également corrigés.
+- La lumière facultative avec mémoire de luminosité est nommée « Veilleuse ».
+- Le curseur inférieur est nommé simplement « Luminosité du visage » ; son fonctionnement et son échelle 1–10 sont conservés. Les identifiants, valeurs, commandes et noms personnalisés sont conservés.
+- Documentation harmonisée ; crédits et compteur de téléchargements conservés.
+
+Après installation, redémarrer Home Assistant puis recharger la page ou
+l’application Companion pour charger les nouveaux libellés.
+
 ## 0.5.2 — Alarmes stables, éclairage mémorisé et carte configurable (2026-11-07)
 
 - Conservation des identifiants Home Assistant lorsqu’une alarme est recréée dans le cloud, grâce à une correspondance persistante par appareil. Les noms ambigus ne sont jamais associés automatiquement.

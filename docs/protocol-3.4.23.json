@@ -113,7 +113,7 @@
     ],
     "cloud_write_path": "StoredProperty.update -> updateNetwork -> updateParse -> Parse.set/save",
     "manufacturer_reference": "https://www.urbanhello.com/fr/faq/faqs/gerer-la-luminosite-de-remi",
-    "distinction": "light_min controls face brightness in the dark; the existing 0-100 luminosity setting is a separate control. No calibration or face-selection command is sent."
+    "distinction": "light_min controls face brightness in the dark; the separate 0-100 luminosity setting controls the nightlight. No calibration or face-selection command is sent."
   },
   "firmware": {
     "status": "Device-specific eligibility implemented; firmware installation not implemented.",
