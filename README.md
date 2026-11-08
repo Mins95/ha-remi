@@ -25,7 +25,7 @@
   Everyday controls in English or French, following your Home Assistant language.
 </p>
 
-**0.5.2 is the current stable release.** Requires Home Assistant **2026.11.0 or newer**, a REMI configured in the UrbanHello app and internet access.
+**0.5.3 is the current stable release.** Requires Home Assistant **2026.11.0 or newer**, a REMI configured in the UrbanHello app and internet access.
 
 ## Your REMI dashboard
 
@@ -36,7 +36,7 @@
 
 ## What you can do
 
-- **Control the face and brightness:** on/off, Awake/Sleepy and separate display/night brightness.
+- **Control the face and brightness:** on/off, Awake/Sleepy and separate nightlight and face brightness.
 - **Manage schedules:** see their times, toggle them and edit their settings.
 - **Follow the room and sleep:** decimal temperature, dated sleep reports and environmental charts.
 - **Access music and timers:** a collapsible music panel and up to five stored timer profiles.
@@ -51,7 +51,7 @@ The card updates with the integration. Existing entity IDs and dashboard configu
 2. Restart Home Assistant, then add **Remi** under **Settings → Devices & services** using your UrbanHello account.
 3. Add **REMI** from your dashboard's card picker. No separate card download or YAML is needed.
 
-**Already installed?** Update to **0.5.2**, restart Home Assistant and reload the browser or Companion app. Keep your existing integration and card.
+**Already installed?** Update to **0.5.3**, restart Home Assistant and reload the browser or Companion app. Keep your existing integration and card.
 
 [HACS, manual installation and repository changes →](docs/usage.md#installation)
 

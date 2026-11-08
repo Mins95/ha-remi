@@ -4,7 +4,7 @@
 
 This guide covers the public Mins95 integration, its Home Assistant actions and changes from earlier versions. It requires an UrbanHello account and internet access. Example entity IDs and alarm IDs are placeholders: use the IDs from your own installation.
 
-**Stable 0.5.2 requires Home Assistant 2026.11.0 or newer.** Pre-release versions do not need to be enabled. Start with the [included dashboard card](card.md) for a visual interface to the features below.
+**Stable 0.5.3 requires Home Assistant 2026.11.0 or newer.** Pre-release versions do not need to be enabled. Start with the [included dashboard card](card.md) for a visual interface to the features below.
 
 ## Installation
 
@@ -17,7 +17,7 @@ You need a REMI already configured in the official app, its UrbanHello account c
 1. Open **Settings → Marketplace → Add from link**.
 2. Enter `https://github.com/Mins95/ha-remi`.
 3. Connect your GitHub account if Marketplace requests it for custom repositories.
-4. Open **Remi (Mins95)** and install stable **0.5.2** or newer.
+4. Open **Remi (Mins95)** and install stable **0.5.3** or newer.
 5. Restart Home Assistant, then configure the integration below.
 
 See the [official Marketplace instructions](https://www.home-assistant.io/integrations/marketplace/#custom-repositories).
@@ -26,7 +26,7 @@ See the [official Marketplace instructions](https://www.home-assistant.io/integr
 
 [Open this repository in HACS](https://my.home-assistant.io/redirect/hacs_repository/?owner=Mins95&repository=ha-remi&category=integration).
 
-Add `https://github.com/Mins95/ha-remi` under **Custom repositories**, choose **Integration**, install stable **0.5.2** or newer and restart Home Assistant. **Show beta versions** is not required. The same Home Assistant 2026.11.0 minimum applies.
+Add `https://github.com/Mins95/ha-remi` under **Custom repositories**, choose **Integration**, install stable **0.5.3** or newer and restart Home Assistant. **Show beta versions** is not required. The same Home Assistant 2026.11.0 minimum applies.
 
 ### Manual installation
 
@@ -54,8 +54,8 @@ Open **Settings → Devices & services → Remi**, then select your device, or a
 
 | Setting | Entity type | Range or values | Behavior |
 | --- | --- | --- | --- |
-| Brightness | Number | Integer 0–100 | Upper light; 0 turns it off |
-| Night face brightness | Number | Integer 1–10 | Face brightness in darkness |
+| Nightlight brightness | Number | Integer 0–100 | Nightlight; 0 turns it off |
+| Face brightness | Number | Integer 1–10 | Face brightness in darkness |
 | Volume | Number | 0–100 | Speaker volume |
 | Noise notification threshold | Number | 0–250 | Threshold used for sound notifications |
 | Clock face | Select | `off`, `awake`, `sleepy`, `semi_awake`, `smiley` | Displayed expression |
@@ -88,10 +88,10 @@ Missing or invalid measurements remain unknown. Sleep reports include their age;
 
 The two brightness entities control separate settings:
 
-- **Brightness** writes `luminosity` on REMI's 0–100 scale. It is a numeric value with no separate on/off state or remembered previous intensity.
-- **Night face brightness** writes `light_min` on the app's 1–10 scale. It changes only this setting, then refreshes the device. It does not modify light calibration, clock face or schedules.
+- **Nightlight brightness** writes `luminosity` on REMI's 0–100 scale. It is a numeric value with no separate on/off state or remembered previous intensity.
+- **Face brightness** writes `light_min` on the app's 1–10 scale. It changes only this setting, then refreshes the device. It does not modify light calibration, clock face or schedules.
 
-Missing, invalid or out-of-range values are shown as unknown. Night face brightness requires whole numbers; fractions and non-finite values are rejected.
+Missing, invalid or out-of-range values are shown as unknown. Face brightness requires whole numbers; fractions and non-finite values are rejected.
 
 ```yaml
 action: number.set_value
@@ -103,11 +103,11 @@ data:
 
 The [UrbanHello brightness guide](https://www.urbanhello.com/fr/faq/faqs/gerer-la-luminosite-de-remi) describes the night face setting. The implementation is covered by API tests; its physical effect has not yet been verified with this fork.
 
-### Optional light with brightness memory
+### Optional nightlight with brightness memory
 
-Version 0.5.2 adds a **Light / Éclairage** entity, disabled by default to keep the existing device page unchanged. Enable it from the device's entity list if you want standard Home Assistant light controls or HomeKit exposure. The existing Brightness number remains available with its original ID.
+Version 0.5.2 added an optional light entity, named **Nightlight / Veilleuse** from 0.5.3, disabled by default to keep the existing device page unchanged. Enable it from the device's entity list if you want standard Home Assistant light controls or HomeKit exposure. The existing Nightlight brightness number remains available with its original ID.
 
-The light controls only `luminosity`; turning it off never changes the face. Turning it on without a brightness value restores the last nonzero level confirmed by a successful cloud read, including after a Home Assistant restart. If no saved or current level is known, it requests 50%. Current confirmed device data takes precedence over saved data. An accepted write alone is not treated as proof of the physical light's state.
+The nightlight controls only `luminosity`; turning it off never changes the face. Turning it on without a brightness value restores the last nonzero level confirmed by a successful cloud read, including after a Home Assistant restart. If no saved or current level is known, it requests 50%. Current confirmed device data takes precedence over saved data. An accepted write alone is not treated as proof of the nightlight's state.
 
 ### Face and music options
 
@@ -215,7 +215,7 @@ Action: `urbanhello_remi_unofficial.create_alarm`.
 | `repeat` | No | List of day numbers; defaults to `[]` |
 | `face_define` | No | Face to display; supported codes and constants are listed below |
 | `volume` | No | Alarm volume, 0–100 |
-| `brightness` | No | Upper light brightness at this schedule, 0–100 |
+| `brightness` | No | Nightlight brightness at this schedule, 0–100 |
 | `music_path` | No | Existing REMI audio file path; an empty string removes the scheduled track |
 | `music_duration_minutes` | No | Music duration in minutes, 0–1440 |
 | `play_button_enabled` | No | Enable or disable the Play button setting associated with this schedule |
@@ -412,9 +412,13 @@ To edit a profile, get its `nap_id` with `list_naps` and supply only the fields 
 
 <a id="upgrading-from-030"></a>
 
+### 0.5.3: nightlight brightness labels
+
+The 0–100 control is named **Nightlight brightness / Luminosité de la veilleuse** throughout the card, entity labels and actions. The optional light is named **Nightlight / Veilleuse**. The lower control is named **Face brightness / Luminosité du visage**. Its 1–10 range, entity IDs, saved values and commands are unchanged. User-assigned entity names are preserved; only default names are updated. Restart Home Assistant and reload the card page after updating.
+
 ### 0.5.2: alarm identities and optional controls
 
-Keep the configured integration and its entities. Restart Home Assistant after updating and reload the card page. The card editor now controls section visibility, while existing cards keep all sections visible by default. Enable the optional Light entity only if you want on/off brightness restoration in standard Home Assistant controls.
+Keep the configured integration and its entities. Restart Home Assistant after updating and reload the card page. The card editor now controls section visibility, while existing cards keep all sections visible by default. Enable the optional Nightlight entity only if you want on/off brightness restoration in standard Home Assistant controls.
 
 Alarm identity tracking starts with the first successful snapshot on this version. It preserves existing identifiers when a later cloud replacement can be matched unambiguously. The old brightness number and all original credits remain intact.
 
@@ -519,7 +523,7 @@ data:
 
 The old `brightness_pct` corresponds directly to the new 0–100 value. The old light's `brightness` attribute used 0–255 and must not be copied directly into a number value or state condition.
 
-Setting the number to `0` turns off the upper light and leaves the setting at zero. The former light entity's memory of the last nonzero brightness is no longer used. The integration does not provide an ambient illuminance sensor. Historical brightness or lux data is not converted.
+Setting the number to `0` turns off the nightlight and leaves the setting at zero. The former light entity's memory of the last nonzero brightness is no longer used. The integration does not provide an ambient illuminance sensor. Historical brightness or lux data is not converted.
 
 #### RGB entities
 
@@ -559,7 +563,7 @@ An explicitly offline or inactive REMI makes live temperature, signal, face and 
 
 Commands, including alarm creation and deletion, are not automatically retried after these failures because the server may already have applied them. Check the resulting state before repeating an action manually. Reauthentication retains the selected REMI, and alarm action handlers resolve the currently loaded integration after a reload.
 
-Earlier installation checks on Home Assistant 2026.11.0 with firmware 332 confirmed corrected live temperature, device-specific firmware status, weekday display and alarm time entities while retaining existing IDs and schedules. Those checks do not establish physical validation of music commands, timer behavior or night face brightness.
+Earlier installation checks on Home Assistant 2026.11.0 with firmware 332 confirmed corrected live temperature, device-specific firmware status, weekday display and alarm time entities while retaining existing IDs and schedules. Those checks do not establish physical validation of music commands, timer behavior or face brightness.
 
 The 0.5.1 history export command was separately tested on a physical REMI and refreshed its current journal. This does not establish recovery of older missing journals or change the validation limits of other device commands.
 
