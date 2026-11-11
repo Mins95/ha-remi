@@ -12,6 +12,11 @@ API_USER_AGENT = "Remi/13433 CFNetwork/1206 Darwin/20.1.0"
 
 SCAN_INTERVAL_SECONDS = 60
 
+# Informational firmware metadata is read rarely, and a failing endpoint is
+# retried after a cool-down instead of on every poll.
+FIRMWARE_METADATA_INTERVAL_SECONDS = 3600
+FIRMWARE_METADATA_RETRY_SECONDS = 300
+
 CONF_REMI_ID = "remi_id"
 CONF_SESSION_TOKEN = "session_token"
 CONF_INSTALLATION_ID = "installation_id"

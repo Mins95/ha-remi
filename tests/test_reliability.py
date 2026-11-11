@@ -4,6 +4,7 @@
 import asyncio
 
 
+from time import monotonic
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
@@ -39,7 +40,12 @@ from custom_components.urbanhello_remi_unofficial.coordinator import RemiDataUpd
 from custom_components.urbanhello_remi_unofficial.firmware import firmware_update_available
 
 
-from .conftest import MOCK_LOGIN_RESPONSE, MOCK_REMI_DATA, MOCK_REMI_ID
+from .conftest import (
+    MOCK_CONFIG_DATA,
+    MOCK_LOGIN_RESPONSE,
+    MOCK_REMI_DATA,
+    MOCK_REMI_ID,
+)
 
 
 from .test_api import _make_response
@@ -65,6 +71,7 @@ def test_firmware_uses_device_assignment(device, expected):
 
 
 async def test_firmware_attributes_explain_global_default(hass, mock_api_client):
+    """Explain the device target next to the server-wide default version."""
     coordinator = RemiDataUpdateCoordinator(hass, mock_api_client)
     coordinator.data = {"remi": {**MOCK_REMI_DATA, "current_firmware_version": 332,
                                  "update_firmware_version": 332, "firmware_need_update": 0}}
@@ -88,6 +95,7 @@ async def test_firmware_button_performs_reads_only(hass, mock_api_client):
 
 
 async def test_firmware_button_reports_failed_read(hass, mock_api_client):
+    """Report a failed metadata read instead of silently succeeding."""
     coordinator = RemiDataUpdateCoordinator(hass, mock_api_client)
     coordinator.data = {"remi": MOCK_REMI_DATA, "events": []}
     mock_api_client.get_config.side_effect = RemiApiError("unreachable")
@@ -96,14 +104,44 @@ async def test_firmware_button_reports_failed_read(hass, mock_api_client):
 
 
 async def test_metadata_failure_does_not_discard_device_state(hass, mock_api_client):
+    """Keep the device and alarm data when the metadata read fails."""
     coordinator = RemiDataUpdateCoordinator(hass, mock_api_client)
     mock_api_client.get_config.side_effect = RemiApiError("502")
     result = await coordinator._async_update_data()
     assert result["remi"] == MOCK_REMI_DATA
 
 
+async def test_failed_metadata_read_waits_before_retrying(hass, mock_api_client):
+    """Do not retry a failed firmware metadata read on every poll."""
+    coordinator = RemiDataUpdateCoordinator(hass, mock_api_client)
+    mock_api_client.get_config.side_effect = RemiApiError("502")
+    await coordinator._async_update_data()
+    await coordinator._async_update_data()
+    assert mock_api_client.get_config.await_count == 1
+
+    # The cool-down expires, so the next poll reads the metadata again.
+    coordinator._config_retry_at = monotonic() - 1
+    await coordinator._async_update_data()
+    assert mock_api_client.get_config.await_count == 2
+
+
+async def test_firmware_button_checks_metadata_during_the_cooldown(hass, mock_api_client):
+    """Let the manual firmware check read the metadata despite the cool-down."""
+    coordinator = RemiDataUpdateCoordinator(hass, mock_api_client)
+    mock_api_client.get_config.side_effect = RemiApiError("502")
+    await coordinator._async_update_data()
+    assert mock_api_client.get_config.await_count == 1
+
+    mock_api_client.get_config.side_effect = None
+    mock_api_client.get_config.return_value = MOCK_CONFIG_DATA
+    await RemiCheckFirmwareButton(coordinator).async_press()
+    assert mock_api_client.get_config.await_count == 2
+    assert coordinator.latest_firmware_version == 110
+
+
 @pytest.fixture
 def api_pair():
+    """Return an API client bound to a mocked HTTP session."""
     session = MagicMock(spec=aiohttp.ClientSession)
     client = RemiApiClient("test@example.com", "test", session)
     client.set_remi_id(MOCK_REMI_ID)
@@ -112,6 +150,7 @@ def api_pair():
 
 
 async def test_502_read_is_retried(api_pair):
+    """Retry a read that failed with a transient server error."""
     client, session = api_pair
     session.request.side_effect = [_make_response(502, {}), _make_response(200, {"results": []})]
     with patch("custom_components.urbanhello_remi_unofficial.api.asyncio.sleep", new=AsyncMock()):
@@ -120,6 +159,7 @@ async def test_502_read_is_retried(api_pair):
 
 
 async def test_reads_stop_after_three_attempts(api_pair):
+    """Give up after three attempts instead of retrying forever."""
     client, session = api_pair
     session.request.return_value = _make_response(503, {})
     with patch("custom_components.urbanhello_remi_unofficial.api.asyncio.sleep", new=AsyncMock()):
@@ -130,6 +170,7 @@ async def test_reads_stop_after_three_attempts(api_pair):
 
 @pytest.mark.parametrize("error", [TimeoutError(), aiohttp.ClientConnectionError()])
 async def test_transport_read_recovers(api_pair, error):
+    """Recover a read that failed with a transport error."""
     client, session = api_pair
     session.request.side_effect = [error, _make_response(200, {"results": []})]
     with patch("custom_components.urbanhello_remi_unofficial.api.asyncio.sleep", new=AsyncMock()):
@@ -139,6 +180,7 @@ async def test_transport_read_recovers(api_pair, error):
 
 @pytest.mark.parametrize("operation", ["create", "update", "delete", "device"])
 async def test_writes_are_not_replayed_after_502(api_pair, operation):
+    """Never replay a device command that failed with a server error."""
     client, session = api_pair
     session.request.return_value = _make_response(502, {})
     with pytest.raises(RemiApiError):
@@ -154,6 +196,7 @@ async def test_writes_are_not_replayed_after_502(api_pair, operation):
 
 
 async def test_relogin_preserves_selected_device(api_pair):
+    """Keep the selected device across a re-login."""
     client, session = api_pair
     selected = "second_remi"
     client.set_remi_id(selected)
@@ -168,6 +211,7 @@ async def test_relogin_preserves_selected_device(api_pair):
 
 
 async def test_wrong_device_response_is_rejected(api_pair):
+    """Reject a response describing another device."""
     client, session = api_pair
     session.request.return_value = _make_response(200, {"results": [{"objectId": "wrong"}]})
     with pytest.raises(RemiApiError, match="selected device"):
@@ -175,11 +219,13 @@ async def test_wrong_device_response_is_rejected(api_pair):
 
 
 async def test_simultaneous_expired_reads_share_one_login(api_pair):
+    """Share a single re-login between concurrent expired reads."""
     client, session = api_pair
     both_started = asyncio.Event()
     expired_count = 0
 
     def response_for_request(*args, **kwargs):
+        """Answer expired tokens with a 401 and fresh tokens with data."""
         nonlocal expired_count
         if kwargs["headers"]["X-Parse-Session-Token"] == "old_token":
             expired_count += 1
@@ -188,6 +234,7 @@ async def test_simultaneous_expired_reads_share_one_login(api_pair):
             response = _make_response(401, {})
 
             async def enter():
+                """Wait for the second request before answering the 401."""
                 await both_started.wait()
                 return response
 
@@ -217,6 +264,7 @@ async def test_services_use_current_coordinator_after_reload(hass):
 
 
 async def test_services_refuse_missing_alarm(hass):
+    """Refuse an alarm action that targets an unknown alarm."""
     coordinator = MagicMock()
     coordinator.events = []
     hass.data[DOMAIN] = {"entry": coordinator}
@@ -227,6 +275,7 @@ async def test_services_refuse_missing_alarm(hass):
 
 
 async def test_last_unload_removes_services(hass):
+    """Remove the alarm services when the last entry is unloaded."""
     entry = MagicMock(entry_id="entry")
     hass.data[DOMAIN] = {"entry": MagicMock()}
     _register_services(hass)

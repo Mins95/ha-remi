@@ -15,7 +15,7 @@ create_alarm:
       required: true
       example: "07:00"
       selector:
-        time:
+        text:
     enabled:
       name: Enabled
       description: Whether the alarm is active.
@@ -71,7 +71,7 @@ update_alarm:
       description: Clock time in the REMI time zone (HH:MM, minute precision).
       example: "07:00"
       selector:
-        time:
+        text:
     enabled:
       name: Enabled
       description: Enable or disable the alarm.

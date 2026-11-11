@@ -53,6 +53,7 @@ class TestTemperatureSensor:
 
 
 def test_luminosity_is_not_exposed_as_illuminance():
+    """Keep the app luminosity out of the illuminance sensor."""
     assert all(description.key != "luminosity" for description in SENSOR_DESCRIPTIONS)
 
 

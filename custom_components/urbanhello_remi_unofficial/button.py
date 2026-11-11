@@ -19,8 +19,10 @@ class RemiCheckFirmwareButton(RemiEntity, ButtonEntity):
     _attr_icon = "mdi:update"
 
     def __init__(self, coordinator):
+        """Bind the button to its unique id."""
         super().__init__(coordinator)
         self._attr_unique_id = f"{self._remi_id}_check_firmware"
 
     async def async_press(self) -> None:
+        """Read the firmware metadata and the device state."""
         await self.coordinator.async_check_firmware()

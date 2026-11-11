@@ -75,6 +75,7 @@ class RemiBinarySensorEntity(RemiEntity, BinarySensorEntity):
         coordinator: RemiDataUpdateCoordinator,
         description: RemiBinarySensorEntityDescription,
     ) -> None:
+        """Bind the entity to its description and unique id."""
         super().__init__(coordinator)
         self.entity_description = description
         self._attr_unique_id = f"{self._remi_id}_{description.key}"

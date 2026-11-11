@@ -11,7 +11,12 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .api import RemiApiClient, RemiApiError
-from .const import DOMAIN, SCAN_INTERVAL_SECONDS
+from .const import (
+    DOMAIN,
+    FIRMWARE_METADATA_INTERVAL_SECONDS,
+    FIRMWARE_METADATA_RETRY_SECONDS,
+    SCAN_INTERVAL_SECONDS,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,6 +25,7 @@ class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Coordinator that polls the Remi API and stores all device data."""
 
     def __init__(self, hass: HomeAssistant, client: RemiApiClient) -> None:
+        """Start the coordinator with an empty firmware metadata cache."""
         super().__init__(
             hass,
             _LOGGER,
@@ -30,6 +36,7 @@ class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.faces: list[dict[str, Any]] = []
         self.config_params: dict[str, Any] = {}
         self._config_checked_at: float | None = None
+        self._config_retry_at: float | None = None
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch latest data from the Remi API."""
@@ -38,7 +45,7 @@ class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self.client.get_remi(),
                 self.client.get_events(),
             )
-            if self._config_checked_at is None or monotonic() - self._config_checked_at >= 3600:
+            if self._config_due():
                 try:
                     await self._async_refresh_config()
                 except RemiApiError:
@@ -47,6 +54,17 @@ class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return {"remi": remi, "events": events}
         except RemiApiError as err:
             raise UpdateFailed(f"Error communicating with Remi API: {err}") from err
+
+    def _config_due(self) -> bool:
+        """Return True when the firmware metadata should be read again."""
+        now = monotonic()
+        if self._config_retry_at is not None and now < self._config_retry_at:
+            # A recent failure is cooling down; do not spend a poll on it.
+            return False
+        return (
+            self._config_checked_at is None
+            or now - self._config_checked_at >= FIRMWARE_METADATA_INTERVAL_SECONDS
+        )
 
     async def async_setup(self) -> None:
         """Fetch static data (faces, config) once at setup."""
@@ -58,9 +76,15 @@ class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _async_refresh_config(self) -> None:
         """Refresh cached informational firmware configuration."""
-        config = await self.client.get_config()
+        try:
+            config = await self.client.get_config()
+        except RemiApiError:
+            # Remember the failure so the next polls wait instead of retrying.
+            self._config_retry_at = monotonic() + FIRMWARE_METADATA_RETRY_SECONDS
+            raise
         self.config_params = config.get("params", {})
         self._config_checked_at = monotonic()
+        self._config_retry_at = None
 
     async def async_check_firmware(self) -> None:
         """Read firmware metadata and device state; never request installation."""

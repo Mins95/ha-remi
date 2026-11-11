@@ -36,6 +36,7 @@ class RemiApiClient:
     """Client for the UrbanHello Remi Parse Server API."""
 
     def __init__(self, username: str, password: str, session: aiohttp.ClientSession, installation_id: str = "") -> None:
+        """Store the account credentials and the shared HTTP session."""
         self._username = username
         self._password = password
         self._session = session
@@ -47,13 +48,16 @@ class RemiApiClient:
 
     @property
     def remi_id(self) -> str | None:
+        """Return the identifier of the selected device."""
         return self._remi_id
 
     @property
     def session_token(self) -> str | None:
+        """Return the current Parse session token."""
         return self._session_token
 
     def _base_headers(self, authenticated: bool = True) -> dict[str, str]:
+        """Return the Parse headers, with the session token when authenticated."""
         headers = {
             "X-Parse-Client-Version": API_CLIENT_VERSION,
             "X-Parse-Application-Id": API_APP_ID,

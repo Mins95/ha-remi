@@ -10,6 +10,7 @@ from custom_components.urbanhello_remi_unofficial.const import DOMAIN
 
 @pytest.fixture
 def coordinator(hass):
+    """Register the alarm services on a coordinator holding one alarm."""
     coordinator = MagicMock(
         events=[{"objectId": "alarm"}], async_request_refresh=AsyncMock()
     )
@@ -42,6 +43,7 @@ async def test_update_weekend_and_time_without_overwriting_other_fields(hass, co
 @pytest.mark.parametrize("value", ["invalid", "24:00", "07:60", "07:30:15",
                                    "2026-02-20T07:00:00Z", "07:30+02:00"])
 async def test_invalid_or_ambiguous_time_does_not_write(hass, coordinator, value):
+    """Reject any clock time the services cannot store without guessing."""
     with pytest.raises(vol.Invalid):
         await hass.services.async_call(DOMAIN, "update_alarm", {
             "event_id": "alarm", "time": value

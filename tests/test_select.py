@@ -52,6 +52,7 @@ class TestAsyncSetupEntry:
 
     @pytest.mark.skip(reason="Requires full HA platform setup - covered by other tests")
     async def test_adds_all_select_entities(self, hass: HomeAssistant, mock_coordinator):
+        """Add one entity per select kind."""
         added_entities = []
 
         async def mock_add_entities(entities):
@@ -210,6 +211,7 @@ class TestRemiMusicModeSelectEntity:
         mock_coordinator.client.update_remi.assert_awaited_once_with({"musicMode": mode})
 
     async def test_invalid_music_mode_does_not_reset_playback(self, mock_coordinator):
+        """Refuse an unknown playback mode without changing the device."""
         from homeassistant.exceptions import ServiceValidationError
 
         entity = RemiMusicModeSelectEntity(mock_coordinator)
@@ -222,6 +224,7 @@ class TestRemiMusicModeSelectEntity:
         assert RemiMusicModeSelectEntity(mock_coordinator).current_option is None
 
     async def test_select_option_updates_music_mode(self, mock_coordinator):
+        """Send the matching playback mode to the device."""
         entity = RemiMusicModeSelectEntity(mock_coordinator)
         target_mode = next(k for k, v in MUSIC_MODE_OPTIONS.items() if v != MUSIC_MODE_OPTIONS[1])
         target_name = MUSIC_MODE_OPTIONS[target_mode]

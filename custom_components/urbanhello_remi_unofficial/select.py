@@ -42,6 +42,7 @@ class RemiFaceSelectEntity(RemiEntity, SelectEntity):
     _attr_options = list(FACE_DEFINE_TO_NAME.values())
 
     def __init__(self, coordinator: RemiDataUpdateCoordinator) -> None:
+        """Bind the select to its unique id."""
         super().__init__(coordinator)
         self._attr_unique_id = f"{self._remi_id}_face"
 
@@ -83,6 +84,7 @@ class RemiClockFormatSelectEntity(RemiEntity, SelectEntity):
     _attr_options = ["12h", "24h"]
 
     def __init__(self, coordinator: RemiDataUpdateCoordinator) -> None:
+        """Bind the select to its unique id."""
         super().__init__(coordinator)
         self._attr_unique_id = f"{self._remi_id}_clock_format"
 
@@ -107,6 +109,7 @@ class RemiMusicModeSelectEntity(RemiEntity, SelectEntity):
     _attr_options = list(MUSIC_MODE_OPTIONS.values())
 
     def __init__(self, coordinator: RemiDataUpdateCoordinator) -> None:
+        """Bind the select to its unique id."""
         super().__init__(coordinator)
         self._attr_unique_id = f"{self._remi_id}_music_mode"
 
