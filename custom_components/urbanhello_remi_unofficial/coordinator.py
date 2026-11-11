@@ -16,6 +16,8 @@ from .alarm_identity import AlarmIdentityMap, AlarmIdentityStorageError
 from .const import DOMAIN, SCAN_INTERVAL_SECONDS
 
 _LOGGER = logging.getLogger(__name__)
+_FIRMWARE_METADATA_INTERVAL_SECONDS = 3600
+_FIRMWARE_METADATA_RETRY_SECONDS = 300
 
 
 class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -32,6 +34,7 @@ class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.faces: list[dict[str, Any]] = []
         self.config_params: dict[str, Any] = {}
         self._config_checked_at: float | None = None
+        self._config_retry_at: float | None = None
         self.events_available = False
         self.alarm_identities = AlarmIdentityMap(client.remi_id)
 
@@ -65,7 +68,7 @@ class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     _LOGGER.error("Could not safely persist REMI alarm identities; retaining the previous snapshot")
                 if not self.events_available:
                     events = self.events
-            if self._config_checked_at is None or monotonic() - self._config_checked_at >= 3600:
+            if self._config_due():
                 try:
                     await self._async_refresh_config()
                 except RemiAuthError as err:
@@ -85,6 +88,16 @@ class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 translation_domain=DOMAIN, translation_key="cannot_refresh_device"
             ) from err
 
+    def _config_due(self) -> bool:
+        """Retry failed metadata after a pause, otherwise refresh it hourly."""
+        now = monotonic()
+        if self._config_retry_at is not None:
+            return now >= self._config_retry_at
+        return (
+            self._config_checked_at is None
+            or now - self._config_checked_at >= _FIRMWARE_METADATA_INTERVAL_SECONDS
+        )
+
     async def async_setup(self) -> None:
         """Fetch static data (faces, config) once at setup."""
         try:
@@ -99,14 +112,26 @@ class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _async_refresh_config(self) -> None:
         """Refresh cached informational firmware configuration."""
-        config = await self.client.get_config()
+        try:
+            config = await self.client.get_config()
+        except RemiAuthError:
+            # Authentication needs repair, not a delayed metadata retry.
+            raise
+        except RemiApiError:
+            self._config_retry_at = monotonic() + _FIRMWARE_METADATA_RETRY_SECONDS
+            raise
         self.config_params = config.get("params", {})
         self._config_checked_at = monotonic()
+        self._config_retry_at = None
 
     async def async_check_firmware(self) -> None:
         """Read firmware metadata and device state; never request installation."""
         try:
             await self._async_refresh_config()
+        except RemiAuthError as err:
+            raise ConfigEntryAuthFailed(
+                translation_domain=DOMAIN, translation_key="reauth_required"
+            ) from err
         except RemiApiError as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN, translation_key="cannot_check_firmware"
