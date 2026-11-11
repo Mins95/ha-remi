@@ -4,7 +4,7 @@
 
 This guide covers the public Mins95 integration, its Home Assistant actions and changes from earlier versions. It requires an UrbanHello account and internet access. Example entity IDs and alarm IDs are placeholders: use the IDs from your own installation.
 
-**Stable 0.5.3 requires Home Assistant 2026.11.0 or newer.** Pre-release versions do not need to be enabled. Start with the [included dashboard card](card.md) for a visual interface to the features below.
+**Stable 0.5.4 requires Home Assistant 2026.11.0 or newer.** Pre-release versions do not need to be enabled. Start with the [included dashboard card](card.md) for a visual interface to the features below.
 
 ## Installation
 
@@ -17,7 +17,7 @@ You need a REMI already configured in the official app, its UrbanHello account c
 1. Open **Settings → Marketplace → Add from link**.
 2. Enter `https://github.com/Mins95/ha-remi`.
 3. Connect your GitHub account if Marketplace requests it for custom repositories.
-4. Open **Remi (Mins95)** and install stable **0.5.3** or newer.
+4. Open **Remi (Mins95)** and install stable **0.5.4** or newer.
 5. Restart Home Assistant, then configure the integration below.
 
 See the [official Marketplace instructions](https://www.home-assistant.io/integrations/marketplace/#custom-repositories).
@@ -26,7 +26,7 @@ See the [official Marketplace instructions](https://www.home-assistant.io/integr
 
 [Open this repository in HACS](https://my.home-assistant.io/redirect/hacs_repository/?owner=Mins95&repository=ha-remi&category=integration).
 
-Add `https://github.com/Mins95/ha-remi` under **Custom repositories**, choose **Integration**, install stable **0.5.3** or newer and restart Home Assistant. **Show beta versions** is not required. The same Home Assistant 2026.11.0 minimum applies.
+Add `https://github.com/Mins95/ha-remi` under **Custom repositories**, choose **Integration**, install stable **0.5.4** or newer and restart Home Assistant. **Show beta versions** is not required. The same Home Assistant 2026.11.0 minimum applies.
 
 ### Manual installation
 
@@ -166,6 +166,8 @@ Historical temperatures are not rewritten. A step in a graph after updating may 
 The **Firmware update available** entity uses the device's `firmware_need_update` indication or its assigned `update_firmware_version`. A server-wide default version is informational and does not establish that an update is available for this particular REMI.
 
 Attributes expose the installed version, assigned target and server default when available. If device-specific information is missing, the update state stays unknown. Firmware metadata is cached for an hour; **Check firmware** refreshes it and the device state.
+
+From 0.5.4, a failed firmware metadata read postpones automatic retries for five minutes. During that wait, device state and alarm polling continue every 60 seconds, and the last successfully read firmware metadata is retained. **Check firmware** can retry immediately; a successful read restores the normal one-hour interval. This applies to failures during setup and manual checks too. Authentication errors still require reauthentication.
 
 **Check firmware never installs firmware.** Use the official app and [UrbanHello's update instructions](https://www.urbanhello.com/fr/faq/faqs/comment-mettre-a-jour-remi-manuellement-) for firmware installation.
 
@@ -411,6 +413,10 @@ To edit a profile, get its `nap_id` with `list_naps` and supply only the fields 
 ## Upgrading
 
 <a id="upgrading-from-030"></a>
+
+### 0.5.4: firmware metadata retry delay
+
+Keep the integration, entities and card, then restart Home Assistant after updating. Failed firmware metadata reads now wait five minutes before the next automatic attempt, while normal device polling continues. The manual firmware check remains available immediately. This adapts the reliability fix from [timoa/ha-remi PR #40](https://github.com/timoa/ha-remi/pull/40).
 
 ### 0.5.3: nightlight brightness labels
 

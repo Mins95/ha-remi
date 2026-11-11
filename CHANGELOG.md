@@ -1,3 +1,13 @@
+## 0.5.4 — Temporiser les erreurs de lecture du firmware (2026-11-11)
+
+- Après un échec de lecture des informations firmware, attendre cinq minutes avant la prochaine tentative automatique, y compris après un échec au démarrage ou via le bouton de vérification.
+- Pendant cette attente, continuer à actualiser l’appareil et ses alarmes toutes les 60 secondes, en conservant les dernières informations firmware reçues.
+- Le bouton de vérification permet toujours une tentative immédiate. Une lecture réussie rétablit l’intervalle normal d’une heure ; les erreurs d’authentification restent signalées.
+- Correctif adapté du travail publié dans [timoa/ha-remi #40](https://github.com/timoa/ha-remi/pull/40), avec tests de non-régression et documentation actualisée.
+
+Après installation, redémarrer Home Assistant. Les entités, automatisations et
+la carte existantes sont conservées.
+
 ## 0.5.3 — Libellés de luminosité de la veilleuse (2026-11-08)
 
 - Le curseur 0–100 est nommé « Luminosité de la veilleuse » dans la carte, son éditeur, l’entité numérique et les actions d’alarmes/minuteurs ; les libellés anglais sont également corrigés.

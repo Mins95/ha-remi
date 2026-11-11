@@ -25,7 +25,7 @@
   Everyday controls in English or French, following your Home Assistant language.
 </p>
 
-**0.5.3 is the current stable release.** Requires Home Assistant **2026.11.0 or newer**, a REMI configured in the UrbanHello app and internet access.
+**0.5.4 is the current stable release.** Requires Home Assistant **2026.11.0 or newer**, a REMI configured in the UrbanHello app and internet access.
 
 ## Your REMI dashboard
 
@@ -51,7 +51,7 @@ The card updates with the integration. Existing entity IDs and dashboard configu
 2. Restart Home Assistant, then add **Remi** under **Settings → Devices & services** using your UrbanHello account.
 3. Add **REMI** from your dashboard's card picker. No separate card download or YAML is needed.
 
-**Already installed?** Update to **0.5.3**, restart Home Assistant and reload the browser or Companion app. Keep your existing integration and card.
+**Already installed?** Update to **0.5.4**, restart Home Assistant and reload the browser or Companion app. Keep your existing integration and card.
 
 [HACS, manual installation and repository changes →](docs/usage.md#installation)
 
