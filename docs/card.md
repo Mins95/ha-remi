@@ -6,7 +6,7 @@ The included **REMI card** brings everyday controls, schedules, sleep reports an
 
 ## Add the card
 
-1. [Install stable 0.5.3 or newer](usage.md#installation), restart Home Assistant and reload the browser page.
+1. [Install stable 0.5.4 or newer](usage.md#installation), restart Home Assistant and reload the browser page.
 2. Open the dashboard where you want to use REMI and choose **Edit dashboard**.
 3. Choose **Add card** and find **REMI** in the card picker.
 4. If you have several REMI devices, choose one in the visual editor.
@@ -18,7 +18,7 @@ The integration loads the bundled card resource automatically. You do not need a
 
 The card is updated with the integration. Its resource URL includes the integration version and a fingerprint of the bundled source, so source changes also invalidate the old cache. After an upgrade, restart Home Assistant and reload the browser or Companion app page. An already-open page keeps its loaded card until it is reloaded; the integration never forces a reload while you are editing a form.
 
-If you already use the card from 0.5.0 or newer, keep your existing dashboard configuration. Updating to 0.5.3 preserves the card configuration and entity IDs; a page reload loads the updated resource. Pre-release versions do not need to be enabled for this release.
+If you already use the card from 0.5.0 or newer, keep your existing dashboard configuration. Updating to 0.5.4 preserves the card configuration and entity IDs; a page reload loads the updated resource. Pre-release versions do not need to be enabled for this release.
 
 ## Choose what to display
 
