@@ -1,3 +1,22 @@
+## 0.5.5 — Carte personnalisable et affichage compact (2026-11-17)
+
+- Choix de l’apparence dans l’éditeur : thème Home Assistant, Rémi turquoise ou verre sombre. Mode compact pour les tablettes et Tap Scheduler, avec commandes tactiles conservées.
+- Hauteur automatique dans les tableaux de bord à sections pour que les panneaux ouverts restent correctement alignés.
+- Bouton personnel facultatif : sélection d’un script, d’une automatisation, d’une scène ou d’un bouton existant, avec nom et icône personnalisables.
+- Possibilité d’intégrer une carte Lovelace existante avec ses actions d’appui simple et long, ses modèles et son style. Son élément reste monté pendant les actualisations de Rémi.
+- Icône de mise à jour du firmware à côté de la connexion, uniquement quand le capteur confirme sa disponibilité ; un appui ouvre les détails.
+- Documentation des options et tests de non-régression. Les configurations personnelles restent dans le tableau de bord.
+- Disposition normale resserrée et nouveau compact horizontal, avec horaires et vue Sommeil plus courts.
+- Suppression de l’interrupteur du visage : le curseur règle la luminosité de 1 à 10 et éteint le visage à zéro. La valeur native conserve sa plage 1–10 ; le rallumage attend la réussite du réglage avant de restaurer l’expression.
+- Horaires et Sommeil resserrés aussi dans la disposition normale, avec commandes tactiles et valeurs lisibles conservées.
+- Réduction supplémentaire en compact : horaires sur des lignes courtes avec jours actifs regroupés, résumé Sommeil sur une rangée et graphique moins haut. Informations détaillées accessibles par une icône, sans modifier les valeurs ni les périodes.
+- Courbes visibles dès l’ouverture de Sommeil, une à la fois, sur des échelles comparables entre les jours ; repères des changements de visage lorsqu’ils sont présents.
+- Suppression des quatre cases vides en l’absence d’estimation et accès explicite au dernier bilan disponible. Dates du journal et du calcul de sommeil séparées ; relecture passive du cloud après vingt minutes, sans commande d’export.
+
+Home Assistant 2026.11.0 minimum. Après installation, redémarrer Home Assistant
+puis recharger la page ou l’application Companion. Les entités et configurations
+existantes sont conservées ; le bouton personnel est masqué par défaut.
+
 ## 0.5.4 — Temporiser les erreurs de lecture du firmware (2026-11-11)
 
 - Après un échec de lecture des informations firmware, attendre cinq minutes avant la prochaine tentative automatique, y compris après un échec au démarrage ou via le bouton de vérification.
