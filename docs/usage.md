@@ -4,7 +4,7 @@
 
 This guide covers the public Mins95 integration, its Home Assistant actions and changes from earlier versions. It requires an UrbanHello account and internet access. Example entity IDs and alarm IDs are placeholders: use the IDs from your own installation.
 
-**Stable 0.5.4 requires Home Assistant 2026.11.0 or newer.** Pre-release versions do not need to be enabled. Start with the [included dashboard card](card.md) for a visual interface to the features below.
+**Stable 0.5.5 requires Home Assistant 2026.11.0 or newer.** Pre-release versions do not need to be enabled. Start with the [included dashboard card](card.md) for a visual interface to the features below.
 
 ## Installation
 
@@ -17,7 +17,7 @@ You need a REMI already configured in the official app, its UrbanHello account c
 1. Open **Settings → Marketplace → Add from link**.
 2. Enter `https://github.com/Mins95/ha-remi`.
 3. Connect your GitHub account if Marketplace requests it for custom repositories.
-4. Open **Remi (Mins95)** and install stable **0.5.4** or newer.
+4. Open **Remi (Mins95)** and install stable **0.5.5** or newer.
 5. Restart Home Assistant, then configure the integration below.
 
 See the [official Marketplace instructions](https://www.home-assistant.io/integrations/marketplace/#custom-repositories).
@@ -26,7 +26,7 @@ See the [official Marketplace instructions](https://www.home-assistant.io/integr
 
 [Open this repository in HACS](https://my.home-assistant.io/redirect/hacs_repository/?owner=Mins95&repository=ha-remi&category=integration).
 
-Add `https://github.com/Mins95/ha-remi` under **Custom repositories**, choose **Integration**, install stable **0.5.4** or newer and restart Home Assistant. **Show beta versions** is not required. The same Home Assistant 2026.11.0 minimum applies.
+Add `https://github.com/Mins95/ha-remi` under **Custom repositories**, choose **Integration**, install stable **0.5.5** or newer and restart Home Assistant. **Show beta versions** is not required. The same Home Assistant 2026.11.0 minimum applies.
 
 ### Manual installation
 
@@ -91,6 +91,8 @@ The two brightness entities control separate settings:
 - **Nightlight brightness** writes `luminosity` on REMI's 0–100 scale. It is a numeric value with no separate on/off state or remembered previous intensity.
 - **Face brightness** writes `light_min` on the app's 1–10 scale. It changes only this setting, then refreshes the device. It does not modify light calibration, clock face or schedules.
 
+The bundled card adds a zero position to its face-brightness slider as a convenience: zero selects the off face instead of writing `light_min: 0`. Raising the slider from off first sets a supported 1–10 brightness, then restores the last non-off expression observed by the card (Awake if none is known). This replaces the card's separate face switch. The native number entity and its automation range remain 1–10.
+
 Missing, invalid or out-of-range values are shown as unknown. Face brightness requires whole numbers; fractions and non-finite values are rejected.
 
 ```yaml
@@ -111,7 +113,7 @@ The nightlight controls only `luminosity`; turning it off never changes the face
 
 ### Face and music options
 
-In the card's main tab, a display on/off control and **Awake/Sleepy** buttons provide quick face changes. The control affects the displayed face, not power to the device. Off selects `off`; On restores the last non-off face observed by that card for the selected REMI, or uses `awake` when no previous face is known. All expressions remain available through the native select entity below.
+In the card's main tab, **Awake/Sleepy** buttons provide quick face changes, and the face-brightness slider handles off at zero and brightness at 1–10. The zero position changes the displayed face without cutting power to the device. All expressions remain available through the native select entity below.
 
 Select a face using its stable code:
 
@@ -413,6 +415,12 @@ To edit a profile, get its `nap_id` with `list_naps` and supply only the fields 
 ## Upgrading
 
 <a id="upgrading-from-030"></a>
+
+### 0.5.5: appearance, compact layout and personal button
+
+Keep the integration and existing card, then restart Home Assistant and reload the dashboard. Choose an appearance and layout in the card editor; existing cards keep the Home Assistant theme and Normal layout. The optional custom button starts hidden. See the [card guide](card.md#optional-custom-button) to select an entity or embed a complete existing button with its long-press actions. A firmware update icon appears beside the connection status only when an update is reported.
+
+The face-brightness slider now includes zero to turn the face off, replacing the separate switch; native brightness automations still use 1–10. Schedule rows and Sleep controls are smaller in Normal as well as Compact layout.
 
 ### 0.5.4: firmware metadata retry delay
 

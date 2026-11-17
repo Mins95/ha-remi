@@ -21,6 +21,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
+from .const import FACE_DEFINE_TO_NAME
 from .history_api import (
     MAX_HISTORY_LOGS,
     MAX_HISTORY_REPORTS,
@@ -37,6 +38,8 @@ HISTORY_INTERVAL = timedelta(minutes=20)
 HISTORY_SAMPLES = 720
 HISTORY_SYNC_DELAY = 12
 HISTORY_SYNC_COOLDOWN = 60
+MAX_HISTORY_FACE_EVENTS = 1440
+_MAX_FACE_DATA_LENGTH = 65536
 _SERIES_FIELDS = {"temperature": "tempData", "noise": "data", "light": "lightData"}
 
 
@@ -90,6 +93,84 @@ def parse_sleep_info(record: Any) -> dict[str, Any]:
         stamp = parse_history_datetime(record.get(field))
         result[key] = stamp.isoformat() if stamp is not None and stamp.year > 1 else None
     result["sleep_status"] = "available" if minutes > 0 or result["sleep_score"] is not None else "unavailable"
+    return result
+
+
+def parse_history_face_events(value: Any, faces: Any) -> dict[str, Any]:
+    """Read face changes independently of sleep estimates, matching the app.
+
+    NoiseLogModel splits faceDataPsm into epoch_seconds:face_index tokens
+    (0x8c6f34/0x8c7154). TrackGraphChart uses each epoch's UTC clock on its
+    noon-to-noon grid (0x90bf40..0x90c06c). Do not reinterpret that clock in
+    the device timezone or claim an absolute event/sleep timestamp.
+
+    The app's map keeps the last value for a repeated epoch. Bound processing
+    to 1440 tokens/64 KiB; invalid_entries counts only inspected tokens, and
+    truncated explicitly reports an uninspected remainder.
+    """
+    result: dict[str, Any] = {
+        "face_events": [],
+        "face_events_source": "faceDataPsm",
+        "face_events_time_basis": "app_utc_clock",
+        "face_events_truncated": False,
+        "face_events_invalid_entries": 0,
+    }
+    if value is None:
+        return result
+    if not isinstance(value, str):
+        result["face_events_invalid_entries"] = 1
+        return result
+    prefix = value[:_MAX_FACE_DATA_LENGTH]
+    if len(value) > _MAX_FACE_DATA_LENGTH:
+        result["face_events_truncated"] = True
+        # Never interpret the beginning of an overlong token as a complete
+        # event. Retain all preceding complete tokens.
+        if not prefix[-1].isspace() and not value[_MAX_FACE_DATA_LENGTH].isspace():
+            parts = prefix.rsplit(maxsplit=1)
+            prefix = parts[0] if len(parts) == 2 else ""
+    tokens = prefix.split()
+    if len(tokens) > MAX_HISTORY_FACE_EVENTS:
+        result["face_events_truncated"] = True
+        tokens = tokens[:MAX_HISTORY_FACE_EVENTS]
+    face_names = {}
+    if isinstance(faces, list):
+        for face in faces:
+            if (
+                isinstance(face, dict)
+                and type(face.get("index")) is int
+                and 0 <= face["index"] <= 255
+                and isinstance(face.get("define"), str)
+            ):
+                face_names[face["index"]] = FACE_DEFINE_TO_NAME.get(face["define"])
+    events = {}
+    for token in tokens:
+        # Bound integer conversion and reject signs, fractions, extra fields,
+        # Unicode digits and dates outside Python's representable range.
+        parts = token.split(":")
+        if (
+            len(parts) != 2
+            or not 1 <= len(parts[0]) <= 12
+            or not 1 <= len(parts[1]) <= 3
+            or not all(part.isascii() and part.isdecimal() for part in parts)
+        ):
+            result["face_events_invalid_entries"] += 1
+            continue
+        epoch, face_index = map(int, parts)
+        if not 0 <= epoch <= 253402300799 or not 0 <= face_index <= 255:
+            result["face_events_invalid_entries"] += 1
+            continue
+        try:
+            clock = datetime.fromtimestamp(epoch, timezone.utc)
+        except (OverflowError, OSError, ValueError):
+            result["face_events_invalid_entries"] += 1
+            continue
+        events[epoch] = {
+            "clock": f"{clock.hour:02d}:{clock.minute:02d}",
+            "minute_offset": ((clock.hour - 12) % 24) * 60 + clock.minute,
+            "face_index": face_index,
+            "face": face_names.get(face_index),
+        }
+    result["face_events"] = sorted(events.values(), key=lambda event: event["minute_offset"])
     return result
 
 
@@ -252,6 +333,7 @@ class RemiHistoryCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "updated_at": updated.isoformat() if updated is not None else None,
                 "sleep_updated_at": sleep_updated.isoformat() if sleep_updated is not None else None,
                 **parse_sleep_info(info),
+                **parse_history_face_events(log.get("faceDataPsm"), getattr(self.device_coordinator, "faces", None)),
             }
             summary.update(report_timing(summary, self.remi.get("timezone")))
             summaries.append(summary)
