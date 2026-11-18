@@ -4,8 +4,13 @@ import { readFile } from "node:fs/promises";
 
 // Small DOM double: variable HTML parsing is deliberately forbidden, so an
 // unsafe text insertion fails instead of becoming a permissive mock operation.
+class Style {
+  constructor() { this.properties = new Map(); }
+  setProperty(name, value) { this.properties.set(name, String(value)); }
+  getPropertyValue(name) { return this.properties.get(name) ?? ""; }
+}
 class Node {
-  constructor(tag = "div") { this.tagName = tag; this.children = []; this.listeners = new Map(); this.dataset = {}; this.attributes = {}; this.type = ""; this.value = ""; this.checked = false; this.disabled = false; this.open = false; this.className = ""; this.isConnected = false; this._text = ""; }
+  constructor(tag = "div") { this.tagName = tag; this.children = []; this.listeners = new Map(); this.dataset = {}; this.attributes = {}; this.style = new Style(); this.type = ""; this.value = ""; this.checked = false; this.disabled = false; this.open = false; this.className = ""; this.isConnected = false; this._text = ""; }
   set innerHTML(_) { throw new Error("HTML parsing is forbidden"); }
   get value() { return this._value ?? ""; }
   set value(value) { this._value = String(value); }
@@ -147,6 +152,47 @@ test("unrelated HA states do not rebuild the card; relevant updates preserve exp
   assert.equal(card.shadowRoot.children[1], root);
   card.hass = { ...hass, states: { ...hass.states, [entry.entity_id]: { state: "43", attributes: {} } } };
   assert.notEqual(card.shadowRoot.children[1], root); assert.equal(card.shadowRoot.querySelector("details").open, true);
+});
+
+const rangeInput = (card, key) => card.shadowRoot.querySelectorAll("input").find(input => input.type === "range" && input.getAttribute("aria-label") === card.t(key));
+const rangeProgress = input => input.style.getPropertyValue("--remi-range-progress");
+
+test("range fills follow each entity's scale at both ends and midway without issuing commands", () => {
+  const nightlight = registryEntity("number", "brightness", "number.test_nightlight");
+  const noise = registryEntity("number", "noise_threshold", "number.test_noise");
+  const { card, calls } = setup([nightlight, noise]);
+  for (const [nightlightValue, noiseValue, expected] of [[0, 0, "0%"], [50, 125, "50%"], [100, 250, "100%"]]) {
+    card.hass = { ...card.hass, states: {
+      [nightlight.entity_id]: { state: String(nightlightValue), attributes: {} },
+      [noise.entity_id]: { state: String(noiseValue), attributes: {} },
+    } };
+    assert.equal(rangeProgress(rangeInput(card, "brightness")), expected);
+    assert.equal(rangeProgress(rangeInput(card, "noise_threshold")), expected);
+  }
+  card.hass = { ...card.hass, states: { [nightlight.entity_id]: { state: "unavailable", attributes: {} } } };
+  const unavailable = rangeInput(card, "brightness");
+  assert.equal(unavailable.disabled, true);
+  assert.equal(unavailable.parentNode.querySelector(".value").textContent, "—");
+  assert.equal(rangeProgress(unavailable), "0%");
+  assert.deepEqual(calls, []);
+});
+
+test("dragging a generic range updates its fill but only release sends the existing command, and reported state restores the fill", async () => {
+  const entry = registryEntity("number", "brightness", "number.test_nightlight");
+  const { card, calls } = setup([entry], { [entry.entity_id]: { state: "30", attributes: {} } });
+  const input = rangeInput(card, "brightness");
+  for (const value of [45, 60]) {
+    input.value = String(value); input.dispatchEvent({ type: "input" });
+    assert.equal(rangeProgress(input), `${value}%`);
+    assert.equal(input.parentNode.querySelector(".value").textContent, `${value}%`);
+  }
+  assert.deepEqual(calls, []);
+  assert.equal(card.hass.states[entry.entity_id].state, "30");
+  input.dispatchEvent({ type: "change" }); await flush();
+  assert.deepEqual(calls, [{ type: "call_service", domain: "number", service: "set_value", service_data: { value: 60 }, target: { entity_id: entry.entity_id } }]);
+  assert.equal(rangeProgress(rangeInput(card, "brightness")), "30%", "an acknowledged command is not an observed value");
+  card.hass = { ...card.hass, states: { [entry.entity_id]: { state: "42", attributes: {} } } };
+  assert.equal(rangeProgress(rangeInput(card, "brightness")), "42%");
 });
 
 test("card uses truthful physical controls and app-background labels", () => {
@@ -501,12 +547,34 @@ test("rapid face actions cannot send a second command while the first is pending
 
 test("dragging the face slider sends no intermediate command and an already lit face needs only a brightness write", async () => {
   const { card, calls, entry, brightnessEntry } = setupFace("sleepy");
-  for (const value of [2, 4, 7]) changeFaceLevel(card, value, "input");
+  assert.equal(rangeProgress(faceLevelInput(card)), "60%");
+  for (const value of [2, 4, 7]) {
+    changeFaceLevel(card, value, "input");
+    assert.equal(rangeProgress(faceLevelInput(card)), `${value * 10}%`);
+    assert.equal(faceLevelInput(card).getAttribute("aria-valuetext"), `${value}/10`);
+  }
   assert.equal(calls.length, 0); assert.equal(card.hass.states[brightnessEntry.entity_id].state, "6");
   changeFaceLevel(card, 7); await flush();
   assert.deepEqual(calls, [{ type: "call_service", domain: "number", service: "set_value", service_data: { value: 7 }, target: { entity_id: brightnessEntry.entity_id } }]);
   assert.equal(card.hass.states[entry.entity_id].state, "sleepy");
   assert.equal(faceLevelInput(card).value, "6", "an acknowledged write must not invent a new number state");
+  assert.equal(rangeProgress(faceLevelInput(card)), "60%");
+});
+
+test("the face fill distinguishes confirmed off from unavailable while tracking the displayed zero-to-ten scale", () => {
+  const { card, calls, entry, brightnessEntry } = setupFace("off", "10");
+  assert.equal(rangeProgress(faceLevelInput(card)), "0%");
+  assert.equal(faceLevelInput(card).getAttribute("aria-valuetext"), card.t("off"));
+  assert.equal(faceLevelInput(card).disabled, false);
+  reportFace(card, entry, "awake");
+  assert.equal(rangeProgress(faceLevelInput(card)), "100%");
+  card.hass = { ...card.hass, states: { ...card.hass.states, [brightnessEntry.entity_id]: { state: "5", attributes: {} } } };
+  assert.equal(rangeProgress(faceLevelInput(card)), "50%");
+  reportFace(card, entry, "unknown");
+  assert.equal(rangeProgress(faceLevelInput(card)), "0%");
+  assert.equal(faceLevelInput(card).getAttribute("aria-valuetext"), "—");
+  assert.equal(faceLevelInput(card).disabled, true);
+  assert.deepEqual(calls, []);
 });
 
 for (const invalid of [undefined, "unknown", "unavailable", "NaN", "Infinity", "0", "11", "1.5"]) {
@@ -742,7 +810,7 @@ test("opening Sleep shows the selected period's temperature even without sleep e
   assert.match(card.shadowRoot.querySelector(".chart").textContent, /Température/);
   assert.equal(card.shadowRoot.querySelectorAll("polyline").length, 1);
   assert.ok(card.shadowRoot.querySelector(".history-latest"));
-  assert.doesNotMatch(card.shadowRoot.textContent, /8 h 30|86\/100|999/);
+  assert.doesNotMatch(card.shadowRoot.querySelector(".body-sleep").textContent, /8 h 30|86\/100|999/);
   card._render(); card.hass = { ...hass, states: { [stateEntry.entity_id]: { state: "1000", attributes: {} } } };
   card.shadowRoot.querySelector(".tabs").querySelectorAll("button")[0].dispatchEvent({ type: "click" });
   card.shadowRoot.querySelector(".tabs").querySelectorAll("button")[2].dispatchEvent({ type: "click" });
@@ -759,7 +827,7 @@ test("date selection navigates actual journals and never invents missing calenda
   assert.equal(card.shadowRoot.querySelector(".history-previous").disabled, true);
   assert.deepEqual(card.shadowRoot.querySelectorAll(".stat-value").map(node => node.textContent), ["8 h 30", "86/100", "21:15", "06:45"]);
   assert.deepEqual(calls.at(-1).service_data, { remi_id: "REMI1", limit: 1, report_id: "older" });
-  assert.doesNotMatch(card.shadowRoot.textContent, /999|Enregistrement en cours/);
+  assert.doesNotMatch(card.shadowRoot.querySelector(".body-sleep").textContent, /999|Enregistrement en cours/);
   card.shadowRoot.querySelector(".history-next").dispatchEvent({ type: "click" });
   await flush();
   assert.equal(card._historyId, "recent");

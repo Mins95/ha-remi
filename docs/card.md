@@ -2,11 +2,11 @@
 
 [Back to the README](../README.md) · [Actions and usage](usage.md)
 
-The included **REMI card** brings everyday controls, schedules, sleep reports and timer profiles together. **0.5.5** adds appearance and layout choices, an optional personal button and a firmware update indicator. It requires **Home Assistant 2026.11.0 or newer**. The interface follows your Home Assistant language, with English and French included.
+The included **REMI card** brings everyday controls, schedules, sleep reports and timer profiles together, with appearance and layout choices, an optional personal button and a firmware update indicator. **0.5.6** harmonizes sliders across browsers and reduces the Normal layout's height. It requires **Home Assistant 2026.11.0 or newer**. The interface follows your Home Assistant language, with English and French included.
 
 ## Add the card
 
-1. [Install stable 0.5.5 or newer](usage.md#installation), restart Home Assistant and reload the browser page.
+1. [Install stable 0.5.6 or newer](usage.md#installation), restart Home Assistant and reload the browser page.
 2. Open the dashboard where you want to use REMI and choose **Edit dashboard**.
 3. Choose **Add card** and find **REMI** in the card picker.
 4. If you have several REMI devices, choose one in the visual editor.
@@ -18,7 +18,7 @@ The integration loads the bundled card resource automatically. You do not need a
 
 The card is updated with the integration. Its resource URL includes the integration version and a fingerprint of the bundled source, so source changes also invalidate the old cache. After an upgrade, restart Home Assistant and reload the browser or Companion app page. An already-open page keeps its loaded card until it is reloaded; the integration never forces a reload while you are editing a form.
 
-If you already use the card from 0.5.0 or newer, keep your existing dashboard configuration. Updating to 0.5.5 preserves the card configuration and entity IDs; a page reload loads the updated resource. Pre-release versions do not need to be enabled for this release.
+If you already use the card from 0.5.0 or newer, keep your existing dashboard configuration. Updating to 0.5.6 preserves the card configuration and entity IDs; a page reload loads the updated resource. Pre-release versions do not need to be enabled for this release.
 
 ## Choose what to display
 
@@ -37,9 +37,11 @@ Choose these options in the visual editor:
 | Appearance | **Home Assistant theme** (`theme`, default), **REMI turquoise** (`remi`) or **Dark glass** (`glass`, translucent dark blue) |
 | Layout | **Normal** (`full`, default) or **Compact** (`compact`, useful on a wall tablet or Tap Scheduler) |
 
-Normal mode uses the former compact spacing, with short schedule rows and tighter sleep controls. Compact mode goes further with a horizontal header, face controls and brightness sliders. Both modes keep the same configured controls and touch targets of at least 44 px. Narrow screens can wrap content; expanded panels and long personal buttons still need additional room. Sections dashboards use automatic card height so expanded panels and forms remain inside their allocated space. An explicit dashboard height override can still constrain the card; remove a fixed `grid_options.rows` value if content overlaps.
+Normal keeps larger labels and an everyday control layout, with short schedule rows and tighter sleep controls. Compact goes further by grouping face controls and brightness sliders into smaller panels. Both modes keep the same configured controls and touch targets of at least 44 px. Narrow screens can wrap content; expanded panels and long personal buttons still need additional room. Sections dashboards use automatic card height so expanded panels and forms remain inside their allocated space. An explicit dashboard height override can still constrain the card; remove a fixed `grid_options.rows` value if content overlaps.
 
 In Compact, each schedule groups its time, name and active days beside the switch and edit icon. Sleep uses a shorter chart, four summary values across when space allows, and an information icon beside the chart selector. The date selector, refresh action, chart values, gaps and face markers remain available. These extra reductions apply only to Compact.
+
+Normal groups the heading and tabs in one row and uses a horizontal REMI preview. Four tabs move below the heading on narrow cards. The two brightness sliders stay side by side when there is enough room; very narrow cards stack them to keep labels readable. Sliders use the same round handle and thin track across browsers, with a full touch area and keyboard support. Open panels and personal buttons keep the space they need.
 
 ```yaml
 type: custom:urbanhello-remi-card

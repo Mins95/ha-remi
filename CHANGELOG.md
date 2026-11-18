@@ -1,3 +1,13 @@
+## 0.5.6 — Curseurs harmonisés et carte moins haute (2026-11-18)
+
+- Curseurs harmonisés entre Safari, Chrome et Firefox : poignée ronde, piste fine et remplissage suivant la valeur, avec une zone tactile d’au moins 44 px.
+- Carte normale moins haute sur petit écran : aperçu Rémi horizontal et luminosités côte à côte lorsque la largeur le permet. Les libellés longs restent lisibles et les commandes conservent leur fonctionnement.
+- En-tête et onglets regroupés en disposition normale, aperçu horizontal également sur écran large et espaces réduits entre les commandes. Les zones tactiles restent d’au moins 44 px ; les panneaux ouverts adaptent toujours la hauteur.
+
+Après installation, redémarrer Home Assistant puis recharger le tableau de bord
+ou l’application Companion. Conserver les cartes et configurations existantes.
+Les actions personnelles et leurs appuis longs restent dans le tableau de bord.
+
 ## 0.5.5 — Carte personnalisable et affichage compact (2026-11-17)
 
 - Choix de l’apparence dans l’éditeur : thème Home Assistant, Rémi turquoise ou verre sombre. Mode compact pour les tablettes et Tap Scheduler, avec commandes tactiles conservées.
