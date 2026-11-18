@@ -145,6 +145,12 @@ function svg(tag, attrs = {}, children = []) {
   children.forEach(child => node.append(child));
   return node;
 }
+function setRangeProgress(input) {
+  const min = Number(input.getAttribute("min")), max = Number(input.getAttribute("max")), value = Number(input.value);
+  const percent = Number.isFinite(min) && Number.isFinite(max) && Number.isFinite(value) && max > min
+    ? Math.min(100, Math.max(0, (value - min) / (max - min) * 100)) : 0;
+  input.style.setProperty("--remi-range-progress", `${percent}%`);
+}
 function faceDrawing(face, miniature = false) {
   const art = svg("svg", { viewBox: miniature ? "40 48 120 85" : "0 0 200 195", class: miniature ? "face-symbol" : "face-art", "aria-hidden": "true" });
   if (!miniature) art.append(svg("path", { d: "M14 185 L21 91 Q25 7 100 7 Q175 7 179 91 L186 185 Z", fill: "currentColor", opacity: ".7" }), svg("path", { d: "M15 180 H185", stroke: "white", "stroke-width": "2", opacity: ".5" }));
@@ -187,6 +193,74 @@ ha-card .stat-value { font-size: 21px; }
 ha-card .feedback { padding: 10px 16px; }
 ha-card .field { margin: 12px 0; }
 ha-card .custom-button, ha-card .custom-card { margin: 8px 0; }
+
+/* Normal keeps larger everyday controls with a single heading/navigation row. */
+ha-card.layout-full { display: grid; grid-template-columns: minmax(70px, 1fr) auto; align-items: center; }
+ha-card.layout-full .head { padding: 10px 12px; gap: 6px; }
+ha-card.layout-full .head .badge { display: none; }
+ha-card.layout-full h2 { font-size: 20px; }
+ha-card.layout-full .eyebrow { font-size: 9px; letter-spacing: 1.5px; }
+ha-card.layout-full .tabs { padding: 0 8px 0 0; border-bottom: 0; align-self: stretch; }
+ha-card.layout-full .tabs button { display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 44px; padding: 6px; }
+ha-card.layout-full .tabicon { display: inline; margin: 0; }
+ha-card.layout-full .body { grid-column: 1 / -1; padding: 6px 14px 10px; }
+ha-card.layout-full .feedback { grid-column: 1 / -1; }
+ha-card.layout-full .hero { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 10px; margin-bottom: 6px; }
+ha-card.layout-full .face-art { order: -1; flex: 0 0 64px; width: 64px; height: 63px; margin: 0; }
+ha-card.layout-full .hero-top { flex: 1; flex-wrap: wrap; min-width: 0; }
+ha-card.layout-full .control { margin: 5px 0; }
+ha-card.layout-full .faces button { min-height: 44px; }
+ha-card.layout-full input[type=range] { height: 44px; }
+ha-card.layout-full .custom-button, ha-card.layout-full .custom-card { margin: 4px 0; }
+ha-card.layout-full .remi-disclosures > details { margin-top: 6px; padding-top: 0; }
+ha-card.layout-full .remi-disclosures summary { min-height: 44px; }
+
+/* Keep the same round sliders across Safari, Chromium and Firefox. The input
+   retains its full touch area; only its painted track and thumb are small. */
+ha-card input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+ha-card input[type=range]::-webkit-slider-runnable-track {
+  height: 4px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--primary-color, #38aab9) 0%, var(--primary-color, #38aab9) var(--remi-range-progress, 0%), var(--divider-color, #dfe9e9) var(--remi-range-progress, 0%), var(--divider-color, #dfe9e9) 100%);
+}
+ha-card input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  width: 20px;
+  height: 20px;
+  margin-top: -8px;
+  border: 2px solid var(--card-background-color, #fff);
+  border-radius: 50%;
+  background: var(--primary-color, #38aab9);
+  box-shadow: 0 1px 4px #0002;
+}
+ha-card input[type=range]::-moz-range-track {
+  height: 4px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--primary-color, #38aab9) 0%, var(--primary-color, #38aab9) var(--remi-range-progress, 0%), var(--divider-color, #dfe9e9) var(--remi-range-progress, 0%), var(--divider-color, #dfe9e9) 100%);
+}
+ha-card input[type=range]::-moz-range-progress { height: 4px; background: transparent; }
+ha-card input[type=range]::-moz-range-thumb {
+  box-sizing: border-box;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--card-background-color, #fff);
+  border-radius: 50%;
+  background: var(--primary-color, #38aab9);
+  box-shadow: 0 1px 4px #0002;
+}
 
 /* Compact: horizontal bands, not a scaled or clipped copy of the normal card. */
 ha-card.layout-compact {
@@ -358,8 +432,11 @@ ha-card.layout-compact .chart { padding: 6px; margin-top: 4px; border-radius: 10
 ha-card.layout-compact .chart-label { font-size: 12px; }
 
 @container remi-card (max-width: 420px) {
-  ha-card.layout-full .brightness-controls { grid-template-columns: 1fr; gap: 0; }
-  ha-card.layout-full .hero-top { flex-wrap: wrap; }
+  ha-card.layout-full .tabs button { font-size: 11px; padding: 6px 4px; }
+  ha-card.layout-full .tabs:has(button:nth-child(4)) { grid-column: 1 / -1; padding: 0 10px 6px; }
+  ha-card.layout-full .brightness-controls { gap: 0 12px; }
+  ha-card.layout-full .brightness-controls .control { display: grid; grid-template-rows: 1fr 48px; }
+  ha-card.layout-full .brightness-controls .control-title { align-items: baseline; line-height: 1.3; }
   .connection-indicators { min-width: 0; }
   ha-card.layout-compact .head { padding: 7px 6px; }
   ha-card.layout-compact .head .badge { display: none; }
@@ -368,6 +445,7 @@ ha-card.layout-compact .chart-label { font-size: 12px; }
   ha-card .sleep-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @container remi-card (max-width: 340px) {
+  ha-card.layout-full .brightness-controls { grid-template-columns: 1fr; gap: 0; }
   ha-card.layout-compact .remi-overview { grid-template-columns: 1fr; gap: 4px; }
   ha-card.layout-compact .hero-top { flex-direction: row; flex: 1; justify-content: space-between; }
   ha-card.layout-compact .brightness-controls { grid-template-columns: 1fr; }
@@ -843,7 +921,8 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
   _slider(key, min, max, unit) {
     const state = this._state("number", key), valid = usable(state) && Number.isFinite(Number(state.state));
     const value = el("span", { class: "value", text: valid ? `${state.state}${unit}` : "—" });
-    const input = el("input", { type: "range", min, max, step: 1, value: valid ? state.state : min, disabled: this._busy || !valid, "aria-label": this.t(key), oninput: event => { value.textContent = `${event.target.value}${unit}`; }, onchange: event => this._entityAction("number", key, "set_value", { value: Number(event.target.value) }) });
+    const input = el("input", { type: "range", min, max, step: 1, value: valid ? state.state : min, disabled: this._busy || !valid, "aria-label": this.t(key), oninput: event => { value.textContent = `${event.target.value}${unit}`; setRangeProgress(input); }, onchange: event => this._entityAction("number", key, "set_value", { value: Number(event.target.value) }) });
+    setRangeProgress(input);
     return el("div", { class: "control" }, [el("div", { class: "control-title" }, [el("span", { text: this.t(key) }), value]), input]);
   }
   _faceBrightnessSlider() {
@@ -856,10 +935,11 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
       oninput: event => {
         if (this._busy || !this._faceBrightnessContextCurrent(context) || this.shadowRoot.querySelector(".face-brightness-slider") !== input || !this._faceBrightnessState().available) return;
         if (!/^(?:[0-9]|10)$/.test(event.target.value)) return;
-        value.textContent = label(Number(event.target.value)); input.setAttribute("aria-valuetext", value.textContent);
+        value.textContent = label(Number(event.target.value)); input.setAttribute("aria-valuetext", value.textContent); setRangeProgress(input);
       },
       onchange: event => this._setFaceBrightness(event.target.value, context, input),
     });
+    setRangeProgress(input);
     return el("div", { class: "control face-brightness-control" }, [el("div", { class: "control-title" }, [el("span", { text: this.t("face_brightness") }), value]), input]);
   }
   _selectControl(key, label) {
