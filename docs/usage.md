@@ -4,7 +4,7 @@
 
 This guide covers the public Mins95 integration, its Home Assistant actions and changes from earlier versions. It requires an UrbanHello account and internet access. Example entity IDs and alarm IDs are placeholders: use the IDs from your own installation.
 
-**Stable 0.5.5 requires Home Assistant 2026.11.0 or newer.** Pre-release versions do not need to be enabled. Start with the [included dashboard card](card.md) for a visual interface to the features below.
+**Stable 0.5.6 requires Home Assistant 2026.11.0 or newer.** Pre-release versions do not need to be enabled. Start with the [included dashboard card](card.md) for a visual interface to the features below.
 
 ## Installation
 
@@ -17,7 +17,7 @@ You need a REMI already configured in the official app, its UrbanHello account c
 1. Open **Settings → Marketplace → Add from link**.
 2. Enter `https://github.com/Mins95/ha-remi`.
 3. Connect your GitHub account if Marketplace requests it for custom repositories.
-4. Open **Remi (Mins95)** and install stable **0.5.5** or newer.
+4. Open **Remi (Mins95)** and install stable **0.5.6** or newer.
 5. Restart Home Assistant, then configure the integration below.
 
 See the [official Marketplace instructions](https://www.home-assistant.io/integrations/marketplace/#custom-repositories).
@@ -26,7 +26,7 @@ See the [official Marketplace instructions](https://www.home-assistant.io/integr
 
 [Open this repository in HACS](https://my.home-assistant.io/redirect/hacs_repository/?owner=Mins95&repository=ha-remi&category=integration).
 
-Add `https://github.com/Mins95/ha-remi` under **Custom repositories**, choose **Integration**, install stable **0.5.5** or newer and restart Home Assistant. **Show beta versions** is not required. The same Home Assistant 2026.11.0 minimum applies.
+Add `https://github.com/Mins95/ha-remi` under **Custom repositories**, choose **Integration**, install stable **0.5.6** or newer and restart Home Assistant. **Show beta versions** is not required. The same Home Assistant 2026.11.0 minimum applies.
 
 ### Manual installation
 
@@ -415,6 +415,10 @@ To edit a profile, get its `nap_id` with `list_naps` and supply only the fields 
 ## Upgrading
 
 <a id="upgrading-from-030"></a>
+
+### 0.5.6: consistent sliders and a shorter Normal layout
+
+Keep the integration and existing cards, then restart Home Assistant and reload the dashboard. Sliders use a round handle and thin track across browsers. Normal groups the heading and tabs, uses a horizontal REMI preview and reduces spacing while retaining touch targets of at least 44 px. Personal button configurations and long-press actions are preserved.
 
 ### 0.5.5: appearance, compact layout and personal button
 
