@@ -1,6 +1,7 @@
 """Tests for the RemiApiClient."""
 from __future__ import annotations
 
+import json
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -33,7 +34,12 @@ def _make_response(status: int, json_data: Any) -> MagicMock:
     """Build a mock aiohttp response."""
     resp = MagicMock()
     resp.status = status
-    resp.json = AsyncMock(return_value=json_data)
+    resp.content_type = "application/json"
+    async def chunks(size):
+        body = json.dumps(json_data).encode()
+        for start in range(0, len(body), size):
+            yield body[start:start + size]
+    resp.content.iter_chunked.side_effect = chunks
     resp.text = AsyncMock(return_value=str(json_data))
     resp.__aenter__ = AsyncMock(return_value=resp)
     resp.__aexit__ = AsyncMock(return_value=False)
@@ -60,6 +66,24 @@ def client(mock_session: MagicMock) -> RemiApiClient:
 
 class TestRemiApiClientInit:
     """Tests for RemiApiClient initialisation."""
+
+    async def test_bounded_json_and_redirect_policy(self, client, mock_session, monkeypatch):
+        mock_session.post.return_value = _make_response(200, MOCK_LOGIN_RESPONSE)
+        await client.login()
+        assert mock_session.post.call_args.kwargs["allow_redirects"] is False
+        mock_session.request.return_value = _make_response(200, {"value": "oversized"})
+        monkeypatch.setattr("custom_components.urbanhello_remi_unofficial.api._MAX_JSON_BYTES", 8)
+        with pytest.raises(RemiApiError):
+            await client._request("GET", "/parse/config")
+        assert mock_session.request.call_args.kwargs["allow_redirects"] is False
+
+    @pytest.mark.parametrize("fields", [{"remis": "bad"}, {"remis": [None]},
+                                        {"sessionToken": []}, {"sessionToken": "bad\nvalue"}])
+    async def test_failed_login_keeps_the_previous_session(self, client, mock_session, fields):
+        mock_session.post.return_value = _make_response(200, {**MOCK_LOGIN_RESPONSE, **fields})
+        with pytest.raises(RemiApiError):
+            await client.login()
+        assert client.session_token == MOCK_SESSION_TOKEN
 
     def test_initial_state(self, mock_session: MagicMock) -> None:
         c = RemiApiClient(MOCK_USERNAME, MOCK_PASSWORD, mock_session)
@@ -130,21 +154,21 @@ class TestLogin:
         assert error.value.translation_key == "api_login_failed"
         assert error.value.translation_placeholders == {"status": "500"}
 
-    async def test_login_missing_session_token_raises_auth_error(self, client: RemiApiClient, mock_session: MagicMock) -> None:
+    async def test_login_missing_session_token_rejects_response(self, client: RemiApiClient, mock_session: MagicMock) -> None:
         response = {**MOCK_LOGIN_RESPONSE, "sessionToken": None}
         mock_session.post.return_value = _make_response(200, response)
 
-        with pytest.raises(RemiAuthError) as error:
+        with pytest.raises(RemiApiError) as error:
             await client.login()
         assert error.value.translation_key == "api_invalid_login_response"
 
-    async def test_login_missing_current_remi_raises_auth_error(self, client: RemiApiClient, mock_session: MagicMock) -> None:
+    async def test_login_missing_current_remi_rejects_response(self, client: RemiApiClient, mock_session: MagicMock) -> None:
         response = {**MOCK_LOGIN_RESPONSE, "currentRemi": {}}
         mock_session.post.return_value = _make_response(200, response)
 
-        with pytest.raises(RemiAuthError) as error:
+        with pytest.raises(RemiApiError) as error:
             await client.login()
-        assert error.value.translation_key == "api_invalid_login_response"
+        assert error.value.translation_key == "api_invalid_response"
 
 
 class TestRequest:

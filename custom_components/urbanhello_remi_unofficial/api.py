@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import re
 from typing import Any
@@ -24,6 +25,7 @@ from .media_api import RemiMediaApiMixin
 from .nap_api import RemiNapApiMixin
 
 _LOGGER = logging.getLogger(__name__)
+_MAX_JSON_BYTES = 8 * 1024 * 1024
 
 
 class RemiApiError(HomeAssistantError):
@@ -36,6 +38,25 @@ class RemiAuthError(RemiApiError):
 
 class _TransientApiError(RemiApiError):
     """A transient response that may only be retried for read operations."""
+
+
+async def _read_json_object(response: aiohttp.ClientResponse) -> dict[str, Any]:
+    """Bound decompressed bytes, including chunked responses without a length."""
+    media_type = response.content_type
+    if media_type != "application/json" and not media_type.endswith("+json"):
+        raise RemiApiError(translation_domain=DOMAIN, translation_key="api_invalid_response")
+    body = bytearray()
+    async for chunk in response.content.iter_chunked(64 * 1024):
+        if len(body) + len(chunk) > _MAX_JSON_BYTES:
+            raise RemiApiError(translation_domain=DOMAIN, translation_key="api_invalid_response")
+        body.extend(chunk)
+    try:
+        data = json.loads(body)
+    except (ValueError, RecursionError) as err:
+        raise RemiApiError(translation_domain=DOMAIN, translation_key="api_invalid_response") from err
+    if not isinstance(data, dict):
+        raise RemiApiError(translation_domain=DOMAIN, translation_key="api_invalid_response")
+    return data
 
 
 class RemiApiClient(RemiHistoryApiMixin, RemiMediaApiMixin, RemiNapApiMixin):
@@ -92,7 +113,7 @@ class RemiApiClient(RemiHistoryApiMixin, RemiMediaApiMixin, RemiNapApiMixin):
         }
         async with self._session.post(
             url, json=payload, headers=self._base_headers(authenticated=False),
-            timeout=self._timeout,
+            timeout=self._timeout, allow_redirects=False,
         ) as resp:
             if resp.status == 401:
                 raise RemiAuthError(
@@ -105,18 +126,24 @@ class RemiApiClient(RemiHistoryApiMixin, RemiMediaApiMixin, RemiNapApiMixin):
                     translation_key="api_login_failed",
                     translation_placeholders={"status": str(resp.status)},
                 )
-            data = await resp.json()
+            data = await _read_json_object(resp)
 
         session_token = data.get("sessionToken")
         current_remi = data.get("currentRemi", {})
         current_remi_id = current_remi.get("objectId") if isinstance(current_remi, dict) else None
-        all_remi_ids: list[str] = data.get("remis", [])
-
-        if not session_token or not current_remi_id:
-            raise RemiAuthError(
+        all_remi_ids = data.get("remis", [])
+        if (
+            not isinstance(session_token, str) or not session_token.isascii()
+            or not session_token.isprintable() or not session_token.strip()
+            or not isinstance(all_remi_ids, list)
+        ):
+            raise RemiApiError(
                 translation_domain=DOMAIN,
                 translation_key="api_invalid_login_response",
             )
+        self._validate_object_id(current_remi_id)
+        for remi_id in all_remi_ids:
+            self._validate_object_id(remi_id)
 
         if not all_remi_ids:
             all_remi_ids = [current_remi_id]
@@ -153,7 +180,8 @@ class RemiApiClient(RemiHistoryApiMixin, RemiMediaApiMixin, RemiNapApiMixin):
         url = f"{API_BASE_URL}{path}"
         token_used = self._session_token
         async with self._session.request(
-            method, url, json=payload, headers=self._base_headers(), timeout=self._timeout
+            method, url, json=payload, headers=self._base_headers(), timeout=self._timeout,
+            allow_redirects=False,
         ) as resp:
             status = resp.status
             if status != 401:
@@ -169,19 +197,7 @@ class RemiApiClient(RemiHistoryApiMixin, RemiMediaApiMixin, RemiNapApiMixin):
                         translation_key="api_http_error",
                         translation_placeholders={"status": str(status)},
                     )
-                try:
-                    data = await resp.json()
-                except ValueError as err:
-                    raise RemiApiError(
-                        translation_domain=DOMAIN,
-                        translation_key="api_invalid_response",
-                    ) from err
-                if not isinstance(data, dict):
-                    raise RemiApiError(
-                        translation_domain=DOMAIN,
-                        translation_key="api_invalid_response",
-                    )
-                return data
+                return await _read_json_object(resp)
         # Release the response before logging in; concurrent expired reads share
         # one refreshed session instead of racing two logins against each other.
         if not retry_auth:
@@ -235,11 +251,17 @@ class RemiApiClient(RemiHistoryApiMixin, RemiMediaApiMixin, RemiNapApiMixin):
             "/parse/classes/Face",
             {"order": "index", "_method": "GET"},
         )
-        return data.get("results", [])
+        faces = data.get("results")
+        if not isinstance(faces, list) or any(not isinstance(face, dict) for face in faces):
+            raise RemiApiError(translation_domain=DOMAIN, translation_key="api_invalid_response")
+        return faces
 
     async def get_config(self) -> dict[str, Any]:
         """Fetch server config (used for firmware update version)."""
-        return await self._request("GET", "/parse/config")
+        config = await self._request("GET", "/parse/config")
+        if not isinstance(config.get("params", {}), dict):
+            raise RemiApiError(translation_domain=DOMAIN, translation_key="api_invalid_response")
+        return config
 
     async def get_events(self) -> list[dict[str, Any]]:
         """Return a complete, validated alarm snapshot before registry cleanup.
