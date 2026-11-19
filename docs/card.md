@@ -30,6 +30,8 @@ The optional YAML keys are `show_face`, `show_brightness`, `show_face_brightness
 
 ## Appearance and layout
 
+The editor also lets you select a **temperature sensor** from Home Assistant. The card displays the chosen sensor’s name, unit and last report time. Clearing this field restores REMI’s own reading. In YAML, set `temperature_entity` to the sensor entity ID. This option changes only the card display. REMI’s historical curves always use its own readings.
+
 Choose these options in the visual editor:
 
 | Option | Choices |
@@ -129,9 +131,9 @@ The card uses the integration's normal Home Assistant entities and actions. It n
 
 ### Choose a sleep period
 
-The Sleep tab lists up to **60 available cloud journals**. Use the date selector or arrows to move between available periods; gaps in the cloud catalogue are not filled with invented days. A period runs from the previous day to the journal's UTC calendar date, matching the app's noon-to-noon view. The journal timestamp's hour is not an export time or a proven sample timestamp.
+The Sleep tab lists up to **60 available journals**, including nights saved on this Home Assistant instance. Use the date selector or arrows to move between recording periods. A period runs from the previous day to the journal's UTC calendar date, matching the app's noon-to-noon view.
 
-Sleep values and charts always come from the same selected journal. The temperature chart opens automatically; choose Noise or the app's Light reference in the chart selector. A current period may still be recording, with no sleep estimate yet. When all four estimates are missing, the card shows a short explanation instead of four empty tiles; available environmental curves remain visible. **Latest available sleep estimate** explicitly switches to a completed journal with an estimate, without mixing its values with another period's date or curves.
+Sleep values and charts come from the same selected journal. The card opens an available curve, even when a night has no score. The chart selector offers temperature, noise and the app’s light reference. A message identifies curves from an earlier export. **Latest available sleep estimate** switches to a completed journal with an estimate.
 
 A zero sleep score or zero sleep duration is shown as unavailable, as in the app; midnight remains a valid bedtime or wake-up time. The integration does not calculate missing sleep estimates from environmental curves. The separate native Home Assistant sensors prefer the latest completed report with a valid sleep estimate, when one is available, so they may describe a different period from the one selected in the card.
 

@@ -1,3 +1,10 @@
+## 0.6.0-beta.1 — Historique et horaires hors ligne
+
+- L’onglet Sommeil conserve les nuits reçues sur Home Assistant, y compris leurs courbes lorsqu’UrbanHello ne fournit aucun score. La durée de conservation se règle entre 0 et 60 nuits, avec 30 nuits par défaut.
+- L’onglet Horaires affiche la dernière programmation confirmée pendant une coupure. Deux capteurs donnent le prochain réveil et le prochain coucher prévus dans le fuseau du Rémi.
+- La carte peut afficher une sonde de température choisie dans Home Assistant, avec sa source et son heure de réception. Une information de connexion manquante apparaît comme inconnue.
+- Les repères de visage sont relus après une panne. Les actions vérifient les permissions de l’utilisateur et la publication vérifie les résultats de Hassfest et HACS sur la révision à distribuer.
+
 ## 0.5.6 — Curseurs harmonisés et carte moins haute (2026-11-18)
 
 - Curseurs harmonisés entre Safari, Chrome et Firefox : poignée ronde, piste fine et remplissage suivant la valeur, avec une zone tactile d’au moins 44 px.
