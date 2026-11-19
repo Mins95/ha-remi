@@ -26,9 +26,9 @@ class TestOnlineBinarySensor:
         desc = _get_description("online")
         assert desc.value_fn({"online": False}) is False
 
-    def test_online_missing_defaults_false(self):
+    def test_online_missing_is_unknown(self):
         desc = _get_description("online")
-        assert desc.value_fn({}) is False
+        assert desc.value_fn({}) is None
 
     def test_online_from_mock_data(self):
         desc = _get_description("online")
@@ -46,9 +46,9 @@ class TestAliveBinarySensor:
         desc = _get_description("alive")
         assert desc.value_fn({"alive": False}) is False
 
-    def test_alive_missing_defaults_false(self):
+    def test_alive_missing_is_unknown(self):
         desc = _get_description("alive")
-        assert desc.value_fn({}) is False
+        assert desc.value_fn({}) is None
 
     def test_alive_disabled_by_default(self):
         desc = _get_description("alive")

@@ -11,6 +11,7 @@ from homeassistant.helpers import config_validation as cv
 from .const import DOMAIN, FACE_DEFINE_TO_NAME, FACE_DEFINE_TO_OBJECT_ID
 from .media_api import invalid_response, validate_music_path, validate_object_id, validation_error
 from .nap_api import strict_integer
+from .service_permissions import async_prepare_device_action
 
 NAP_SERVICES = ("list_naps", "create_nap", "update_nap", "delete_nap")
 _FIELD_MAP = {
@@ -106,29 +107,35 @@ def async_register_nap_services(hass: HomeAssistant) -> None:
     if hass.services.has_service(DOMAIN, "list_naps"):
         return
 
-    def resolve(call: ServiceCall):
+    async def resolve(call: ServiceCall):
         coordinators = [value for value in hass.data.get(DOMAIN, {}).values() if hasattr(value, "client")]
         if remi_id := call.data.get("remi_id"):
             coordinators = [value for value in coordinators if value.client.remi_id == remi_id]
         if len(coordinators) != 1:
             raise validation_error("nap_target_not_unique")
-        return coordinators[0]
+        coordinator = coordinators[0]
+        await async_prepare_device_action(hass, call, coordinator, control=call.service != "list_naps")
+        return coordinator
 
     async def list_naps(call: ServiceCall) -> dict[str, Any]:
-        records = await resolve(call).client.get_naps()
+        coordinator = await resolve(call)
+        records = await coordinator.client.get_naps()
         return {"profiles": [_profile(record) for record in records]}
 
     async def create_nap(call: ServiceCall) -> dict[str, Any]:
-        response = await resolve(call).client.create_nap(_payload(dict(call.data), create=True))
+        coordinator = await resolve(call)
+        response = await coordinator.client.create_nap(_payload(dict(call.data), create=True))
         if not isinstance(response, dict) or not isinstance(response.get("objectId"), str):
             raise invalid_response()
         return {"nap_id": response["objectId"]}
 
     async def update_nap(call: ServiceCall) -> None:
-        await resolve(call).client.update_nap(call.data["nap_id"], _payload(dict(call.data), create=False))
+        coordinator = await resolve(call)
+        await coordinator.client.update_nap(call.data["nap_id"], _payload(dict(call.data), create=False))
 
     async def delete_nap(call: ServiceCall) -> None:
-        await resolve(call).client.delete_nap(call.data["nap_id"])
+        coordinator = await resolve(call)
+        await coordinator.client.delete_nap(call.data["nap_id"])
 
     hass.services.async_register(DOMAIN, "list_naps", list_naps, schema=LIST_NAPS_SCHEMA, supports_response=SupportsResponse.ONLY)
     hass.services.async_register(DOMAIN, "create_nap", create_nap, schema=CREATE_NAP_SCHEMA, supports_response=SupportsResponse.OPTIONAL)

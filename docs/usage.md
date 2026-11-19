@@ -157,6 +157,8 @@ If the library is empty, check the tracks available in the official app. A missi
 
 ### Temperature
 
+The `received_at` attribute records when Home Assistant received REMI’s cloud state. A new response may contain an older measurement. The dashboard card can display a separate room thermometer and identifies the selected source.
+
 The Celsius conversion is `(raw - 50) / 5`. For example, raw `160` means **22.0 °C**. Decimal values are retained, with a suggested display precision of one decimal place. The official app displays an integer.
 
 The raw measurement and conversion formula are available in the sensor's attributes. Missing or invalid readings remain unknown. Decimal display preserves the reported value; it does not prove that the physical sensor is accurate to a tenth of a degree.
@@ -176,6 +178,8 @@ From 0.5.4, a failed firmware metadata read postpones automatic retries for five
 ## Alarm actions
 
 ### Preserving alarms after cloud changes
+
+Home Assistant saves the last complete schedule for each REMI. During a cloud outage, the Schedules tab shows that copy with its confirmation time. The **Next scheduled wake-up** and **Next scheduled bedtime** sensors calculate the next enabled, recurring awake or sleepy face event in REMI’s time zone. Predictions advance locally. An ambiguous clock change or a missing time zone can leave a prediction unknown. One-off events with no confirmed date are omitted from the calculation. Schedule changes require a fresh cloud connection.
 
 From 0.5.2, Home Assistant keeps a persistent mapping between each alarm's existing identity and its current cloud ID. When a previous ID disappears and a new ID appears with the same exact, nonempty name, the integration associates them only if that name was unique across both complete snapshots. Existing entity IDs, unique IDs and custom names are retained; switches, time entities and the card then target the new cloud ID.
 
@@ -284,6 +288,8 @@ data:
 
 ## Sleep and environmental history
 
+In the integration’s options, choose how many nights to keep on this Home Assistant instance. The default is **30**, the maximum is **60**, and **0** deletes and disables the archive. Saved nights survive a restart and remain readable during a cloud outage. Removing the integration entry deletes its archive. Each night stores the received estimates and environmental measurements. A night can have temperature, noise or light data with no sleep score.
+
 The integration reads a catalogue of up to **60 cloud journals**. The card lets you select an available recording period, with its sleep values and charts kept together. The five native Home Assistant sensors prefer the latest **completed report with a valid sleep estimate**; if none exists, they use the latest available report and leave missing estimates unknown.
 
 | Sensor | Value |
@@ -304,14 +310,14 @@ The latest cloud update is exposed separately as `updated_at`. `report_age_days`
 
 ### Request history data
 
-Action: `urbanhello_remi_unofficial.get_history`. It returns a response. With the default `sync: false`, it reads cloud data without sending a command to REMI. Select a device with `remi_id` only when needed.
+The `urbanhello_remi_unofficial.get_history` action returns the requested periods. The default `sync: false` reads available cloud or saved data. Select a device with `remi_id` when several REMIs are configured.
 
 | Field | Default | Behavior |
 | --- | --- | --- |
 | `limit` | `2` | Integer 1–60 for metadata; at most 2 when requesting series without a `report_id` |
 | `include_series` | `true` | Include temperature, noise and light files; set `false` to list periods without downloading charts |
 | `report_id` | Not set | Return one journal from the selected REMI's available catalogue; use the ID returned by a metadata request |
-| `refresh` | `false` | Reread cloud metadata and clear cached chart files; this alone does not request a device export |
+| `refresh` | `false` | Reread cloud metadata and refresh the requested charts. Saved nights remain available if that read fails. |
 | `sync` | `false` | Explicitly request a new device export, then refresh cloud data; see the limits below |
 | `remi_id` | Not set | Cloud REMI ID, required to choose among multiple loaded devices |
 
@@ -347,7 +353,7 @@ Each sample exposes `index`, `minute_offset`, `clock`, `value`, `raw_value`, `gr
 
 Historical temperature uses a different scale from the live sensor's `(raw - 50) / 5` conversion. The response names its source as `app_chart_axis` and retains decimals and raw values. This reproduces the graph's scale; it does not independently calibrate the physical sensor. A temperature byte of zero could be an unfilled slot or the graph's lower boundary, so `raw_value: 0` is retained while `value` and `graph_value` are `null` and `valid` is `false`. It is not presented as a confirmed −10 °C reading. The card leaves a gap and does not connect lines across it. Zero noise and light bytes remain valid. Boundary bytes remain identified in `boundary_values_not_calibrated`; this does not mean all boundary values are missing.
 
-Metadata refreshes every 20 minutes. Binary chart files are fetched only on demand, with a bounded memory cache. A failed file appears as unavailable without hiding the other series or the sleep report. No historical values are retroactively inserted into Home Assistant's recorder.
+Metadata refreshes every 20 minutes. With archiving enabled, a successful poll also retrieves missing or updated curves for up to two nights. Selecting a night can load its curves immediately. The response identifies data served from the local archive. A failed download preserves the last saved curve for that night when available. Local history stays in the integration’s own storage.
 
 ### Request a fresh export from REMI
 
@@ -362,9 +368,9 @@ data:
 response_variable: remi_history
 ```
 
-This sends the app's `push_logs:<nonce>` command, waits **12 seconds**, clears the history cache and rereads the cloud. A **60-second cooldown** limits export attempts for the loaded REMI. During the cooldown, the action rereads the cloud without sending another command and returns `sync_status: cooldown`; a new request returns `sync_status: requested`. That status confirms a request, not that every expected report has arrived. With no sync request, `sync_status` is `null`.
+This sends the app's export command, waits **12 seconds** and rereads the cloud. A **60-second cooldown** limits export attempts for the loaded REMI. The result reports `requested`, `cooldown`, or `failed` when the command failed and saved nights are available. The card can continue displaying those nights. A successful request may take time to appear in the journal. With no sync request, `sync_status` is `null`.
 
-Normal polling, opening the Sleep tab, selecting a period and loading charts never request an export automatically. To reread only the cloud and clear cached files, set `refresh: true` and leave `sync: false`.
+Normal polling, opening the Sleep tab, selecting a period and loading charts never request an export automatically. To request fresh data from the cloud while preserving the archive, set `refresh: true` and leave `sync: false`.
 
 The export command has been tested on a physical REMI and updated its current journal. It does not guarantee recovery of missing earlier days or completion of a sleep estimate. Ambiguous command failures are not automatically replayed.
 
@@ -574,6 +580,8 @@ Changing a Marketplace repository is a separate operation from updating its rele
 Before changing repository ownership, preserve a Home Assistant backup and verify the source-change procedure supported by your package manager. This guide does not provide an automatic Marketplace source migration.
 
 ## Connection behavior and validation
+
+Device-wide actions check the caller’s Home Assistant permissions on the selected REMI. Viewing history or listing timers requires read access. Editing alarms or timers requires control access. A history request with `sync: true` requires both because it sends a device command and returns the household’s sleep data. During a cloud outage the local schedule and archive are available for reading. Device commands resume after a successful poll.
 
 Device state is polled every 60 seconds. Cloud reads use a 15-second timeout per request and up to three attempts for connection failures or HTTP 500, 502, 503 and 504 responses. History metadata has its own 20-minute coordinator and does not block initial device setup. Chart files have bounded size, timeouts and caching.
 

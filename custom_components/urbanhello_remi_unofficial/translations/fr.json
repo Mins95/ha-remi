@@ -45,6 +45,15 @@
       "reconfigure_successful": "Les identifiants UrbanHello ont été modifiés."
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Historique local du sommeil",
+        "description": "Conservez jusqu’à 60 nuits de bilans et de courbes sur ce Home Assistant. Réglez la valeur à zéro pour effacer l’archive et désactiver le stockage local.",
+        "data": { "history_nights": "Nombre de nuits à conserver" }
+      }
+    }
+  },
   "entity": {
     "button": {
       "check_firmware": {
@@ -70,6 +79,9 @@
           },
           "conversion": {
             "name": "Formule de conversion"
+          },
+          "received_at": {
+            "name": "Valeur reçue à"
           }
         }
       },
@@ -212,6 +224,55 @@
       },
       "reported_clock_shift": {
         "name": "Décalage d’horloge signalé"
+      },
+      "next_wake": {
+        "name": "Prochain réveil prévu",
+        "state_attributes": {
+          "synced_at": {
+            "name": "Horaires confirmés à"
+          },
+          "alarm_name": {
+            "name": "Nom de l’horaire"
+          },
+          "source": {
+            "name": "Source",
+            "state": {
+              "confirmed_schedule": "Programme confirmé"
+            }
+          },
+          "cached": {
+            "name": "Affiché depuis la copie locale"
+          },
+          "timezone": {
+            "name": "Fuseau horaire du Rémi"
+          },
+          "schedules": {
+            "name": "Horaires confirmés"
+          }
+        }
+      },
+      "next_bedtime": {
+        "name": "Prochain coucher prévu",
+        "state_attributes": {
+          "synced_at": {
+            "name": "Horaires confirmés à"
+          },
+          "alarm_name": {
+            "name": "Nom de l’horaire"
+          },
+          "source": {
+            "name": "Source",
+            "state": {
+              "confirmed_schedule": "Programme confirmé"
+            }
+          },
+          "cached": {
+            "name": "Affiché depuis la copie locale"
+          },
+          "timezone": {
+            "name": "Fuseau horaire du Rémi"
+          }
+        }
       }
     },
     "binary_sensor": {

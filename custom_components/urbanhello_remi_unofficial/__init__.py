@@ -28,7 +28,10 @@ from .const import (
 from .coordinator import RemiDataUpdateCoordinator
 from .history import RemiHistoryCoordinator
 from .history_api import MAX_HISTORY_REPORTS, validate_history_report_id
+from .history_store import history_store
 from .nap import async_register_nap_services, async_unregister_nap_services
+from .schedule_snapshot import ScheduleSnapshot
+from .service_permissions import async_prepare_device_action
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -181,11 +184,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         raise ConfigEntryNotReady(
             translation_domain=DOMAIN, translation_key="alarm_identity_storage_invalid"
         ) from err
-    await coordinator.async_setup()
-    await coordinator.async_config_entry_first_refresh()
+    snapshot = ScheduleSnapshot(hass, entry.entry_id, client.remi_id)
+    coordinator.schedule_snapshot = snapshot
+    try:
+        await snapshot.async_load()
+    except (HomeAssistantError, ValueError, OSError):
+        _LOGGER.warning("Could not restore the local REMI schedule")
+    history = RemiHistoryCoordinator(hass, client, coordinator, entry=entry)
+    coordinator.history_coordinator = history
+    has_nights = await history.async_load_archive()
+    if has_nights or snapshot.synced_at is not None:
+        # The actual cloud poll sets availability. Never announce a cached device
+        # as online or feed historical alarms to registry cleanup.
+        coordinator.data = {
+            "remi": snapshot.remi or {"objectId": client.remi_id},
+            "events": snapshot.events,
+        }
+    try:
+        await coordinator.async_config_entry_first_refresh()
+    except ConfigEntryNotReady:
+        if coordinator.data is None:
+            raise
+        _LOGGER.debug("Loading REMI with locally saved data until the cloud returns")
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
-    coordinator.history_coordinator = RemiHistoryCoordinator(hass, client, coordinator)
 
     # Remove only obsolete entities owned by this config entry. Automation
     # references are intentionally left for the user to migrate.
@@ -201,9 +223,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     # Optional history must neither delay startup nor block live device controls.
-    entry.async_create_background_task(
-        hass, coordinator.history_coordinator.async_refresh(), "REMI initial history refresh"
-    )
+    history.async_start()
 
     from .frontend import async_setup_frontend
     await async_setup_frontend(hass)
@@ -215,8 +235,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Discard the identity store only when its config entry is removed."""
+    """Remove all local data belonging to the deleted entry."""
     await alarm_identity_store(hass, entry.entry_id).async_remove()
+    await ScheduleSnapshot(hass, entry.entry_id, entry.data[CONF_REMI_ID]).async_remove()
+    await history_store(hass, entry.entry_id).async_remove()
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -255,6 +277,7 @@ def _register_services(hass: HomeAssistant) -> None:
     async def handle_create_alarm(call: ServiceCall) -> None:
         """Handle create_alarm service call."""
         coordinator = resolve_coordinator(remi_id=call.data.get("remi_id"))
+        await async_prepare_device_action(hass, call, coordinator, control=True)
         event_data: dict[str, Any] = {
             "name": call.data["name"],
             "event_time": call.data["time"],
@@ -286,6 +309,7 @@ def _register_services(hass: HomeAssistant) -> None:
         """Handle update_alarm service call."""
         event_id = call.data["event_id"]
         coordinator = resolve_coordinator(event_id, call.data.get("remi_id"))
+        await async_prepare_device_action(hass, call, coordinator, control=True)
         fields: dict[str, Any] = {}
 
         if "name" in call.data:
@@ -328,12 +352,14 @@ def _register_services(hass: HomeAssistant) -> None:
     async def handle_delete_alarm(call: ServiceCall) -> None:
         """Handle delete_alarm service call."""
         coordinator = resolve_coordinator(call.data["event_id"], call.data.get("remi_id"))
+        await async_prepare_device_action(hass, call, coordinator, control=True)
         await coordinator.client.delete_event(call.data["event_id"])
         await coordinator.async_request_refresh()
 
     async def handle_history(call: ServiceCall) -> dict[str, Any]:
         """Read history, with a device export only when explicitly requested."""
         coordinator = resolve_coordinator(remi_id=call.data.get("remi_id"))
+        await async_prepare_device_action(hass, call, coordinator, control=call.data["sync"], read=True)
         return await coordinator.history_coordinator.async_get_history(
             call.data["limit"],
             report_id=call.data.get("report_id"),

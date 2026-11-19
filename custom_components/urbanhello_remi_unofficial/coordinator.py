@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from time import monotonic
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -14,6 +14,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .api import RemiApiClient, RemiApiError, RemiAuthError
 from .alarm_identity import AlarmIdentityMap, AlarmIdentityStorageError
 from .const import DOMAIN, SCAN_INTERVAL_SECONDS
+from .schedule_snapshot import ScheduleSnapshot
 
 _LOGGER = logging.getLogger(__name__)
 _FIRMWARE_METADATA_INTERVAL_SECONDS = 3600
@@ -32,17 +33,25 @@ class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         self.client = client
         self.faces: list[dict[str, Any]] = []
+        self._faces_retry_at: float | None = None
+        self.device_received_at: datetime | None = None
+        self.schedule_snapshot: ScheduleSnapshot | None = None
         self.config_params: dict[str, Any] = {}
         self._config_checked_at: float | None = None
         self._config_retry_at: float | None = None
         self.events_available = False
         self.alarm_identities = AlarmIdentityMap(client.remi_id)
 
+    async def _async_read_device(self) -> tuple[dict[str, Any], datetime]:
+        """Timestamp the state response independently of slower optional requests."""
+        device = await self.client.get_remi()
+        return device, datetime.now(UTC)
+
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch latest data from the Remi API."""
         try:
             remi, events = await asyncio.gather(
-                self.client.get_remi(),
+                self._async_read_device(),
                 self.client.get_events(),
                 return_exceptions=True,
             )
@@ -54,6 +63,7 @@ class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if isinstance(remi, BaseException):
                 self.events_available = False
                 raise remi
+            remi, received_at = remi
             if isinstance(events, BaseException):
                 self.events_available = False
                 if not isinstance(events, RemiApiError):
@@ -68,16 +78,13 @@ class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     _LOGGER.error("Could not safely persist REMI alarm identities; retaining the previous snapshot")
                 if not self.events_available:
                     events = self.events
-            if self._config_due():
-                try:
-                    await self._async_refresh_config()
-                except RemiAuthError as err:
-                    raise ConfigEntryAuthFailed(
-                        translation_domain=DOMAIN, translation_key="reauth_required"
-                    ) from err
-                except RemiApiError:
-                    # A firmware metadata failure must not discard valid device data.
-                    _LOGGER.debug("Could not refresh REMI firmware metadata")
+                elif self.schedule_snapshot is not None:
+                    try:
+                        await self.schedule_snapshot.async_confirm(remi, events)
+                    except (HomeAssistantError, OSError):
+                        _LOGGER.warning("Could not save the latest REMI schedule locally")
+            await self.async_setup()
+            self.device_received_at = received_at
             return {"remi": remi, "events": events}
         except RemiAuthError as err:
             raise ConfigEntryAuthFailed(
@@ -98,17 +105,35 @@ class RemiDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             or now - self._config_checked_at >= _FIRMWARE_METADATA_INTERVAL_SECONDS
         )
 
-    async def async_setup(self) -> None:
-        """Fetch static data (faces, config) once at setup."""
+    async def _async_refresh_faces_if_needed(self) -> None:
+        """Retry optional labels without slowing each regular poll in an outage."""
+        if self.faces or (self._faces_retry_at is not None and monotonic() < self._faces_retry_at):
+            return
         try:
-            self.faces = await self.client.get_faces()
-            await self._async_refresh_config()
+            faces = await self.client.get_faces()
+        except RemiAuthError:
+            raise
+        except RemiApiError:
+            faces = []
+        if faces:
+            self.faces = faces
+            self._faces_retry_at = None
+        else:
+            self._faces_retry_at = monotonic() + _FIRMWARE_METADATA_RETRY_SECONDS
+            _LOGGER.debug("REMI face catalogue unavailable; will retry")
+
+    async def async_setup(self) -> None:
+        """Refresh each missing or expired piece of metadata independently."""
+        try:
+            await self._async_refresh_faces_if_needed()
+            if self._config_due():
+                await self._async_refresh_config()
         except RemiAuthError as err:
             raise ConfigEntryAuthFailed(
                 translation_domain=DOMAIN, translation_key="reauth_required"
             ) from err
-        except RemiApiError as err:
-            _LOGGER.warning("Could not fetch static Remi data: %s", err)
+        except RemiApiError:
+            _LOGGER.debug("Could not refresh REMI firmware metadata")
 
     async def _async_refresh_config(self) -> None:
         """Refresh cached informational firmware configuration."""

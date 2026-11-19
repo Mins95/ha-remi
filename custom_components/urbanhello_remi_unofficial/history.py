@@ -11,17 +11,22 @@ import asyncio
 from collections import OrderedDict
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
+import hashlib
 import logging
 import time
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import aiohttp
-from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import FACE_DEFINE_TO_NAME
+from .history_store import (
+    CONF_HISTORY_NIGHTS, DEFAULT_HISTORY_NIGHTS, HISTORY_SAMPLES, NightArchive, history_store,
+)
 from .history_api import (
     MAX_HISTORY_LOGS,
     MAX_HISTORY_REPORTS,
@@ -35,7 +40,6 @@ from .history_api import (
 
 _LOGGER = logging.getLogger(__name__)
 HISTORY_INTERVAL = timedelta(minutes=20)
-HISTORY_SAMPLES = 720
 HISTORY_SYNC_DELAY = 12
 HISTORY_SYNC_COOLDOWN = 60
 MAX_HISTORY_FACE_EVENTS = 1440
@@ -268,17 +272,63 @@ def decode_history_series(kind: str, body: bytes) -> dict[str, Any]:
 
 
 class RemiHistoryCoordinator(DataUpdateCoordinator[dict[str, Any]]):
-    """Poll small metadata independently; fetch binary files only on request."""
+    """Poll metadata and incrementally archive environmental measurements."""
 
-    def __init__(self, hass: HomeAssistant, client: Any, device_coordinator: Any) -> None:
+    def __init__(self, hass: HomeAssistant, client: Any, device_coordinator: Any, *, entry: ConfigEntry | None = None) -> None:
         super().__init__(hass, _LOGGER, name="REMI history", update_interval=HISTORY_INTERVAL)
         self.client = client
         self.device_coordinator = device_coordinator
         self._logs: list[dict[str, Any]] = []
         self._fetched_monotonic: float | None = None
-        self._file_cache: OrderedDict[tuple[str, str], tuple[float, bytes]] = OrderedDict()
+        self._file_cache: OrderedDict[tuple[str, str], tuple[float, tuple[bytes, str]]] = OrderedDict()
         self._history_lock = asyncio.Lock()
+        self._file_locks = {kind: asyncio.Lock() for kind in _SERIES_FIELDS}
         self._last_sync_attempt: float | None = None
+        self._archive = NightArchive(
+            history_store(hass, entry.entry_id), client.remi_id,
+            entry.options.get(CONF_HISTORY_NIGHTS, DEFAULT_HISTORY_NIGHTS),
+        ) if entry is not None else None
+        self._entry = entry
+        self._backfill: asyncio.Task | None = None
+        self._last_backfill: dict[str, float] = {}
+        self._closing = False
+        self._unsubscribe_archive = None
+
+    async def async_load_archive(self) -> bool:
+        """Restore existing reports before the first cloud read."""
+        if self._archive is None:
+            return False
+        try:
+            await self._archive.async_load()
+        except (OSError, HomeAssistantError):
+            _LOGGER.warning("Could not read the local REMI sleep archive")
+        if not self._archive.reports:
+            return False
+        self.data = self._archived_data()
+        return True
+
+    def _archived_data(self) -> dict[str, Any]:
+        return {"logs": self._archive.summaries(), "fetched_at": self._archive.fetched_at,
+                "source": "local_archive"}
+
+    @callback
+    def async_start(self) -> None:
+        """Poll for archiving even if every historical sensor has been disabled."""
+        if self._archive and self._archive.nights:
+            self._unsubscribe_archive = self.async_add_listener(lambda: None)
+        self._entry.async_create_background_task(self.hass, self.async_refresh(), "REMI initial history refresh")
+
+    async def async_shutdown(self) -> None:
+        self._closing = True
+        if self._unsubscribe_archive:
+            self._unsubscribe_archive()
+            self._unsubscribe_archive = None
+        await super().async_shutdown()
+        if self._backfill:
+            self._backfill.cancel()
+            await asyncio.gather(self._backfill, return_exceptions=True)
+        if self._archive:
+            await self._archive.async_close()
 
     @property
     def remi(self) -> dict[str, Any]:
@@ -316,6 +366,13 @@ class RemiHistoryCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             ))
             sleep = await self.client.get_history_sleep_info(ids)
         except (HomeAssistantError, aiohttp.ClientError, TimeoutError) as err:
+            if self._archive:
+                self._archive.prune()
+                await self._archive.async_save()
+                if self._archive.reports:
+                    self._logs = []
+                    self._fetched_monotonic = time.monotonic()
+                    return self._archived_data()
             # The parent coordinator and device controls remain untouched.
             raise UpdateFailed("Unable to read REMI history") from err
         sleep_by_id = {record["objectId"]: record for record in sleep}
@@ -329,6 +386,8 @@ class RemiHistoryCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             sleep_updated = parse_history_datetime(info.get("updatedAt")) if info else None
             summary = {
                 "report_id": log["objectId"],
+                "source": "cloud",
+                "series_available": any(log.get(field) is not None for field in _SERIES_FIELDS.values()),
                 "log_timestamp": stamp.isoformat() if stamp is not None else None,
                 "updated_at": updated.isoformat() if updated is not None else None,
                 "sleep_updated_at": sleep_updated.isoformat() if sleep_updated is not None else None,
@@ -337,15 +396,85 @@ class RemiHistoryCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             }
             summary.update(report_timing(summary, self.remi.get("timezone")))
             summaries.append(summary)
+        fetched_at = datetime.now(timezone.utc).isoformat()
+        if self._archive and self._archive.nights:
+            self._archive.update_reports(summaries, fetched_at)
+            live_ids = {log["objectId"] for log in logs}
+            for log in logs:
+                record = self._archive.reports.get(log["objectId"])
+                if record is None:
+                    continue
+                revisions = {}
+                for kind, field in _SERIES_FIELDS.items():
+                    if log.get(field) is None:
+                        continue
+                    try:
+                        revisions[kind] = self._revision(log[field], log)
+                    except RemiHistoryError:
+                        continue
+                record["revisions"] = revisions
+            for summary in summaries:
+                record = self._archive.reports.get(summary["report_id"])
+                if record and record["files"]:
+                    summary["series_available"] = True
+            archived = [s for s in self._archive.summaries() if s["report_id"] not in live_ids]
+            if archived:
+                summaries.extend(archived)
+                summaries.sort(key=lambda report: report.get("log_timestamp") or "", reverse=True)
+                del summaries[MAX_HISTORY_REPORTS:]
+            await self._archive.async_save()
+        # Publish pointers and summaries together. Do not suspend between here
+        # and the coordinator installing the result as its current data.
         self._logs = deepcopy(logs)
+        if (not self._closing and self._archive and self._archive.nights
+                and (self._backfill is None or self._backfill.done())):
+            self._backfill = self._entry.async_create_background_task(
+                self.hass, self._backfill_series(), "REMI archive environmental history", eager_start=False,
+            )
         self._fetched_monotonic = time.monotonic()
-        return {"logs": summaries, "fetched_at": datetime.now(timezone.utc).isoformat()}
+        return {"logs": summaries, "fetched_at": fetched_at, "source": "cloud"}
 
-    async def _cached_file(self, file: dict[str, Any], revision: str) -> bytes:
+    def _revision(self, file: dict[str, Any], log: dict[str, Any]) -> str:
+        """A cloud file reference stays in memory; only its fingerprint is saved."""
+        url = history_file_url(file)
+        return hashlib.sha256(f"{url}\n{log.get('updatedAt', '')}".encode()).hexdigest()
+
+    async def _backfill_series(self) -> None:
+        """Catch up two recent/missing nights per successful poll, without exporting."""
+        logs = [log for log in self._logs if log["objectId"] in self._archive.reports]
+        # Rotate retries so one continuously failing file cannot starve older nights.
+        self._last_backfill = {key: value for key, value in self._last_backfill.items()
+                               if key in self._archive.reports}
+        logs.sort(key=lambda log: self._last_backfill.get(log["objectId"], 0.0))
+        attempted = 0
+        for log in logs:
+            key = log["objectId"]
+            missing = []
+            for kind, field in _SERIES_FIELDS.items():
+                if log.get(field) is None:
+                    continue
+                try:
+                    revision = self._revision(log[field], log)
+                except RemiHistoryError:
+                    continue
+                archived = self._archive.file(key, kind)
+                if archived is None or archived.revision != revision:
+                    missing.append(kind)
+            if missing:
+                self._last_backfill[key] = time.monotonic()
+                await asyncio.gather(*(self._read_body(kind, log) for kind in missing))
+                await self._archive.async_save()
+                attempted += 1
+                if attempted >= MAX_HISTORY_LOGS:
+                    break
+
+    async def _cached_file(
+        self, file: dict[str, Any], revision: str, *, force: bool = False,
+    ) -> tuple[bytes, str]:
         key = (history_file_url(file), revision)
         now = time.monotonic()
         cached = self._file_cache.get(key)
-        if cached is not None and now - cached[0] < HISTORY_INTERVAL.total_seconds():
+        if not force and cached is not None and now - cached[0] < HISTORY_INTERVAL.total_seconds():
             self._file_cache.move_to_end(key)
             return cached[1]
         # A failed refresh never makes an expired file appear newly fetched.
@@ -353,10 +482,11 @@ class RemiHistoryCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         body = await self.client.get_history_file(file)
         if not isinstance(body, bytes) or len(body) not in (0, HISTORY_SAMPLES):
             raise history_error()
-        self._file_cache[key] = (time.monotonic(), body)
+        downloaded = (body, datetime.now(timezone.utc).isoformat())
+        self._file_cache[key] = (time.monotonic(), downloaded)
         while len(self._file_cache) > MAX_HISTORY_LOGS * len(_SERIES_FIELDS):
             self._file_cache.popitem(last=False)
-        return body
+        return downloaded
 
     async def async_get_history(
         self, limit: int = MAX_HISTORY_LOGS, *, report_id: str | None = None,
@@ -371,11 +501,13 @@ class RemiHistoryCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         elif include_series:
             validate_history_limit(limit)
         async with self._history_lock:
-            if report_id is not None:
-                if self.data is None or not self.last_update_success:
+            if self._closing:
+                raise history_error()
+            if report_id is not None and sync:
+                if not self._logs or not self.last_update_success:
                     await self.async_refresh()
-                if not self.last_update_success or not any(log.get("objectId") == report_id for log in self._logs):
-                    # Verify ownership before any explicit export command too.
+                if not any(log.get("objectId") == report_id for log in self._logs):
+                    # An explicit export requires current online ownership.
                     raise history_error()
             sync_status = None
             if sync:
@@ -384,25 +516,32 @@ class RemiHistoryCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     # Mark the attempt before the write: an ambiguous failure
                     # must not cause an automatic replay of a device command.
                     self._last_sync_attempt = now
-                    await self.client.request_history_sync()
-                    await asyncio.sleep(HISTORY_SYNC_DELAY)
-                    sync_status = "requested"
+                    try:
+                        await self.client.request_history_sync()
+                    except (HomeAssistantError, aiohttp.ClientError, TimeoutError):
+                        if not self._archive or not self._archive.reports:
+                            raise
+                        sync_status = "failed"
+                    else:
+                        await asyncio.sleep(HISTORY_SYNC_DELAY)
+                        sync_status = "requested"
                 else:
                     sync_status = "cooldown"
                 refresh = True
-            if refresh:
-                self._file_cache.clear()
+            restored = self.data is not None and self.data.get("source") == "local_archive"
             if (
-                refresh or self._fetched_monotonic is None
+                refresh or (self._fetched_monotonic is None and not restored)
                 or not self.last_update_success
-                or time.monotonic() - self._fetched_monotonic >= HISTORY_INTERVAL.total_seconds()
+                or (self._fetched_monotonic is not None
+                    and time.monotonic() - self._fetched_monotonic >= HISTORY_INTERVAL.total_seconds())
             ):
                 await self.async_refresh()
             if not self.last_update_success or self.data is None:
                 raise history_error()
             # Snapshot once: a metadata poll cannot mix reports and file pointers.
             result = deepcopy(self.data)
-            pairs = list(zip(deepcopy(self._logs), result["logs"], strict=True))
+            live_logs = {log["objectId"]: log for log in self._logs}
+            pairs = [(live_logs.get(summary["report_id"]), summary) for summary in result["logs"]]
             if report_id is not None:
                 pairs = [(log, summary) for log, summary in pairs if summary.get("report_id") == report_id]
                 if not pairs:
@@ -422,17 +561,48 @@ class RemiHistoryCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     continue
                 # At most three file reads in flight; each has its own 15s deadline.
                 series = await asyncio.gather(*(
-                    self._load_series(kind, log) for kind in _SERIES_FIELDS
+                    self._load_series(kind, summary["report_id"], log, force=refresh) for kind in _SERIES_FIELDS
                 ))
                 summary["series"] = dict(zip(_SERIES_FIELDS, series, strict=True))
+            if self._archive:
+                await self._archive.async_save()
             return result
 
-    async def _load_series(self, kind: str, log: dict[str, Any]) -> dict[str, Any]:
+    async def _read_body(self, kind: str, log: dict, *, force: bool = False) -> tuple[bytes, str] | None:
+        """Refresh a single file and retain the last good version on failure."""
+        key = log["objectId"]
         file = log.get(_SERIES_FIELDS[kind])
-        if file is None:
-            return {"status": "missing", "samples": []}
-        try:
-            body = await self._cached_file(file, str(log.get("updatedAt", "")))
-            return decode_history_series(kind, body)
-        except (RemiHistoryError, aiohttp.ClientError, TimeoutError):
-            return {"status": "unavailable", "samples": []}
+        async with self._file_locks[kind]:
+            try:
+                revision = self._revision(file, log)
+                saved = self._archive.file(key, kind) if self._archive else None
+                if not force and saved and saved.revision == revision and log.get("updatedAt"):
+                    return saved.body, "local_archive"
+                body, received_at = await self._cached_file(file, revision, force=force)
+                # Empty files can be transient while a new export is being
+                # published. Retry next poll and retain any usable older curve.
+                if not body and saved:
+                    return None
+                if self._archive and body:
+                    record = self._archive.reports.get(key)
+                    if record and record["revisions"].get(kind) == revision:
+                        self._archive.save_file(key, kind, revision, body, received_at)
+                return body, "cloud"
+            except (RemiHistoryError, aiohttp.ClientError, TimeoutError):
+                return None
+
+    async def _load_series(self, kind: str, key: str, log: dict | None, *, force: bool) -> dict:
+        has_reference = log is not None and log.get(_SERIES_FIELDS[kind]) is not None
+        if has_reference:
+            current = await self._read_body(kind, log, force=force)
+            if current is not None:
+                body, source = current
+                return dict(decode_history_series(kind, body), source=source)
+        record = self._archive.reports.get(key) if self._archive else None
+        saved = self._archive.file(key, kind) if record else None
+        if saved is not None:
+            return dict(decode_history_series(kind, saved.body), source="local_archive",
+                        updated_at=saved.updated_at, received_at=saved.received_at,
+                        outdated=record.get("revisions", {}).get(kind) != saved.revision)
+        status = "unavailable" if has_reference or (record and kind in record.get("revisions", {})) else "missing"
+        return {"status": status, "samples": []}

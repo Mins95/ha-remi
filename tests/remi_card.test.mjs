@@ -1243,6 +1243,80 @@ test("zero noise and zero light remain valid readings, while unavailable series 
 const displayKeys = ["show_face", "show_brightness", "show_face_brightness", "show_temperature", "show_connection", "show_music", "show_alarms", "show_sleep", "show_naps"];
 const displayInput = (editor, key) => editor.shadowRoot.querySelectorAll("input").find(input => input.dataset.option === key);
 
+test("the chosen room thermometer updates independently and keeps its identity when unavailable", async () => {
+  const remi = registryEntity("sensor", "temperature", "sensor.remi_temperature");
+  const external = "sensor.room", room = { state: "21.75", attributes: { friendly_name: "Sonde chambre", device_class: "temperature", unit_of_measurement: "°C" }, last_reported: "2026-11-19T08:15:00Z" };
+  const { card, hass } = setup([remi], {
+    [remi.entity_id]: { state: "18.4", attributes: { unit_of_measurement: "°C", received_at: "2026-11-18T19:05:00Z" } },
+    [external]: room,
+    "sensor.lux": { state: "300", attributes: { device_class: "illuminance" } }
+  });
+  hass.config = { time_zone: "Europe/Paris" };
+  card.setConfig({ temperature_entity: external });
+  assert.equal(card.shadowRoot.querySelector(".temperature").textContent, "21,75 °C");
+  assert.match(card.shadowRoot.querySelector(".temperature-source").textContent, /Sonde chambre.*Reçu.*09:15/);
+  card.hass = { ...hass, states: { ...hass.states, [external]: { ...room, state: "22" } } };
+  assert.equal(card.shadowRoot.querySelector(".temperature").textContent, "22,0 °C");
+  card.hass = { ...hass, states: { ...hass.states, [external]: { ...room, state: "unavailable" } } };
+  assert.equal(card.shadowRoot.querySelector(".temperature").textContent, "—");
+  assert.ok(card.shadowRoot.querySelector(".temperature-source").textContent.includes("Sonde chambre"));
+  const editor = new UrbanhelloRemiCardEditor(); editor.setConfig({ temperature_entity: external }); editor.hass = hass; await flush();
+  const field = editor.shadowRoot.querySelector(".temperature-entity");
+  assert.deepEqual(field.querySelectorAll("option").map(node => node.value).sort(), ["", remi.entity_id, external].sort());
+  assert.equal(field.querySelectorAll("option").find(node => node.value === external).getAttribute("selected"), "true");
+  editor.addEventListener("config-changed", event => card.setConfig(event.detail.config));
+  field.value = ""; field.dispatchEvent({ type: "change" });
+  assert.equal(card.shadowRoot.querySelector(".temperature").textContent, "18,4 °C");
+  assert.match(card.shadowRoot.querySelector(".temperature-source").textContent, /Thermomètre du Rémi.*Reçu.*20:05/);
+  assert.throws(() => card.setConfig({ temperature_entity: "switch.unrelated" }));
+});
+
+test("cached schedules retain real future events, weekdays and device timezone while blocking stale controls", () => {
+  const wake = registryEntity("sensor", "next_wake", "sensor.next"), bedtime = registryEntity("sensor", "next_bedtime", "sensor.bed");
+  const entry = registryEntity("switch", "alarm_row", "switch.example");
+  const { card, hass, calls } = setup([wake, bedtime, entry], { [entry.entity_id]: { state: "on", attributes: { event_id: "event", alarm_name: "Matin", time: "09:00" } } });
+  card._tab = "alarms"; card._render();
+  const staleToggle = card.shadowRoot.querySelector(".toggle");
+  const next = { state: "2026-11-22T08:00:00Z", attributes: { cached: true, synced_at: "2026-11-18T18:00:00Z", timezone: "Europe/Paris", schedules: [
+    { name: "Matin", time: "09:00", enabled: true, days: ["sat", "sun"] }, { name: "Soir", time: "20:15", enabled: false, days: [] }
+  ] } };
+  card.hass = { ...hass, states: { ...hass.states, [wake.entity_id]: next, [bedtime.entity_id]: { state: "unknown", attributes: { cached: true } } } };
+  assert.match(card.shadowRoot.querySelector(".schedule-forecast").textContent, /Prochain réveil.*09:00/);
+  assert.match(card.shadowRoot.querySelector(".saved-schedule").textContent, /Derniers horaires confirmés.*Lecture seule/);
+  assert.match(card.shadowRoot.querySelectorAll(".schedule-saved-row")[1].textContent, /Soir.*Désactivé/);
+  assert.equal(card.shadowRoot.querySelector(".toggle"), undefined);
+  staleToggle.dispatchEvent({ type: "change" });
+  card._openForm("alarm");
+  assert.equal(card._form, null); assert.equal(calls.length, 0);
+});
+
+test("an archived scoreless night opens a valid noise series and shows its original catalogue date", async () => {
+  const { card, hass, reports } = setupHistory();
+  const report = reports[0], date = "2026-11-14T07:15:00Z";
+  hass.callWS = async request => ({ response: { source: "local_archive", fetched_at: date, logs: [{
+    ...report, series_available: true, ...(request.service_data.report_id ? { series: { noise: { samples: [historySample(0, 0), historySample(1, 10)], outdated: true, updated_at: "2026-11-13T08:10:00Z" } } } : {})
+  }] } });
+  await card._loadHistory();
+  assert.match(card.shadowRoot.querySelector(".history-summary").textContent, /Courbes disponibles/);
+  assert.match(card.shadowRoot.querySelector(".chart").textContent, /Bruit.*Dernière courbe enregistrée.*13 nov/);
+  assert.match(card.shadowRoot.querySelector(".history-received").textContent, /14 nov/);
+  assert.equal(card._message.text, card.t("archiveRead"));
+  assert.equal(card.shadowRoot.querySelectorAll(".stat-value").length, 0);
+});
+
+test("a failed detail download after a successful catalogue refresh preserves the selected chart", async () => {
+  const { card, hass, reports } = setupHistory(); await card._loadHistory();
+  const detail = card._historyDetail;
+  hass.callWS = async request => {
+    if (request.service_data.report_id) throw new Error("Download failed");
+    return { response: { logs: reports, fetched_at: "2026-11-19T07:00:00Z" } };
+  };
+  await card._loadHistory({ refresh: true });
+  assert.equal(card._historyDetail, detail);
+  assert.ok(card.shadowRoot.querySelector("polyline"));
+  assert.equal(card._message.error, true);
+});
+
 test("all display controls default to visible and preserve the compact music disclosure", () => {
   const { card, calls } = setup(); card.setConfig({ type: "custom:urbanhello-remi-card" });
   assert.ok(card.shadowRoot.querySelector(".faces")); assert.ok(card.shadowRoot.querySelector(".temperature"));
@@ -1395,15 +1469,15 @@ test("a suspended alarm draft does not freeze REMI states or deferred focusout r
   const draft = card._form; draft.inputs.get("time").value = "08:15"; draft.inputs.get("time").dispatchEvent({ type: "change" });
   card.setConfig({ show_alarms: false });
   card.hass = { ...hass, states: { ...hass.states, "sensor.temperature": { state: "22.3", attributes: { unit_of_measurement: "°C" } }, "binary_sensor.online": { state: "off", attributes: {} } } };
-  assert.equal(card.shadowRoot.querySelector(".temperature").textContent, "22.3 °C");
+  assert.equal(card.shadowRoot.querySelector(".temperature").textContent, "22,3 °C");
   assert.match(card.shadowRoot.querySelector(".connection-status").textContent, /Déconnecté/);
   assert.equal(card._form, draft); assert.equal(draft.inputs.get("time").value, "08:15");
   card.shadowRoot.activeElement = card.shadowRoot.querySelector("input");
   card.hass = { ...card.hass, states: { ...card.hass.states, "sensor.temperature": { state: "22.8", attributes: { unit_of_measurement: "°C" } } } };
-  assert.equal(card.shadowRoot.querySelector(".temperature").textContent, "22.3 °C");
+  assert.equal(card.shadowRoot.querySelector(".temperature").textContent, "22,3 °C");
   assert.equal(card._renderPending, true);
   card.shadowRoot.activeElement = null; card.shadowRoot.dispatchEvent({ type: "focusout" }); await flush();
-  assert.equal(card.shadowRoot.querySelector(".temperature").textContent, "22.8 °C");
+  assert.equal(card.shadowRoot.querySelector(".temperature").textContent, "22,8 °C");
   assert.equal(card._form, draft); assert.equal(draft.inputs.get("time").value, "08:15"); assert.ok(draft.dirty.has("time"));
   card.setConfig({ show_alarms: true }); assert.equal(card.shadowRoot.querySelector("form"), draft.element);
 });
@@ -1882,7 +1956,7 @@ test("REMI updates and layout changes never detach an embedded card or its ances
     });
   }
   card.hass = { ...hass, states: { [temperature.entity_id]: { state: "22.4", attributes: { unit_of_measurement: "°C" } } } };
-  assert.equal(card.shadowRoot.querySelector(".temperature").textContent, "22.4 °C");
+  assert.equal(card.shadowRoot.querySelector(".temperature").textContent, "22,4 °C");
   card.setConfig({ ...config, appearance: "glass", layout: "compact" });
   await flush();
   assert.equal(card.shadowRoot.querySelector("native-action-card"), child);

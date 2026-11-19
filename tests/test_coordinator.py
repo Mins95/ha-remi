@@ -78,6 +78,22 @@ class TestAsyncUpdateData:
 class TestAsyncSetup:
     """Tests for async_setup."""
 
+    async def test_face_catalogue_recovers_while_polling(self, coordinator, mock_api_client):
+        mock_api_client.get_faces.side_effect = [RemiApiError("Offline"), MOCK_FACES_DATA]
+        with patch("custom_components.urbanhello_remi_unofficial.coordinator.monotonic") as clock:
+            clock.return_value = 0
+            await coordinator.async_refresh()
+            assert coordinator.faces == []
+            assert coordinator.last_update_success
+            assert coordinator.device_received_at is not None
+            clock.return_value = 60
+            await coordinator.async_refresh()
+            mock_api_client.get_faces.assert_awaited_once()
+            clock.return_value = 300
+            await coordinator.async_refresh()
+            assert coordinator.faces == MOCK_FACES_DATA
+            assert mock_api_client.get_config.await_count == 1
+
     async def test_setup_fetches_faces_and_config(self, coordinator, mock_api_client):
         await coordinator.async_setup()
 
@@ -90,4 +106,4 @@ class TestAsyncSetup:
         await coordinator.async_setup()
 
         assert coordinator.faces == []
-        assert coordinator.config_params == {}
+        assert coordinator.config_params == MOCK_CONFIG_DATA["params"]
