@@ -41,7 +41,7 @@ These tests cover the card and its resource loader. They do not replace checking
 - [Tests](https://github.com/Mins95/ha-remi/actions/workflows/tests.yml) run the Python suite against Home Assistant 2026.11.0 and the Node.js card tests.
 - [Hassfest](https://github.com/Mins95/ha-remi/actions/workflows/hassfest.yml) validates the integration's Home Assistant metadata.
 - [HACS validation](https://github.com/Mins95/ha-remi/actions/workflows/hacs.yml) checks repository compatibility.
-- [Release](https://github.com/Mins95/ha-remi/actions/workflows/release.yml) checks the requested version against the manifest and changelog and runs validation before publishing. Tags containing a pre-release suffix are published as pre-releases rather than becoming the latest stable release.
+- The release workflow checks the requested version against the manifest and changelog, runs the tests, validates the ZIP and requires successful Hassfest and HACS push runs for that exact commit on main. A beta version is published as a pre-release. [Release workflow](https://github.com/Mins95/ha-remi/actions/workflows/release.yml)
 
 Starting with 0.5.0, releases provide `urbanhello_remi_unofficial.zip`, containing the integration files and original MIT license directly at its root. Marketplace and HACS use this packaged asset; [manual installation](usage.md#manual-installation) explains its destination directory. Older releases retain their original packaging configuration.
 
