@@ -45,6 +45,15 @@
       "reconfigure_successful": "UrbanHello credentials updated."
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Local sleep history",
+        "description": "Keep up to 60 nights of reports and environmental curves on this Home Assistant. Set to zero to erase the archive and turn off local storage.",
+        "data": { "history_nights": "Nights to keep" }
+      }
+    }
+  },
   "entity": {
     "button": {
       "check_firmware": {
@@ -70,6 +79,9 @@
           },
           "conversion": {
             "name": "Conversion formula"
+          },
+          "received_at": {
+            "name": "Reading received at"
           }
         }
       },
@@ -212,6 +224,55 @@
       },
       "reported_clock_shift": {
         "name": "Reported clock shift"
+      },
+      "next_wake": {
+        "name": "Next scheduled wake-up",
+        "state_attributes": {
+          "synced_at": {
+            "name": "Schedule confirmed at"
+          },
+          "alarm_name": {
+            "name": "Alarm name"
+          },
+          "source": {
+            "name": "Source",
+            "state": {
+              "confirmed_schedule": "Confirmed programme"
+            }
+          },
+          "cached": {
+            "name": "Showing the saved schedule"
+          },
+          "timezone": {
+            "name": "REMI time zone"
+          },
+          "schedules": {
+            "name": "Confirmed alarms"
+          }
+        }
+      },
+      "next_bedtime": {
+        "name": "Next scheduled bedtime",
+        "state_attributes": {
+          "synced_at": {
+            "name": "Schedule confirmed at"
+          },
+          "alarm_name": {
+            "name": "Alarm name"
+          },
+          "source": {
+            "name": "Source",
+            "state": {
+              "confirmed_schedule": "Confirmed programme"
+            }
+          },
+          "cached": {
+            "name": "Showing the saved schedule"
+          },
+          "timezone": {
+            "name": "REMI time zone"
+          }
+        }
       }
     },
     "binary_sensor": {

@@ -1,6 +1,7 @@
 """Base entity for the UrbanHello Remi integration."""
 from __future__ import annotations
 
+from ipaddress import IPv4Address
 from typing import Any
 
 from homeassistant.core import callback
@@ -50,15 +51,23 @@ class RemiEntity(CoordinatorEntity[RemiDataUpdateCoordinator]):
     def device_info(self) -> DeviceInfo:
         """Return device info for this Remi."""
         remi = self.coordinator.remi
-        return DeviceInfo(
+        info = DeviceInfo(
             identifiers={(DOMAIN, self._remi_id)},
-            name=remi.get("name", "Remi"),
             manufacturer="UrbanHello",
             model="Remi",
-            sw_version=str(remi.get("current_firmware_version", "")),
-            serial_number=remi.get("uniqueID"),
-            configuration_url=f"http://{remi.get('ipv4Address', '')}",
         )
+        if name := remi.get("name"):
+            info["name"] = name
+        if remi.get("current_firmware_version") is not None:
+            info["sw_version"] = str(remi["current_firmware_version"])
+        if serial := remi.get("uniqueID"):
+            info["serial_number"] = serial
+        if isinstance(address := remi.get("ipv4Address"), str):
+            try:
+                info["configuration_url"] = f"http://{IPv4Address(address)}"
+            except ValueError:
+                pass
+        return info
 
 
 def valid_alarm_snapshot(coordinator: RemiDataUpdateCoordinator) -> dict[str, dict[str, Any]] | None:

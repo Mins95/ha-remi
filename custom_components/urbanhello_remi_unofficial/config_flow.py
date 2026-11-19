@@ -8,12 +8,15 @@ import uuid
 import aiohttp
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlowWithReload
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import RemiApiClient, RemiAuthError, RemiApiError
 from .const import CONF_INSTALLATION_ID, CONF_REMI_ID, CONF_SESSION_TOKEN, DOMAIN
+from .history_api import MAX_HISTORY_REPORTS
+from .history_store import CONF_HISTORY_NIGHTS, DEFAULT_HISTORY_NIGHTS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,6 +32,11 @@ class RemiConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for UrbanHello Remi."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> RemiOptionsFlow:
+        return RemiOptionsFlow()
 
     def __init__(self) -> None:
         """Initialize the config flow."""
@@ -176,4 +184,20 @@ class RemiConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_SESSION_TOKEN: self._session_token,
                 CONF_INSTALLATION_ID: self._installation_id,
             },
+        )
+
+
+class RemiOptionsFlow(OptionsFlowWithReload):
+    """Apply local sleep retention independently for each device."""
+
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        if user_input is not None:
+            return self.async_create_entry(data={**self.config_entry.options, **user_input})
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema({
+                vol.Required(CONF_HISTORY_NIGHTS, default=self.config_entry.options.get(
+                    CONF_HISTORY_NIGHTS, DEFAULT_HISTORY_NIGHTS
+                )): vol.All(vol.Coerce(int), vol.Range(min=0, max=MAX_HISTORY_REPORTS)),
+            }),
         )

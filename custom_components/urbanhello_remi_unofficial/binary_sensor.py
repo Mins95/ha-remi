@@ -31,14 +31,14 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[RemiBinarySensorEntityDescription, ...] = (
         key="online",
         translation_key="online",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
-        value_fn=lambda remi: remi.get("online", False),
+        value_fn=lambda remi: remi["online"] if type(remi.get("online")) is bool else None,
     ),
     RemiBinarySensorEntityDescription(
         key="alive",
         translation_key="alive",
         device_class=BinarySensorDeviceClass.RUNNING,
         entity_registry_enabled_default=False,
-        value_fn=lambda remi: remi.get("alive", False),
+        value_fn=lambda remi: remi["alive"] if type(remi.get("alive")) is bool else None,
     ),
     RemiBinarySensorEntityDescription(
         key="firmware_update",

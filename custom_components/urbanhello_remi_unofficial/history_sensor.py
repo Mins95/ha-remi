@@ -51,7 +51,7 @@ class RemiHistorySensor(RemiEntity, SensorEntity):
         report = self.coordinator.latest_report
         stamp = parse_history_datetime(report.get("log_timestamp"))
         return {
-            "source": "cloud_history",
+            "source": "local_archive" if report.get("source") == "local_archive" else "cloud_history",
             "log_timestamp": stamp.isoformat() if stamp else None,
             "updated_at": report.get("updated_at"),
             "sleep_status": report.get("sleep_status"),

@@ -14,19 +14,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from .coordinator import RemiDataUpdateCoordinator
 from .entity import RemiAlarmEntity, retained_alarm_ids, valid_alarm_snapshot
-
-
-def alarm_time(event: dict[str, Any]) -> time | None:
-    """Decode the clock time without inventing a date or applying a UTC offset."""
-    value = event.get("event_time")
-    if not isinstance(value, list) or len(value) != 2:
-        return None
-    if not all(type(part) is int for part in value):
-        return None
-    try:
-        return time(*value)
-    except ValueError:
-        return None
+from .schedule_snapshot import alarm_time
 
 
 async def async_setup_entry(

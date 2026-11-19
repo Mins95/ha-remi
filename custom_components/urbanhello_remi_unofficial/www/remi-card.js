@@ -8,6 +8,10 @@ const DISPLAY_OPTIONS = [["show_face", "face"], ["show_brightness", "brightness"
 const validObjectId = value => typeof value === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(value);
 const TEXT = {
   en: {
+    temperatureSource: "Temperature source", remiThermometer: "REMI thermometer", received: "Received", chooseTemperature: "Choose a temperature sensor.",
+    historyArchive: "Saved in Home Assistant", historyReceived: "Journal received", historyChartOnly: "Environmental readings available · no sleep estimate", historyNoReadings: "No readings or sleep estimate received", olderCurve: "Showing the previously saved curve", archiveRead: "Saved journal opened",
+    nextWake: "Next wake-up", nextBedtime: "Next bedtime", savedSchedule: "Last confirmed schedule", readOnly: "Read only",
+    exportFailed: "The new export could not be obtained. Showing the available data.",
     everyDay: "Every day", historySleepUnavailableShort: "Sleep estimate unavailable", historyLatestShort: "Latest estimate",
     faceBrightnessUnconfirmed: "The setting was not confirmed. The face has not been turned on.",
     appearanceGlass: "Dark glass",
@@ -19,6 +23,10 @@ const TEXT = {
     remi: "REMI", alarms: "Schedules", sleep: "Sleep", naps: "Timers", choose: "Choose your REMI", loading: "Loading…", unavailable: "Unavailable", unknown: "Not reported", online: "Connected", offline: "Disconnected", statusUnknown: "Connection not reported", face: "Expression", faceDisplay: "Face display", on: "On", off: "Off", awake: "Awake", sleepy: "Sleepy", semi_awake: "Half awake", smiley: "Smiling", brightness: "Nightlight brightness", face_brightness: "Face brightness", volume: "Volume", music: "Music", play: "Play", pause: "Pause", stop: "Stop", browse: "Choose music", more: "More controls", musicNote: "REMI does not report whether music is playing.", advanced: "More settings", clock: "Clock format", musicMode: "Playback mode", normal: "Normal", single_track: "Single track", repeat_track: "Repeat track", repeat_playlist: "Repeat playlist", nightlight: "App background color", noise: "Noise alert threshold", addAlarm: "Add a schedule", edit: "Edit", delete: "Delete", confirmDelete: "Delete this item?", cancel: "Cancel", save: "Save", name: "Name", time: "Time", enabled: "Enabled", repeat: "Repeat", once: "Once", mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun", alarmFace: "Expression at this time", music_path: "Music file on REMI", music_duration_minutes: "Music duration (minutes)", play_button_enabled: "Enable play button", musicHelp: "Advanced: use a file path already present on this REMI. Leave unchanged to keep the app setting.", emptyAlarms: "No schedules yet", refresh: "Refresh", addNap: "Add a timer profile", napNote: "Saved profiles shared with the REMI app. Start a timer using REMI’s physical button.", emptyNaps: "No saved profiles", duration_minutes: "Duration (minutes)", sleep_aid: "Sleep aid", music_path_start: "Music at the start", music_path_end: "Music at the end", volume_start: "Start volume", volume_end: "End volume", music_duration_start_minutes: "Start music duration (minutes)", music_duration_end_minutes: "End music duration (minutes)", sleep_duration: "Sleep duration", sleep_score: "Sleep score", sleep_bedtime: "Bedtime", sleep_wake_time: "Wake-up", sleep_report_timestamp: "Report date", oldReport: "Older or undated report", sleepNote: "Estimates from the latest cloud report, not live readings.", charts: "Show environmental charts", chartNote: "App clock grid, from noon to the following morning. Sample dates are not inferred.", temperature: "Temperature", noiseChart: "Noise · relative level", light: "Light detected", noHistory: "No report available", noSeries: "No series available", sent: "Command sent", saved: "Saved", deleted: "Deleted", error: "The action could not be completed", noDevices: "No REMI device found. Add the integration first.", missingDevice: "The configured REMI is not available. Choose it in the card editor.", title: "Card title", auto: "Automatic (only if one REMI)", device: "REMI device", chooseFirst: "Select a REMI in the card editor.", close: "Close", minutes: "min", libraryEmpty: "No music files found", registryError: "Cannot read the device registry", changes: "Unsaved changes", disabled: "Disabled", successRead: "Updated", pending: "Sending…"
   },
   fr: {
+    temperatureSource: "Source de la température", remiThermometer: "Thermomètre du Rémi", received: "Reçu", chooseTemperature: "Choisissez un capteur de température.",
+    historyArchive: "Enregistré dans Home Assistant", historyReceived: "Journal reçu", historyChartOnly: "Courbes disponibles · bilan de sommeil absent", historyNoReadings: "Aucune mesure ni estimation de sommeil reçue", olderCurve: "Dernière courbe enregistrée", archiveRead: "Journal enregistré consulté",
+    nextWake: "Prochain réveil", nextBedtime: "Prochain coucher", savedSchedule: "Derniers horaires confirmés", readOnly: "Lecture seule",
+    exportFailed: "Le nouvel export a échoué. Les données disponibles restent affichées.",
     everyDay: "Tous les jours", historySleepUnavailableShort: "Estimation indisponible", historyLatestShort: "Voir le dernier bilan",
     faceBrightnessUnconfirmed: "Le réglage n’est pas confirmé. Le visage n’a pas été rallumé.",
     appearanceGlass: "Verre sombre",
@@ -38,6 +46,8 @@ function cardConfig(config, locale = "en") {
   if (Object.hasOwn(config, "appearance") && !["theme", "remi", "glass"].includes(config.appearance) || Object.hasOwn(config, "layout") && !["full", "compact"].includes(config.layout)) throw new Error(TEXT[locale].invalidAppearance);
   if (Object.hasOwn(config, "show_custom_button") && typeof config.show_custom_button !== "boolean") throw new Error(TEXT[locale].invalidCustomButton);
   const next = { ...config };
+  if (config.temperature_entity == null || config.temperature_entity === "") delete next.temperature_entity;
+  else if (typeof config.temperature_entity !== "string" || !/^sensor\.[a-z0-9_]+$/.test(config.temperature_entity)) throw new Error(TEXT[locale].chooseTemperature);
   if (Object.hasOwn(config, "custom_button")) {
     const button = config.custom_button;
     if (!button || typeof button !== "object" || Array.isArray(button) || Object.keys(button).some(key => !CUSTOM_BUTTON_FIELDS.includes(key))) throw new Error(TEXT[locale].invalidCustomButton);
@@ -151,6 +161,15 @@ function setRangeProgress(input) {
     ? Math.min(100, Math.max(0, (value - min) / (max - min) * 100)) : 0;
   input.style.setProperty("--remi-range-progress", `${percent}%`);
 }
+function temperatureSensor(state) {
+  return state?.attributes?.device_class === "temperature" || (!state?.attributes?.device_class && ["°C", "°F", "K"].includes(state?.attributes?.unit_of_measurement));
+}
+function validSample(kind, sample) {
+  return sample && sample.valid !== false && Number.isInteger(sample.index) && sample.index >= 0 && sample.index < 720 && Number.isFinite(sample.value) && (kind !== "light" || Number.isFinite(sample.graph_value));
+}
+function hasReadings(kind, series) {
+  return Array.isArray(series?.samples) && series.samples.some(sample => validSample(kind, sample));
+}
 function faceDrawing(face, miniature = false) {
   const art = svg("svg", { viewBox: miniature ? "40 48 120 85" : "0 0 200 195", class: miniature ? "face-symbol" : "face-art", "aria-hidden": "true" });
   if (!miniature) art.append(svg("path", { d: "M14 185 L21 91 Q25 7 100 7 Q175 7 179 91 L186 185 Z", fill: "currentColor", opacity: ".7" }), svg("path", { d: "M15 180 H185", stroke: "white", "stroke-width": "2", opacity: ".5" }));
@@ -263,6 +282,12 @@ ha-card input[type=range]::-moz-range-thumb {
 }
 
 /* Compact: horizontal bands, not a scaled or clipped copy of the normal card. */
+.temperature-reading { max-width: 100%; min-width: 0; text-align: end; }
+.temperature-source { display: block; font-size: 10px; line-height: 1.25; overflow-wrap: anywhere; }
+.schedule-forecast { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 0 0 5px; }
+.saved-schedule { margin: 0 0 5px; }
+ha-card .schedule-saved-row { display: flex; align-items: baseline; gap: 8px; margin: 0 0 3px; padding: 4px 8px; overflow-wrap: anywhere; }
+ha-card.layout-compact .temperature-reading { text-align: center; }
 ha-card.layout-compact {
   display: grid;
   grid-template-columns: minmax(68px, 1fr) auto;
@@ -548,6 +573,7 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
   _sourcesChanged() {
     this._rememberFace();
     const ids = [...new Set([...this._index().values(), ...(this._config.show_custom_button && this._config.custom_button?.entity ? [this._config.custom_button.entity] : [])])];
+    if (this._shown("show_temperature") && this._config.temperature_entity && !ids.includes(this._config.temperature_entity)) ids.push(this._config.temperature_entity);
     let changed = this._lastLanguage !== language(this._hass) || ids.length !== this._sourceStates.size;
     this._lastLanguage = language(this._hass);
     const next = new Map();
@@ -575,6 +601,7 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
   _entity(domain, key) { return this._index().get(`${domain}:${key}`); }
   _state(domain, key) { return this._hass?.states?.[this._entity(domain, key)]; }
   _alarmEventId(entityId) {
+    if (this._savedSchedules()) return null;
     const index = this._index(), entry = [...index].find(([key, id]) => id === entityId && (key.startsWith("switch:alarm_") || key.startsWith("time:alarm_") && key.endsWith("_time")));
     if (!entry || !usable(this._hass?.states?.[entityId])) return null;
     const [key] = entry, isTime = key.startsWith("time:"), suffix = key.slice(isTime ? "time:alarm_".length : "switch:alarm_".length), logicalId = isTime ? suffix.slice(0, -"_time".length) : suffix;
@@ -588,6 +615,27 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
     const state = this._state(domain, key);
     if (!usable(state)) return "—";
     return this._hass.formatEntityState ? this._hass.formatEntityState(state) : `${state.state}${state.attributes?.unit_of_measurement ? ` ${state.attributes.unit_of_measurement}` : ""}`;
+  }
+  _moment(value, timeZone = this._hass?.config?.time_zone) {
+    if (typeof value !== "string" || !Number.isFinite(Date.parse(value))) return "";
+    const options = { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" };
+    try { return new Date(value).toLocaleString(language(this._hass), { ...options, timeZone }); }
+    catch { return new Date(value).toLocaleString(language(this._hass), options); }
+  }
+  _temperatureReading() {
+    const id = this._config.temperature_entity;
+    const state = id ? this._hass.states?.[id] : this._state("sensor", "temperature");
+    const value = Number(state?.state);
+    const available = usable(state) && temperatureSensor(state) && String(state.state).trim() !== "" && Number.isFinite(value);
+    const unit = state?.attributes?.unit_of_measurement;
+    const reading = available ? new Intl.NumberFormat(this._hass.locale?.language || language(this._hass), { minimumFractionDigits: 1, maximumFractionDigits: 3 }).format(value) : "—";
+    const receivedAt = this._moment(id ? state?.last_reported || state?.last_updated : state?.attributes?.received_at);
+    const source = id ? state?.attributes?.friendly_name || id : this.t("remiThermometer");
+    const label = [source, receivedAt && `${this.t("received")} · ${receivedAt}`].filter(Boolean).join(" · ");
+    return el("div", { class: "temperature-reading" }, [
+      el("span", { class: "temperature", text: `${reading}${available && unit ? ` ${unit}` : ""}` }),
+      el("span", { class: "muted temperature-source", text: label }),
+    ]);
   }
   async _loadRegistry() {
     if (!this._hass) return;
@@ -628,7 +676,7 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
     this._busy = true; this._pendingText = pending; this._message = null; this._render();
     try {
       const result = await action();
-      if (generation === this._generation && isCurrent()) this._message = { text: this.t(success) };
+      if (generation === this._generation && isCurrent()) this._message = { text: this.t(typeof success === "function" ? success() : success) };
       return result;
     } catch (error) {
       if (generation === this._generation && isCurrent()) this._message = { error: true, text: `${this.t("error")}: ${error.message || error}` };
@@ -636,6 +684,7 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
     } finally { this._busy = false; this._render(); }
   }
   _call(domain, service, data = {}, entityId, response = false) {
+    if (domain === DOMAIN && ["create_alarm", "update_alarm", "delete_alarm"].includes(service) && this._savedSchedules()) throw new Error(this.t("readOnly"));
     return this._hass.callWS(serviceRequest(domain, service, data, entityId, response));
   }
   _customButtonConfig() {
@@ -886,7 +935,7 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
       }
       indicators.push(connection);
     }
-    if (this._shown("show_temperature")) indicators.push(el("span", { class: "temperature", text: this._textState("sensor", "temperature") }));
+    if (this._shown("show_temperature")) indicators.push(this._temperatureReading());
     overview.append(el("div", { class: "hero" }, [...(indicators.length ? [el("div", { class: "hero-top" }, indicators)] : []), art]));
     const choices = el("div", { class: "faces" });
     ["awake", "sleepy"].forEach(value => {
@@ -948,8 +997,33 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
     (state?.attributes?.options || []).forEach(option => select.append(el("option", { value: option, text: this.t(option), selected: option === state.state })));
     return el("label", { class: "field" }, [el("span", { class: "field-label", text: this.t(label) }), select]);
   }
+  _savedSchedules() {
+    return ["next_wake", "next_bedtime"].some(key => this._state("sensor", key)?.attributes?.cached === true);
+  }
   _renderAlarms() {
     const fragment = document.createDocumentFragment(), alarms = [], compact = this._config.layout === "compact";
+    const wake = this._state("sensor", "next_wake"), bedtime = this._state("sensor", "next_bedtime");
+    const forecast = el("div", { class: "schedule-forecast muted" });
+    for (const [state, label] of [[wake, "nextWake"], [bedtime, "nextBedtime"]]) {
+      const when = this._moment(state?.state, state?.attributes?.timezone);
+      if (when) forecast.append(el("span", { text: `${this.t(label)} · ${when}` }));
+    }
+    if (forecast.childNodes.length) fragment.append(forecast);
+    if (this._savedSchedules()) {
+      const synced = this._moment(wake?.attributes?.synced_at || bedtime?.attributes?.synced_at);
+      fragment.append(el("p", { class: "saved-schedule muted", text: [this.t("savedSchedule"), synced, this.t("readOnly")].filter(Boolean).join(" · ") }));
+      const rows = wake?.attributes?.schedules;
+      if (Array.isArray(rows)) {
+        if (!rows.length) fragment.append(el("p", { class: "empty muted", text: this.t("emptyAlarms") }));
+        for (const row of rows) {
+          if (!row || typeof row.time !== "string") continue;
+          fragment.append(el("section", { class: "schedule schedule-saved-row" }, [
+            el("strong", { text: row.time }), el("span", { text: [row.name, this._recurrenceLabel(row.days), row.enabled === false && this.t("disabled")].filter(Boolean).join(" · ") }),
+          ]));
+        }
+      }
+      return fragment;
+    }
     for (const [key, entityId] of this._index()) if (key.startsWith("switch:alarm_")) alarms.push({ eventId: this._alarmEventId(entityId), entityId, state: this._hass.states[entityId] });
     alarms.sort((a, b) => String(a.state?.attributes?.time || "99:99").localeCompare(b.state?.attributes?.time || "99:99"));
     if (!alarms.length) fragment.append(el("p", { class: "empty muted", text: this.t("emptyAlarms") }));
@@ -1005,6 +1079,7 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
   }
   _openForm(kind, record = {}, alarmEntityId) {
     const device = this._device(); if (!device || this._busy || !this._formVisible({ kind })) return;
+    if (kind === "alarm" && this._savedSchedules()) return;
     const id = alarmEntityId ? this._alarmEventId(alarmEntityId) : record.event_id || record.nap_id;
     if (alarmEntityId && !id) return;
     const create = !id, dirty = new Set(), inputs = new Map();
@@ -1104,7 +1179,11 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
     const hasEstimate = ["sleep_duration", "sleep_score", "sleep_bedtime", "sleep_wake_time"].some(key => report[key] !== null && report[key] !== undefined);
     if (hasEstimate) fragment.append(stats);
     const summary = el("div", { class: "history-summary" });
-    if (report.sleep_status === "unavailable") summary.append(el("p", { class: "muted note", text: this.t(compact ? "historySleepUnavailableShort" : "historySleepUnavailable"), ...(compact ? { title: this.t("historySleepUnavailable"), "aria-label": this.t("historySleepUnavailable") } : {}) }));
+    if (report.sleep_status === "unavailable") {
+      const hasCurves = Object.entries(report.series || {}).some(([kind, series]) => hasReadings(kind, series));
+      const label = hasCurves ? "historyChartOnly" : report.series_available === false ? "historyNoReadings" : compact ? "historySleepUnavailableShort" : "historySleepUnavailable";
+      summary.append(el("p", { class: "muted note", text: this.t(label) }));
+    }
     const latest = logs.find(item => item.report_status === "completed" && item.sleep_status === "available" && (Number.isFinite(item.sleep_duration) && item.sleep_duration > 0 || Number.isFinite(item.sleep_score) && item.sleep_score > 0));
     if (report.sleep_status === "unavailable" && latest && latest.report_id !== report.report_id) {
       const button = this._button(this.t(compact ? "historyLatestShort" : "historyLatest"), () => this._selectHistory(latest.report_id), "history-latest subtle");
@@ -1114,6 +1193,8 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
     if (summary.childNodes.length) fragment.append(summary);
     if (report.stale === true && report.report_status !== "completed") fragment.append(el("p", { class: "muted note warning", text: this.t("historyOld") }));
     if (this._history?.sync_status === "cooldown") fragment.append(el("p", { class: "muted note", text: this.t("historyCooldown") }));
+    if (this._history?.sync_status === "failed") fragment.append(el("p", { class: "muted note warning", text: this.t("exportFailed") }));
+    if (report.source === "local_archive" || this._history?.source === "local_archive") fragment.append(el("p", { class: "muted note history-archive", text: this.t("historyArchive") }));
     let chartSelect, chartNode;
     if (this._historyCharts) {
       const select = el("select", { class: "history-chart-kind history-date", "aria-label": this.t("historyChartKind"), disabled: this._busy, onchange: event => {
@@ -1121,11 +1202,20 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
         this._historyKind = event.target.value; this._render();
       } });
       for (const [kind, label] of [["temperature", "temperature"], ["noise", "noiseChart"], ["light", "lightReference"]]) select.append(el("option", { value: kind, selected: kind === this._historyKind, text: `${this.t(label)}${compact && kind === "temperature" ? " · °C" : ""}` }));
-      chartSelect = select; chartNode = this._chart(this._historyKind, report.series?.[this._historyKind], report.face_events);
+      chartSelect = select;
+      const series = report.series?.[this._historyKind];
+      chartNode = this._chart(this._historyKind, series, report.face_events);
+      if (series?.outdated) {
+        const exportTime = this._moment(series.updated_at);
+        const text = [this.t("olderCurve"), exportTime].filter(Boolean).join(" · ");
+        chartNode.append(el("p", { class: "muted note", text }));
+      }
       if (!compact) fragment.append(chartSelect, chartNode);
     }
     const infoSummary = compact ? el("summary", { class: "history-info-toggle", title: this.t("historyInfo"), "aria-label": this.t("historyInfo") }, [el("ha-icon", { icon: "mdi:information-outline", "aria-hidden": "true" })]) : el("summary", { text: this.t("historyInfo") });
     const info = el("details", { class: "history-info", "data-key": "sleep:info" }, [infoSummary]);
+    const fetchedAt = this._moment(this._history?.fetched_at);
+    if (fetchedAt) info.append(el("p", { class: "muted note history-received", text: `${this.t("historyReceived")} · ${fetchedAt}` }));
     for (const [key, label, cls] of [["updated_at", "historyExport", "history-export"], ["sleep_updated_at", "historySleepUpdated", "history-sleep-updated"]]) {
       if (report[key] && Number.isFinite(Date.parse(report[key]))) info.append(el("p", { class: `muted note ${cls}`, text: `${this.t(label)} · ${new Date(report[key]).toLocaleString(language(this._hass))}` }));
     }
@@ -1153,13 +1243,20 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
   _historyNeedsRefresh() {
     return Date.now() - Math.max(this._historyLoadedAt, this._historyAttemptedAt) >= 20 * 60 * 1000;
   }
+  _historyReadMessage() {
+    return this._selectedHistory()?.source === "local_archive" || this._history?.source === "local_archive" ? "archiveRead" : "historyRead";
+  }
   async _readHistoryDetail(generation, remiId, reportId) {
     if (!this._shown("show_sleep") || generation !== this._generation || reportId !== this._historyId) return;
     const result = await this._call(DOMAIN, "get_history", { remi_id: remiId, limit: 1, report_id: reportId }, undefined, true);
     if (generation !== this._generation || reportId !== this._historyId) return;
     const report = result?.response?.logs?.[0];
     if (!report || report.report_id !== reportId) throw new Error(this.t("historyMismatch"));
-    this._historyDetail = report;
+    if (!this._historyDetail && report.sleep_status === "unavailable" && !hasReadings(this._historyKind, report.series?.[this._historyKind])) {
+      const firstAvailable = ["temperature", "noise", "light"].find(kind => hasReadings(kind, report.series?.[kind]));
+      if (firstAvailable) this._historyKind = firstAvailable;
+    }
+    this._historyDetail = { ...report, source: report.source || result.response.source };
   }
   _loadHistory({ refresh = false, revalidate = false } = {}) {
     const device = this._device(), generation = this._generation; if (!device || this._busy || !this._shown("show_sleep")) return;
@@ -1179,9 +1276,9 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
       this._history = { ...result.response, logs };
       this._historyLoadedAt = Date.now();
       this._historyId = logs.some(item => item.report_id === selectedId) ? selectedId : logs[0]?.report_id || null;
-      this._historyDetail = null;
+      if (this._historyDetail?.report_id !== this._historyId) this._historyDetail = null;
       if ((refresh || this._historyCharts) && this._historyId) await this._readHistoryDetail(generation, device.remiId, this._historyId);
-    }, "historyRead", refresh ? "historySyncWait" : "loading").catch(() => {});
+    }, () => this._historyReadMessage(), refresh ? "historySyncWait" : "loading").catch(() => {});
   }
   _selectHistory(reportId) {
     if (this._busy || !this._shown("show_sleep") || !this._history?.logs?.some(item => item.report_id === reportId)) return;
@@ -1189,7 +1286,7 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
     this._historyId = reportId; this._historyDetail = null; this._message = null; this._render();
     if (this._historyCharts) {
       const generation = this._generation, remiId = this._device()?.remiId;
-      if (remiId) return this._run(() => this._readHistoryDetail(generation, remiId, reportId), "historyRead", "loading").catch(() => {});
+      if (remiId) return this._run(() => this._readHistoryDetail(generation, remiId, reportId), () => this._historyReadMessage(), "loading").catch(() => {});
     }
   }
   _toggleHistoryCharts() {
@@ -1197,13 +1294,13 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
     this._historyCharts = !this._historyCharts;
     if (!this._historyCharts) { this._render(); return; }
     const generation = this._generation, remiId = this._device().remiId, reportId = this._historyId;
-    return this._run(() => this._readHistoryDetail(generation, remiId, reportId), "historyRead", "loading").catch(() => {});
+    return this._run(() => this._readHistoryDetail(generation, remiId, reportId), () => this._historyReadMessage(), "loading").catch(() => {});
   }
   _chart(kind, series, faceEvents = []) {
     const compact = this._config.layout === "compact";
     const title = `${this.t(kind === "noise" ? "noiseChart" : kind === "light" ? "lightReference" : kind)}${kind === "temperature" ? " · °C" : ""}`;
     const section = el("section", { class: "chart", ...(compact ? { "aria-label": title } : {}) }, compact ? [] : [el("h3", { text: title })]);
-    const valid = sample => sample && sample.valid !== false && Number.isInteger(sample.index) && sample.index >= 0 && sample.index < 720 && Number.isFinite(sample.value) && (kind !== "light" || Number.isFinite(sample.graph_value));
+    const valid = sample => validSample(kind, sample);
     const rawSamples = Array.isArray(series?.samples) ? series.samples : [], samples = rawSamples.filter(valid);
     if (!samples.length) { section.append(el("p", { class: "muted", text: this.t("noSeries") })); return section; }
     const value = sample => kind === "light" ? sample.graph_value : kind === "noise" ? sample.value * 100 / 255 : sample.value;
@@ -1282,6 +1379,16 @@ export class UrbanhelloRemiCardEditor extends (globalThis.HTMLElement || class {
       const input = el("input", { type: "checkbox", checked: this._config[key] !== false, "aria-label": t(label), onchange: event => this._update(key, event.target.checked) });
       input.dataset.option = key;
       options.append(el("label", { class: "display-option" }, [el("span", { text: t(label) }), input]));
+      if (key === "show_temperature" && this._config.show_temperature !== false) {
+        const selected = this._config.temperature_entity;
+        const field = el("select", { class: "temperature-entity", "aria-label": t("temperatureSource"), onchange: event => this._update("temperature_entity", event.target.value) });
+        field.append(el("option", { value: "", text: t("remiThermometer"), selected: !selected }));
+        const sensors = Object.entries(this._hass.states || {}).filter(([id, state]) => id.startsWith("sensor.") && temperatureSensor(state));
+        sensors.sort((a, b) => (a[1].attributes.friendly_name || a[0]).localeCompare(b[1].attributes.friendly_name || b[0]));
+        for (const [id, state] of sensors) field.append(el("option", { value: id, text: state.attributes.friendly_name ? `${state.attributes.friendly_name} (${id})` : id, selected: selected === id }));
+        if (selected && !sensors.some(([id]) => id === selected)) field.append(el("option", { value: selected, text: `${selected} · ${t("unavailable")}`, selected: true }));
+        options.append(el("label", { class: "field" }, [el("span", { class: "field-label", text: t("temperatureSource") }), field]));
+      }
     }
     const appearance = el("section", { class: "appearance-options" });
     for (const [key, title, choices, fallback] of [
