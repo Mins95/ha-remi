@@ -1,3 +1,7 @@
+## 0.6.0-beta.2 — Heure de mise à jour de la température
+
+- Sous la température, la carte affiche uniquement « Update : HH:mm » dans le fuseau de Home Assistant. Ce libellé s’applique au thermomètre du Rémi et aux sondes de chambre, dans les formats normal et compact.
+
 ## 0.6.0-beta.1 — Historique et horaires hors ligne
 
 - L’onglet Sommeil conserve les nuits reçues sur Home Assistant, y compris leurs courbes lorsqu’UrbanHello ne fournit aucun score. La durée de conservation se règle entre 0 et 60 nuits, avec 30 nuits par défaut.
