@@ -30,7 +30,7 @@ The optional YAML keys are `show_face`, `show_brightness`, `show_face_brightness
 
 ## Appearance and layout
 
-The editor also lets you select a **temperature sensor** from Home Assistant. The card displays the chosen sensor’s name, unit and last report time. Clearing this field restores REMI’s own reading. In YAML, set `temperature_entity` to the sensor entity ID. This option changes only the card display. REMI’s historical curves always use its own readings.
+The editor also lets you select a **temperature sensor** from Home Assistant. Under the temperature, the card shows the last report time as **Update: HH:mm** in Home Assistant’s time zone. Hover over the reading to see the sensor name. Clearing the selection restores REMI’s own reading. In YAML, set `temperature_entity` to the sensor entity ID. REMI’s historical curves always use its own readings.
 
 Choose these options in the visual editor:
 

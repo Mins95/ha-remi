@@ -8,7 +8,7 @@ const DISPLAY_OPTIONS = [["show_face", "face"], ["show_brightness", "brightness"
 const validObjectId = value => typeof value === "string" && /^[A-Za-z0-9_-]{1,128}$/.test(value);
 const TEXT = {
   en: {
-    temperatureSource: "Temperature source", remiThermometer: "REMI thermometer", received: "Received", chooseTemperature: "Choose a temperature sensor.",
+    temperatureSource: "Temperature source", remiThermometer: "REMI thermometer", temperatureUpdate: "Update:", chooseTemperature: "Choose a temperature sensor.",
     historyArchive: "Saved in Home Assistant", historyReceived: "Journal received", historyChartOnly: "Environmental readings available · no sleep estimate", historyNoReadings: "No readings or sleep estimate received", olderCurve: "Showing the previously saved curve", archiveRead: "Saved journal opened",
     nextWake: "Next wake-up", nextBedtime: "Next bedtime", savedSchedule: "Last confirmed schedule", readOnly: "Read only",
     exportFailed: "The new export could not be obtained. Showing the available data.",
@@ -23,7 +23,7 @@ const TEXT = {
     remi: "REMI", alarms: "Schedules", sleep: "Sleep", naps: "Timers", choose: "Choose your REMI", loading: "Loading…", unavailable: "Unavailable", unknown: "Not reported", online: "Connected", offline: "Disconnected", statusUnknown: "Connection not reported", face: "Expression", faceDisplay: "Face display", on: "On", off: "Off", awake: "Awake", sleepy: "Sleepy", semi_awake: "Half awake", smiley: "Smiling", brightness: "Nightlight brightness", face_brightness: "Face brightness", volume: "Volume", music: "Music", play: "Play", pause: "Pause", stop: "Stop", browse: "Choose music", more: "More controls", musicNote: "REMI does not report whether music is playing.", advanced: "More settings", clock: "Clock format", musicMode: "Playback mode", normal: "Normal", single_track: "Single track", repeat_track: "Repeat track", repeat_playlist: "Repeat playlist", nightlight: "App background color", noise: "Noise alert threshold", addAlarm: "Add a schedule", edit: "Edit", delete: "Delete", confirmDelete: "Delete this item?", cancel: "Cancel", save: "Save", name: "Name", time: "Time", enabled: "Enabled", repeat: "Repeat", once: "Once", mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun", alarmFace: "Expression at this time", music_path: "Music file on REMI", music_duration_minutes: "Music duration (minutes)", play_button_enabled: "Enable play button", musicHelp: "Advanced: use a file path already present on this REMI. Leave unchanged to keep the app setting.", emptyAlarms: "No schedules yet", refresh: "Refresh", addNap: "Add a timer profile", napNote: "Saved profiles shared with the REMI app. Start a timer using REMI’s physical button.", emptyNaps: "No saved profiles", duration_minutes: "Duration (minutes)", sleep_aid: "Sleep aid", music_path_start: "Music at the start", music_path_end: "Music at the end", volume_start: "Start volume", volume_end: "End volume", music_duration_start_minutes: "Start music duration (minutes)", music_duration_end_minutes: "End music duration (minutes)", sleep_duration: "Sleep duration", sleep_score: "Sleep score", sleep_bedtime: "Bedtime", sleep_wake_time: "Wake-up", sleep_report_timestamp: "Report date", oldReport: "Older or undated report", sleepNote: "Estimates from the latest cloud report, not live readings.", charts: "Show environmental charts", chartNote: "App clock grid, from noon to the following morning. Sample dates are not inferred.", temperature: "Temperature", noiseChart: "Noise · relative level", light: "Light detected", noHistory: "No report available", noSeries: "No series available", sent: "Command sent", saved: "Saved", deleted: "Deleted", error: "The action could not be completed", noDevices: "No REMI device found. Add the integration first.", missingDevice: "The configured REMI is not available. Choose it in the card editor.", title: "Card title", auto: "Automatic (only if one REMI)", device: "REMI device", chooseFirst: "Select a REMI in the card editor.", close: "Close", minutes: "min", libraryEmpty: "No music files found", registryError: "Cannot read the device registry", changes: "Unsaved changes", disabled: "Disabled", successRead: "Updated", pending: "Sending…"
   },
   fr: {
-    temperatureSource: "Source de la température", remiThermometer: "Thermomètre du Rémi", received: "Reçu", chooseTemperature: "Choisissez un capteur de température.",
+    temperatureSource: "Source de la température", remiThermometer: "Thermomètre du Rémi", temperatureUpdate: "Update :", chooseTemperature: "Choisissez un capteur de température.",
     historyArchive: "Enregistré dans Home Assistant", historyReceived: "Journal reçu", historyChartOnly: "Courbes disponibles · bilan de sommeil absent", historyNoReadings: "Aucune mesure ni estimation de sommeil reçue", olderCurve: "Dernière courbe enregistrée", archiveRead: "Journal enregistré consulté",
     nextWake: "Prochain réveil", nextBedtime: "Prochain coucher", savedSchedule: "Derniers horaires confirmés", readOnly: "Lecture seule",
     exportFailed: "Le nouvel export a échoué. Les données disponibles restent affichées.",
@@ -616,9 +616,11 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
     if (!usable(state)) return "—";
     return this._hass.formatEntityState ? this._hass.formatEntityState(state) : `${state.state}${state.attributes?.unit_of_measurement ? ` ${state.attributes.unit_of_measurement}` : ""}`;
   }
-  _moment(value, timeZone = this._hass?.config?.time_zone) {
+  _moment(value, { timeZone = this._hass?.config?.time_zone, timeOnly = false } = {}) {
     if (typeof value !== "string" || !Number.isFinite(Date.parse(value))) return "";
-    const options = { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" };
+    const options = timeOnly
+      ? { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }
+      : { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" };
     try { return new Date(value).toLocaleString(language(this._hass), { ...options, timeZone }); }
     catch { return new Date(value).toLocaleString(language(this._hass), options); }
   }
@@ -629,12 +631,11 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
     const available = usable(state) && temperatureSensor(state) && String(state.state).trim() !== "" && Number.isFinite(value);
     const unit = state?.attributes?.unit_of_measurement;
     const reading = available ? new Intl.NumberFormat(this._hass.locale?.language || language(this._hass), { minimumFractionDigits: 1, maximumFractionDigits: 3 }).format(value) : "—";
-    const receivedAt = this._moment(id ? state?.last_reported || state?.last_updated : state?.attributes?.received_at);
+    const receivedAt = this._moment(id ? state?.last_reported || state?.last_updated : state?.attributes?.received_at, { timeOnly: true });
     const source = id ? state?.attributes?.friendly_name || id : this.t("remiThermometer");
-    const label = [source, receivedAt && `${this.t("received")} · ${receivedAt}`].filter(Boolean).join(" · ");
-    return el("div", { class: "temperature-reading" }, [
+    return el("div", { class: "temperature-reading", title: source }, [
       el("span", { class: "temperature", text: `${reading}${available && unit ? ` ${unit}` : ""}` }),
-      el("span", { class: "muted temperature-source", text: label }),
+      receivedAt ? el("span", { class: "muted temperature-source", text: `${this.t("temperatureUpdate")} ${receivedAt}` }) : null,
     ]);
   }
   async _loadRegistry() {
@@ -1005,7 +1006,7 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
     const wake = this._state("sensor", "next_wake"), bedtime = this._state("sensor", "next_bedtime");
     const forecast = el("div", { class: "schedule-forecast muted" });
     for (const [state, label] of [[wake, "nextWake"], [bedtime, "nextBedtime"]]) {
-      const when = this._moment(state?.state, state?.attributes?.timezone);
+      const when = this._moment(state?.state, { timeZone: state?.attributes?.timezone });
       if (when) forecast.append(el("span", { text: `${this.t(label)} · ${when}` }));
     }
     if (forecast.childNodes.length) fragment.append(forecast);

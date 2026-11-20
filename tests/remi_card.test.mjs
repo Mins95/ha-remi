@@ -1254,12 +1254,12 @@ test("the chosen room thermometer updates independently and keeps its identity w
   hass.config = { time_zone: "Europe/Paris" };
   card.setConfig({ temperature_entity: external });
   assert.equal(card.shadowRoot.querySelector(".temperature").textContent, "21,75 °C");
-  assert.match(card.shadowRoot.querySelector(".temperature-source").textContent, /Sonde chambre.*Reçu.*09:15/);
+  assert.equal(card.shadowRoot.querySelector(".temperature-reading").textContent, "21,75 °CUpdate : 09:15");
   card.hass = { ...hass, states: { ...hass.states, [external]: { ...room, state: "22" } } };
   assert.equal(card.shadowRoot.querySelector(".temperature").textContent, "22,0 °C");
   card.hass = { ...hass, states: { ...hass.states, [external]: { ...room, state: "unavailable" } } };
   assert.equal(card.shadowRoot.querySelector(".temperature").textContent, "—");
-  assert.ok(card.shadowRoot.querySelector(".temperature-source").textContent.includes("Sonde chambre"));
+  assert.doesNotMatch(card.shadowRoot.querySelector(".temperature-reading").textContent, /Sonde chambre/);
   const editor = new UrbanhelloRemiCardEditor(); editor.setConfig({ temperature_entity: external }); editor.hass = hass; await flush();
   const field = editor.shadowRoot.querySelector(".temperature-entity");
   assert.deepEqual(field.querySelectorAll("option").map(node => node.value).sort(), ["", remi.entity_id, external].sort());
@@ -1267,8 +1267,25 @@ test("the chosen room thermometer updates independently and keeps its identity w
   editor.addEventListener("config-changed", event => card.setConfig(event.detail.config));
   field.value = ""; field.dispatchEvent({ type: "change" });
   assert.equal(card.shadowRoot.querySelector(".temperature").textContent, "18,4 °C");
-  assert.match(card.shadowRoot.querySelector(".temperature-source").textContent, /Thermomètre du Rémi.*Reçu.*20:05/);
+  assert.equal(card.shadowRoot.querySelector(".temperature-reading").textContent, "18,4 °CUpdate : 20:05");
   assert.throws(() => card.setConfig({ temperature_entity: "switch.unrelated" }));
+});
+
+test("compact temperature uses a 24-hour local clock and omits missing or invalid update times", () => {
+  const remi = registryEntity("sensor", "temperature", "sensor.remi_temperature");
+  const { card, hass } = setup([remi]);
+  card.setConfig({ layout: "compact" });
+  for (const [stamp, expected] of [
+    ["2026-11-19T17:04:57Z", "71.5 °FUpdate: 18:04"],
+    ["2026-11-19T23:05:00Z", "71.5 °FUpdate: 00:05"],
+    [undefined, "71.5 °F"],
+    ["invalid", "71.5 °F"],
+  ]) {
+    card.hass = { ...hass, language: "en", config: { time_zone: "Europe/Paris" }, states: {
+      [remi.entity_id]: { state: "71.5", attributes: { unit_of_measurement: "°F", received_at: stamp } },
+    } };
+    assert.equal(card.shadowRoot.querySelector(".temperature-reading").textContent, expected);
+  }
 });
 
 test("cached schedules retain real future events, weekdays and device timezone while blocking stale controls", () => {
