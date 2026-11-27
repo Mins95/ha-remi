@@ -585,6 +585,20 @@
         }
       }
     },
+    "test_alarm": {
+      "name": "Tester le réveil",
+      "description": "Applique immédiatement le visage, la veilleuse et le volume définis pour cet horaire, et lance sa piste si elle est configurée. Utilisez le lecteur multimédia pour arrêter la musique.",
+      "fields": {
+        "remi_id": {
+          "name": "Identifiant du Rémi",
+          "description": "L’identifiant du Rémi sur lequel effectuer le test."
+        },
+        "event_id": {
+          "name": "Identifiant de l’horaire",
+          "description": "L’objectId actuel de l’horaire sur ce Rémi."
+        }
+      }
+    },
     "get_history": {
       "name": "Consulter l’historique du sommeil et de l’environnement",
       "description": "Renvoie un catalogue de 60 bilans cloud au maximum, ou jusqu’à deux bilans avec leurs courbes d’environnement. Utilisez report_id pour sélectionner un bilan. Les dates désignent les périodes des bilans ; les estimations de sommeil peuvent être absentes. Le bruit et la lumière n’ont pas d’unité physique étalonnée. Un export depuis le Rémi est demandé uniquement si sync est activé.",
@@ -755,6 +769,18 @@
   "exceptions": {
     "alarm_target_not_unique": {
       "message": "Impossible d’identifier un seul REMI chargé pour cette action sur les alarmes"
+    },
+    "alarm_test_running": {
+      "message": "Un test est déjà en cours sur ce Rémi."
+    },
+    "alarm_test_empty": {
+      "message": "Cet horaire ne contient aucun réglage de visage, de veilleuse, de volume ni de piste à tester."
+    },
+    "alarm_test_offline": {
+      "message": "Le Rémi doit être connecté pour tester cet horaire."
+    },
+    "alarm_test_invalid_settings": {
+      "message": "Cet horaire contient un réglage de visage, de veilleuse ou de volume que le Rémi ne peut pas tester."
     },
     "alarm_not_found": {
       "message": "Cette alarme REMI n’existe plus"

@@ -120,7 +120,9 @@ class RemiMediaApiMixin:
             })
         return tracks
 
-    async def _async_send_music_path(self, value: str) -> dict[str, Any]:
+    async def _async_send_music_path(
+        self, value: str, *, device_fields: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Serialize and send once; never infer playback from a cloud ACK."""
         selected_remi_id(self)
         if not hasattr(self, "_music_command_lock"):
@@ -131,7 +133,7 @@ class RemiMediaApiMixin:
             if nonce == self._last_music_nonce:
                 nonce = (nonce + 1) % 1000
             self._last_music_nonce = nonce
-            return await self.update_remi({"musicPath": f"{value}:{nonce}"})
+            return await self.update_remi({**(device_fields or {}), "musicPath": f"{value}:{nonce}"})
 
     async def async_media_command(self, command: str) -> dict[str, Any]:
         """Only send command strings whose cloud setter is verified in the app."""

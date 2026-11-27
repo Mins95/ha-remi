@@ -50,6 +50,7 @@ PLATFORMS: list[Platform] = [
 SERVICE_CREATE_ALARM = "create_alarm"
 SERVICE_UPDATE_ALARM = "update_alarm"
 SERVICE_DELETE_ALARM = "delete_alarm"
+SERVICE_TEST_ALARM = "test_alarm"
 ALARM_FACE_NAME_TO_DEFINE = {
     name: define for define, name in FACE_DEFINE_TO_NAME.items()
 }
@@ -249,7 +250,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if coordinator is not None and getattr(coordinator, "history_coordinator", None) is not None:
             await coordinator.history_coordinator.async_shutdown()
         if not hass.data.get(DOMAIN):
-            for service in (SERVICE_CREATE_ALARM, SERVICE_UPDATE_ALARM, SERVICE_DELETE_ALARM, "get_history"):
+            for service in (
+                SERVICE_CREATE_ALARM, SERVICE_UPDATE_ALARM, SERVICE_DELETE_ALARM,
+                SERVICE_TEST_ALARM, "get_history",
+            ):
                 hass.services.async_remove(DOMAIN, service)
             async_unregister_nap_services(hass)
     return unload_ok
@@ -356,6 +360,18 @@ def _register_services(hass: HomeAssistant) -> None:
         await coordinator.client.delete_event(call.data["event_id"])
         await coordinator.async_request_refresh()
 
+    async def handle_test_alarm(call: ServiceCall) -> None:
+        """Test an existing schedule on the explicitly selected live device."""
+        coordinator = resolve_coordinator(remi_id=call.data["remi_id"])
+        await async_prepare_device_action(hass, call, coordinator, control=True)
+        event_id = call.data["event_id"]
+        if not coordinator.events_available or not any(
+            event.get("objectId") == event_id for event in coordinator.events
+        ):
+            raise ServiceValidationError(translation_domain=DOMAIN, translation_key="alarm_not_found")
+        await coordinator.client.async_test_alarm(event_id)
+        await coordinator.async_request_refresh()
+
     async def handle_history(call: ServiceCall) -> dict[str, Any]:
         """Read history, with a device export only when explicitly requested."""
         coordinator = resolve_coordinator(remi_id=call.data.get("remi_id"))
@@ -390,6 +406,11 @@ def _register_services(hass: HomeAssistant) -> None:
             SERVICE_CREATE_ALARM,
             handle_create_alarm,
             schema=SERVICE_CREATE_ALARM_SCHEMA,
+        )
+    if not hass.services.has_service(DOMAIN, SERVICE_TEST_ALARM):
+        hass.services.async_register(
+            DOMAIN, SERVICE_TEST_ALARM, handle_test_alarm,
+            schema=vol.Schema({vol.Required("event_id"): cv.string, vol.Required("remi_id"): cv.string}),
         )
     if not hass.services.has_service(DOMAIN, SERVICE_UPDATE_ALARM):
         hass.services.async_register(
