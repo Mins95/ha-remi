@@ -28,6 +28,8 @@ class Node {
   matches(selector) { return selector.split(",").some(part => part.startsWith(".") ? this.className.split(" ").includes(part.slice(1)) : this.tagName === part); }
   querySelectorAll(selector) { const results = []; for (const child of this.children) { if (child.matches(selector)) results.push(child); results.push(...child.querySelectorAll(selector)); } return results; }
   querySelector(selector) { return this.querySelectorAll(selector)[0]; }
+  contains(node) { return this === node || this.children.some(child => child.contains(node)); }
+  focus() { let root = this; while (root.parentNode) root = root.parentNode; root.activeElement = this; }
   attachShadow() { return this.shadowRoot = new Node("#shadow"); }
   reportValidity() { return true; }
 }
@@ -209,6 +211,67 @@ test("alarm rows sort by clock time and use current cloud names beside actual sw
   assert.deepEqual(card.shadowRoot.querySelectorAll(".toggle").map(node => node.checked), [true, false]);
 });
 
+test("schedule disclosure preserves its layout-specific choice and refreshes the enabled count", () => {
+  const entry = registryEntity("switch", "alarm_morning");
+  const { card, hass } = setup([entry], { [entry.entity_id]: { state: "on", attributes: { time: "07:30" } } });
+  card._switchTab("alarms");
+  const panel = () => card.shadowRoot.querySelector(".schedule-panel");
+  const count = () => panel().querySelector(".schedule-count").textContent;
+  assert.equal(panel().open, true);
+  assert.equal(count(), "1/1");
+  card.setConfig({ layout: "compact" }); assert.equal(panel().open, false);
+  panel().open = true;
+  card.hass = { ...hass, states: { [entry.entity_id]: { state: "off", attributes: { time: "07:30" } } } };
+  assert.equal(panel().open, true); assert.equal(count(), "0/1");
+  card._switchTab("remi"); card._switchTab("alarms"); assert.equal(panel().open, true);
+  card.hass = { ...hass, states: { [entry.entity_id]: { state: "unavailable", attributes: {} } } };
+  assert.equal(count(), "—/1");
+  panel().open = false; card.setConfig({ layout: "full" });
+  assert.equal(panel().open, true);
+});
+
+test("testing one alarm confirms in its row, cancels on close and sends only once for the current event", async () => {
+  const late = registryEntity("switch", "alarm_late", "switch.evening"), early = registryEntity("switch", "alarm_early", "switch.morning");
+  const { card, hass, calls } = setup([late, early], {
+    [late.entity_id]: { state: "on", attributes: { event_id: "late", alarm_name: "Evening", time: "21:00" } },
+    [early.entity_id]: { state: "off", attributes: { event_id: "early", alarm_name: "Morning", time: "07:30" } },
+  });
+  card._switchTab("alarms"); const find = key => card.shadowRoot.querySelector(key);
+  const click = button => button.dispatchEvent({ type: "click" });
+  click(find(".schedule-test")); assert.equal(calls.length, 0);
+  assert.ok(find(".schedule-confirm").textContent.includes("Morning · 07:30 · Bedroom"));
+  assert.equal(card.shadowRoot.activeElement, find(".schedule-confirm-cancel"));
+  click(find(".schedule-confirm-cancel")); assert.equal(card.shadowRoot.activeElement.dataset.entityId, early.entity_id);
+  click(find(".schedule-test")); const old = find(".schedule-confirm-run"), panel = find(".schedule-panel");
+  panel.open = false; panel.dispatchEvent({ type: "toggle" }); assert.equal(find(".schedule-confirm"), undefined);
+  find(".schedule-panel").open = true;
+  click(old); assert.equal(calls.length, 0);
+  click(find(".schedule-test")); const stale = find(".schedule-confirm-run");
+  card.hass = { ...hass, states: { ...hass.states, [early.entity_id]: { state: "off", attributes: { ...hass.states[early.entity_id].attributes, event_id: "rotated" } } } };
+  click(stale); assert.equal(calls.length, 0);
+  const run = find(".schedule-confirm-run"); click(run); click(run); await flush();
+  assert.deepEqual(calls, [{ type: "call_service", domain: DOMAIN, service: "test_alarm", service_data: { remi_id: "REMI1", event_id: "rotated" } }]);
+});
+
+test("detached test confirmations cannot run offline, against cached schedules or another REMI", () => {
+  const entry = registryEntity("switch", "alarm_morning"), wake = registryEntity("sensor", "next_wake"), online = registryEntity("binary_sensor", "online");
+  const { card, hass, calls } = setup([entry, wake, online], {
+    [entry.entity_id]: { state: "on", attributes: { event_id: "one", time: "07:30" } },
+    [online.entity_id]: { state: "on", attributes: {} },
+  });
+  card._switchTab("alarms");
+  const find = key => card.shadowRoot.querySelector(key), click = button => button.dispatchEvent({ type: "click" });
+  click(find(".schedule-test")); let run = find(".schedule-confirm-run");
+  card.hass = { ...hass, states: { ...hass.states, [online.entity_id]: { state: "off", attributes: {} } } };
+  click(run); assert.equal(find(".schedule-test").disabled, true); assert.equal(find(".schedule-confirm"), undefined);
+  card.hass = hass; click(find(".schedule-test")); run = find(".schedule-confirm-run");
+  card.hass = { ...hass, states: { ...hass.states, [wake.entity_id]: { state: "unknown", attributes: { cached: true, schedules: [{ time: "07:00", enabled: true }] } } } };
+  click(run); assert.equal(find(".schedule-test"), undefined); assert.equal(find(".schedule-count").textContent, "1/1");
+  card.hass = hass; click(find(".schedule-test")); run = find(".schedule-confirm-run");
+  card.setConfig({ device_id: "different" }); click(run);
+  assert.equal(calls.length, 0);
+});
+
 test("compact alarm rows preserve real switch targets and edit the current cloud alarm after its ID rotates", async () => {
   const early = registryEntity("switch", "alarm_early", "switch.renamed_morning"), late = registryEntity("switch", "alarm_late", "switch.renamed_evening");
   const { card, calls } = setup([late, early], {
@@ -282,7 +345,7 @@ test("normal alarm rows retain their seven Monday-first day chips and literal na
   assert.deepEqual(days.map(node => node.textContent), ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]);
   assert.deepEqual(days.map(node => node.className.split(" ").includes("active")), [true, false, false, false, false, false, true]);
   assert.equal(card.shadowRoot.querySelector(".schedule-recurrence"), undefined);
-  assert.equal(card.shadowRoot.querySelector(".schedule").querySelector("button").textContent, card.t("edit"));
+  assert.ok(card.shadowRoot.querySelector(".schedule").querySelectorAll("button").some(button => button.textContent === card.t("edit")));
   assert.equal(calls.length, 0);
 });
 
@@ -1438,7 +1501,7 @@ test("music is collapsed again after hiding it and a late browser response canno
 test("alarm edits use the current cloud event_id even if it rotates while the form is open", async () => {
   const entry = registryEntity("switch", "alarm_original", "switch.user_alarm");
   const { card, hass, calls } = setup([entry], { [entry.entity_id]: { state: "on", attributes: { event_id: "current1", time: "07:00", alarm_name: "Wake" } } });
-  card._tab = "alarms"; card._render(); card.shadowRoot.querySelector(".schedule").querySelector("button").dispatchEvent({ type: "click" });
+  card._tab = "alarms"; card._render(); card.shadowRoot.querySelector(".schedule-edit").dispatchEvent({ type: "click" });
   const draft = card._form; assert.equal(draft.id, "current1"); assert.equal(draft.alarmEntityId, entry.entity_id);
   draft.inputs.get("time").value = "08:30"; draft.inputs.get("time").dispatchEvent({ type: "change" });
   card.hass = { ...hass, states: { [entry.entity_id]: { state: "on", attributes: { event_id: "current2", time: "07:00", alarm_name: "Wake" } } } };
