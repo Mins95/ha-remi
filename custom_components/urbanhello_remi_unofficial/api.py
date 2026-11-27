@@ -19,9 +19,10 @@ from .const import (
     API_OS_VERSION,
     API_USER_AGENT,
     DOMAIN,
+    FACE_OBJECT_ID_TO_DEFINE,
 )
 from .history_api import RemiHistoryApiMixin
-from .media_api import RemiMediaApiMixin
+from .media_api import RemiMediaApiMixin, selected_remi_id, validate_music_path, validation_error
 from .nap_api import RemiNapApiMixin
 
 _LOGGER = logging.getLogger(__name__)
@@ -70,6 +71,7 @@ class RemiApiClient(RemiHistoryApiMixin, RemiMediaApiMixin, RemiNapApiMixin):
         self._session_token: str | None = None
         self._remi_id: str | None = None
         self._auth_lock = asyncio.Lock()
+        self._alarm_test_lock = asyncio.Lock()
         self._timeout = aiohttp.ClientTimeout(total=15)
 
     @property
@@ -303,6 +305,51 @@ class RemiApiClient(RemiHistoryApiMixin, RemiMediaApiMixin, RemiNapApiMixin):
                 return events
             cursor = max(event["objectId"] for event in page)
         raise RemiApiError(translation_domain=DOMAIN, translation_key="api_invalid_response")
+
+    async def async_test_alarm(self, event_id: str) -> None:
+        """Apply the event's current output settings in one device update."""
+        selected_remi_id(self)
+        self._validate_object_id(event_id)
+        if self._alarm_test_lock.locked():
+            raise validation_error("alarm_test_running")
+        async with self._alarm_test_lock:
+            events = await self.get_events()
+            event = next((item for item in events if item["objectId"] == event_id), None)
+            if event is None:
+                raise validation_error("alarm_not_found")
+
+            fields: dict[str, Any] = {}
+            face = event.get("face")
+            if face is not None:
+                if (
+                    not isinstance(face, dict)
+                    or face.get("className", "Face") != "Face"
+                    or not isinstance(face.get("objectId"), str)
+                    or face["objectId"] not in FACE_OBJECT_ID_TO_DEFINE
+                ):
+                    raise validation_error("alarm_test_invalid_settings")
+                fields["face"] = {
+                    "__type": "Pointer", "className": "Face", "objectId": face["objectId"],
+                }
+            for setting, device_field in (("volume", "volume"), ("brightness", "luminosity")):
+                value = event.get(setting)
+                if value is not None:
+                    if type(value) is not int or not 0 <= value <= 100:
+                        raise validation_error("alarm_test_invalid_settings")
+                    fields[device_field] = value
+            path = event.get("music_path")
+            if path is not None:
+                path = validate_music_path(path)
+            if not fields and not path:
+                raise validation_error("alarm_test_empty")
+
+            remi = await self.get_remi()
+            if remi.get("online") is not True or remi.get("alive") is False:
+                raise validation_error("alarm_test_offline")
+            if path:
+                await self._async_send_music_path(path, device_fields=fields)
+            else:
+                await self.update_remi(fields)
 
     async def create_event(self, event_data: dict[str, Any]) -> dict[str, Any]:
         """Create a new alarm event."""

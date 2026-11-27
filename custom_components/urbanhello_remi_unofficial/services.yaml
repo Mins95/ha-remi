@@ -130,6 +130,16 @@ delete_alarm:
     remi_id:
       selector:
         text: {}
+test_alarm:
+  fields:
+    remi_id:
+      required: true
+      selector:
+        text: {}
+    event_id:
+      required: true
+      selector:
+        text: {}
 get_history:
   fields:
     remi_id:

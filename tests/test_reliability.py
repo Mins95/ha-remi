@@ -237,3 +237,4 @@ async def test_last_unload_removes_services(hass):
     with patch.object(hass.config_entries, "async_unload_platforms", return_value=True):
         assert await async_unload_entry(hass, entry)
     assert not hass.services.has_service(DOMAIN, "create_alarm")
+    assert not hass.services.has_service(DOMAIN, "test_alarm")

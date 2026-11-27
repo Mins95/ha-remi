@@ -585,6 +585,20 @@
         }
       }
     },
+    "test_alarm": {
+      "name": "Test alarm",
+      "description": "Apply this alarm’s face, nightlight and volume now, and play its track if configured. The schedule stays as saved. Stop playback with the media player.",
+      "fields": {
+        "remi_id": {
+          "name": "REMI identifier",
+          "description": "The identifier of the REMI to test."
+        },
+        "event_id": {
+          "name": "Event ID",
+          "description": "The current objectId of the alarm on this REMI."
+        }
+      }
+    },
     "get_history": {
       "name": "Get sleep and environmental history",
       "description": "Returns a catalogue of up to 60 cloud reports, or up to two reports with environmental charts. Use report_id to select one report. Dates label report periods; sleep estimates may be unavailable. Noise and light have no calibrated physical unit. Device export is requested only when sync is enabled.",
@@ -755,6 +769,18 @@
   "exceptions": {
     "alarm_target_not_unique": {
       "message": "Cannot identify a single loaded REMI for this alarm action"
+    },
+    "alarm_test_running": {
+      "message": "A test is already in progress for this REMI."
+    },
+    "alarm_test_empty": {
+      "message": "This alarm has no face, nightlight, volume or track to test."
+    },
+    "alarm_test_offline": {
+      "message": "The test requires a REMI that is currently connected."
+    },
+    "alarm_test_invalid_settings": {
+      "message": "This alarm contains face, nightlight or volume settings that REMI cannot preview."
     },
     "alarm_not_found": {
       "message": "This REMI alarm no longer exists"

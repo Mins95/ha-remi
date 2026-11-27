@@ -42,6 +42,7 @@ async def test_read_only_user_can_view_nights_and_timers(hass, hass_read_only_us
 
 @pytest.mark.parametrize(("action", "data"), [
     ("create_alarm", {"name": "Morning", "time": "07:30"}),
+    ("test_alarm", {"remi_id": "test_remi", "event_id": "event1"}),
     ("create_nap", {"name": "Nap", "duration_minutes": 10}),
     ("get_history", {"sync": True}),
 ])

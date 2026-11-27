@@ -11,6 +11,7 @@ const TEXT = {
     temperatureSource: "Temperature source", remiThermometer: "REMI thermometer", temperatureUpdate: "Update:", chooseTemperature: "Choose a temperature sensor.",
     historyArchive: "Saved in Home Assistant", historyReceived: "Journal received", historyChartOnly: "Environmental readings available · no sleep estimate", historyNoReadings: "No readings or sleep estimate received", olderCurve: "Showing the previously saved curve", archiveRead: "Saved journal opened",
     nextWake: "Next wake-up", nextBedtime: "Next bedtime", savedSchedule: "Last confirmed schedule", readOnly: "Read only",
+    activeSchedules: "Active schedules", testAlarm: "Test alarm", testNow: "Test now", testAlarmEffect: "REMI will apply this schedule now. Music may start.",
     exportFailed: "The new export could not be obtained. Showing the available data.",
     everyDay: "Every day", historySleepUnavailableShort: "Sleep estimate unavailable", historyLatestShort: "Latest estimate",
     faceBrightnessUnconfirmed: "The setting was not confirmed. The face has not been turned on.",
@@ -26,6 +27,7 @@ const TEXT = {
     temperatureSource: "Source de la température", remiThermometer: "Thermomètre du Rémi", temperatureUpdate: "Update :", chooseTemperature: "Choisissez un capteur de température.",
     historyArchive: "Enregistré dans Home Assistant", historyReceived: "Journal reçu", historyChartOnly: "Courbes disponibles · bilan de sommeil absent", historyNoReadings: "Aucune mesure ni estimation de sommeil reçue", olderCurve: "Dernière courbe enregistrée", archiveRead: "Journal enregistré consulté",
     nextWake: "Prochain réveil", nextBedtime: "Prochain coucher", savedSchedule: "Derniers horaires confirmés", readOnly: "Lecture seule",
+    activeSchedules: "Horaires actifs", testAlarm: "Tester le réveil", testNow: "Tester maintenant", testAlarmEffect: "Rémi appliquera cet horaire maintenant. La musique peut démarrer.",
     exportFailed: "Le nouvel export a échoué. Les données disponibles restent affichées.",
     everyDay: "Tous les jours", historySleepUnavailableShort: "Estimation indisponible", historyLatestShort: "Voir le dernier bilan",
     faceBrightnessUnconfirmed: "Le réglage n’est pas confirmé. Le visage n’a pas été rallumé.",
@@ -285,6 +287,18 @@ ha-card input[type=range]::-moz-range-thumb {
 .temperature-reading { max-width: 100%; min-width: 0; text-align: end; }
 .temperature-source { display: block; font-size: 10px; line-height: 1.25; overflow-wrap: anywhere; }
 .schedule-forecast { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 0 0 5px; }
+ha-card details.schedule-panel { margin: 0; padding: 0; border: 0; }
+.schedule-panel > summary { display: flex; align-items: center; gap: 8px; min-height: 44px; color: inherit; list-style: none; }
+.schedule-panel > summary::-webkit-details-marker { display: none; }
+.schedule-panel > summary::after { content: ""; width: 8px; height: 8px; margin: 0 7px 4px auto; flex: none; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.schedule-panel[open] > summary::after { transform: rotate(225deg); margin-bottom: -4px; }
+.schedule-panel > summary:focus-visible { outline: 2px solid var(--primary-color,#38aab9); outline-offset: -2px; border-radius: 8px; }
+.schedule-count { font-variant-numeric: tabular-nums; }
+.schedule-test { display: inline-flex; justify-content: center; align-items: center; width: 44px; min-height: 44px; padding: 4px; }
+.schedule-test ha-icon { --mdc-icon-size: 20px; }
+.schedule-confirm { grid-column: 1 / -1; width: 100%; padding: 8px; border-top: 1px solid var(--divider-color,#dfe9e9); }
+.schedule-confirm p { margin: 2px 0 6px; }
+.schedule-confirm button { min-height: 44px; }
 .saved-schedule { margin: 0 0 5px; }
 ha-card .schedule-saved-row { display: flex; align-items: baseline; gap: 8px; margin: 0 0 3px; padding: 4px 8px; overflow-wrap: anywhere; }
 ha-card.layout-compact .temperature-reading { text-align: center; }
@@ -370,7 +384,7 @@ ha-card.layout-compact .schedule .days { margin: 4px 0 0; gap: 3px; }
 ha-card.layout-compact .schedule .day { font-size: 9px; padding: 3px 5px; }
 ha-card.layout-compact .schedule button { min-height: 44px; padding: 5px 9px; }
 ha-card.layout-compact .schedule .row { gap: 6px; }
-ha-card .schedule-alarm { display: grid; grid-template-columns: minmax(0, 1fr) 44px auto; align-items: center; gap: 0 6px; padding: 8px 10px; margin-bottom: 6px; border-radius: 12px; }
+ha-card .schedule-alarm { display: grid; grid-template-columns: minmax(0, 1fr) 44px 44px auto; align-items: center; gap: 0 4px; padding: 8px 10px; margin-bottom: 6px; border-radius: 12px; }
 ha-card .schedule-header, ha-card .schedule-footer { display: contents; }
 ha-card .schedule-heading { grid-column: 1; grid-row: 1; display: flex; align-items: baseline; gap: 8px; min-width: 0; }
 ha-card .schedule-heading .clock { flex-shrink: 0; font-size: 21px; letter-spacing: -.5px; white-space: nowrap; }
@@ -382,7 +396,8 @@ ha-card .schedule-header .toggle:checked:before { transform: translateX(20px); }
 ha-card .schedule-days { grid-column: 1; grid-row: 2; margin: 4px 0 0; gap: 3px; }
 ha-card .schedule-days .day { font-size: 9px; padding: 3px 5px; }
 ha-card .schedule-face { grid-column: 1; grid-row: 3; font-size: 10px; line-height: 1.3; }
-ha-card .schedule-footer button { grid-column: 3; grid-row: 1 / 4; min-height: 44px; padding: 5px 9px; }
+ha-card .schedule-footer button { grid-column: 4; grid-row: 1 / 4; min-height: 44px; padding: 5px 9px; }
+ha-card .schedule-footer .schedule-test { grid-column: 3; }
 ha-card .schedule-unavailable { grid-column: 1 / -1; }
 
 /* Sleep keeps a single navigation row and the same readable density in both layouts. */
@@ -413,9 +428,9 @@ ha-card .chart h3 { margin-bottom: 8px; }
 /* The compact schedules keep only active recurrence days, beside the controls. */
 ha-card.layout-compact .schedule-compact {
   display: grid;
-  grid-template-columns: 52px minmax(0, 1fr) 44px 44px;
+  grid-template-columns: max-content minmax(0, 1fr) repeat(3, 44px);
   align-items: center;
-  gap: 0 6px;
+  gap: 0 3px;
   padding: 2px 6px;
   margin-bottom: 4px;
   border-radius: 10px;
@@ -507,7 +522,7 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
     if (previousButton !== JSON.stringify([next.show_custom_button, next.custom_button])) { this._customRevision++; this._message = null; this._invalidateCustomCard(); }
     if (previousDevice !== (next.device_id || "")) this._resetContext();
     if (!this._shown("show_music")) { this._library = null; this._details.delete("remi:music"); }
-    if (!this._tabVisible(this._tab)) this._tab = "remi";
+    if (!this._tabVisible(this._tab)) { this._tab = "remi"; this._confirm = null; }
     if (!formWasVisible && this._formVisible(this._form)) this._tab = this._form.kind === "alarm" ? "alarms" : "naps";
     this._render();
   }
@@ -685,7 +700,7 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
     } finally { this._busy = false; this._render(); }
   }
   _call(domain, service, data = {}, entityId, response = false) {
-    if (domain === DOMAIN && ["create_alarm", "update_alarm", "delete_alarm"].includes(service) && this._savedSchedules()) throw new Error(this.t("readOnly"));
+    if (domain === DOMAIN && ["create_alarm", "update_alarm", "delete_alarm", "test_alarm"].includes(service) && this._savedSchedules()) throw new Error(this.t("readOnly"));
     return this._hass.callWS(serviceRequest(domain, service, data, entityId, response));
   }
   _customButtonConfig() {
@@ -1001,35 +1016,93 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
   _savedSchedules() {
     return ["next_wake", "next_bedtime"].some(key => this._state("sensor", key)?.attributes?.cached === true);
   }
+  _canTestAlarm(entityId) {
+    return this.isConnected && this._tab === "alarms" && this._shown("show_alarms") && !this._form &&
+      this._controlConnectionReady !== false && !["online", "alive"].some(key => this._state("binary_sensor", key)?.state === "off") &&
+      !!this._alarmEventId(entityId);
+  }
+  _alarmTestButton(entityId, name) {
+    const button = this._button("", () => {
+      if (this._busy || !this._canTestAlarm(entityId) || !this.shadowRoot.contains(button)) return;
+      this._confirm = { entityId, generation: this._generation };
+      this._render();
+      this.shadowRoot.querySelector(".schedule-confirm-cancel")?.focus();
+    }, "subtle schedule-test", !this._canTestAlarm(entityId));
+    button.dataset.entityId = entityId;
+    button.title = `${this.t("testAlarm")} · ${name}`;
+    button.setAttribute("aria-label", button.title);
+    button.append(el("ha-icon", { icon: "mdi:alarm-check", "aria-hidden": "true" }));
+    return button;
+  }
+  _alarmTestConfirmation(name, time) {
+    const context = this._confirm, device = this._device();
+    const cancel = this._button(this.t("cancel"), () => {
+      if (this._confirm !== context) return;
+      this._confirm = null; this._render();
+      [...this.shadowRoot.querySelectorAll(".schedule-test")].find(button => button.dataset.entityId === context.entityId)?.focus();
+    }, "subtle schedule-confirm-cancel");
+    const run = this._button(this.t("testNow"), () => {
+      if (this._busy || this._confirm !== context || this._generation !== context.generation ||
+          !this.shadowRoot.contains(run) || !this._canTestAlarm(context.entityId)) return;
+      const eventId = this._alarmEventId(context.entityId);
+      this._confirm = null;
+      this._run(() => this._call(DOMAIN, "test_alarm", { remi_id: device.remiId, event_id: eventId })).catch(() => {});
+    }, "primary schedule-confirm-run");
+    return el("div", { class: "schedule-confirm", role: "group", "aria-label": this.t("testAlarm") }, [
+      el("strong", { text: [name, time, device.name].filter(Boolean).join(" · ") }),
+      el("p", { text: this.t("testAlarmEffect") }), el("div", { class: "row" }, [cancel, run]),
+    ]);
+  }
   _renderAlarms() {
     const fragment = document.createDocumentFragment(), alarms = [], compact = this._config.layout === "compact";
     const wake = this._state("sensor", "next_wake"), bedtime = this._state("sensor", "next_bedtime");
+    const cached = this._savedSchedules();
+    if (this._confirm && !this._canTestAlarm(this._confirm.entityId)) this._confirm = null;
     const forecast = el("div", { class: "schedule-forecast muted" });
     for (const [state, label] of [[wake, "nextWake"], [bedtime, "nextBedtime"]]) {
       const when = this._moment(state?.state, { timeZone: state?.attributes?.timezone });
       if (when) forecast.append(el("span", { text: `${this.t(label)} · ${when}` }));
     }
     if (forecast.childNodes.length) fragment.append(forecast);
-    if (this._savedSchedules()) {
+    if (!cached) {
+      for (const [key, entityId] of this._index()) if (key.startsWith("switch:alarm_")) alarms.push({ eventId: this._alarmEventId(entityId), entityId, state: this._hass.states[entityId] });
+      alarms.sort((a, b) => String(a.state?.attributes?.time || "99:99").localeCompare(b.state?.attributes?.time || "99:99"));
+    }
+    const rows = wake?.attributes?.schedules ?? bedtime?.attributes?.schedules;
+    const states = cached ? (Array.isArray(rows) ? rows.map(row => row?.enabled) : null)
+      : alarms.map(({ state }) => state?.state === "on" ? true : state?.state === "off" ? false : null);
+    const enabled = states?.every(state => typeof state === "boolean") ? states.filter(Boolean).length : "—";
+    const summary = el("summary", {}, [el("strong", { text: this.t("activeSchedules") }), el("span", {
+      class: "schedule-count", text: states ? `${enabled}/${states.length}` : "—",
+    })]);
+    const panel = el("details", { class: "schedule-panel", open: !compact }, [summary]);
+    panel.dataset.key = `alarms:${this._device().id}:${compact ? "compact" : "full"}`;
+    panel.addEventListener("toggle", () => {
+      if (!panel.open && this._confirm && this.shadowRoot.querySelector(".schedule-panel") === panel) {
+        this._confirm = null; this._render();
+      }
+    });
+    if (cached) {
       const synced = this._moment(wake?.attributes?.synced_at || bedtime?.attributes?.synced_at);
       fragment.append(el("p", { class: "saved-schedule muted", text: [this.t("savedSchedule"), synced, this.t("readOnly")].filter(Boolean).join(" · ") }));
-      const rows = wake?.attributes?.schedules;
+      fragment.append(panel);
       if (Array.isArray(rows)) {
-        if (!rows.length) fragment.append(el("p", { class: "empty muted", text: this.t("emptyAlarms") }));
+        if (!rows.length) panel.append(el("p", { class: "empty muted", text: this.t("emptyAlarms") }));
         for (const row of rows) {
           if (!row || typeof row.time !== "string") continue;
-          fragment.append(el("section", { class: "schedule schedule-saved-row" }, [
+          panel.append(el("section", { class: "schedule schedule-saved-row" }, [
             el("strong", { text: row.time }), el("span", { text: [row.name, this._recurrenceLabel(row.days), row.enabled === false && this.t("disabled")].filter(Boolean).join(" · ") }),
           ]));
         }
       }
       return fragment;
     }
-    for (const [key, entityId] of this._index()) if (key.startsWith("switch:alarm_")) alarms.push({ eventId: this._alarmEventId(entityId), entityId, state: this._hass.states[entityId] });
-    alarms.sort((a, b) => String(a.state?.attributes?.time || "99:99").localeCompare(b.state?.attributes?.time || "99:99"));
-    if (!alarms.length) fragment.append(el("p", { class: "empty muted", text: this.t("emptyAlarms") }));
+    fragment.append(panel);
+    if (!alarms.length) panel.append(el("p", { class: "empty muted", text: this.t("emptyAlarms") }));
     alarms.forEach(alarm => {
       const attrs = alarm.state?.attributes || {}, disabled = !usable(alarm.state) || !alarm.eventId, name = attrs.alarm_name ?? attrs.friendly_name ?? this.t("alarms");
+      const test = this._alarmTestButton(alarm.entityId, name);
+      const confirmation = this._confirm?.entityId === alarm.entityId ? this._alarmTestConfirmation(name, attrs.time) : null;
       const toggle = el("input", { type: "checkbox", class: "toggle", checked: alarm.state?.state === "on", disabled: this._busy || disabled, "aria-label": `${this.t("enabled")} ${name}`, onchange: event => { const enabled = event.target.checked; event.target.checked = alarm.state?.state === "on"; if (!this._shown("show_alarms") || !this._alarmEventId(alarm.entityId)) return; this._run(() => this._call("switch", enabled ? "turn_on" : "turn_off", {}, alarm.entityId)).catch(() => {}); } });
       if (compact) {
         const edit = this._button("", () => this._openForm("alarm", { ...attrs, event_id: alarm.eventId, enabled: alarm.state?.state === "on" }, alarm.entityId), "subtle schedule-edit", disabled);
@@ -1039,17 +1112,18 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
         const item = el("section", { class: "schedule schedule-compact" }, [
           el("div", { class: "clock", text: attrs.time || "—:—" }),
           el("div", { class: "schedule-summary" }, [el("div", { class: "schedule-name", text: name }), el("div", { class: "muted schedule-recurrence", text: [recurrence, face].filter(Boolean).join(" · ") })]),
-          toggle, edit,
+          toggle, test, edit, confirmation,
         ]);
         if (disabled) item.append(el("p", { class: "muted schedule-unavailable", text: this.t("unavailable") }));
-        fragment.append(item); return;
+        panel.append(item); return;
       }
       const item = el("section", { class: "schedule schedule-alarm" }, [el("div", { class: "row spread schedule-header" }, [el("div", { class: "schedule-heading" }, [el("div", { class: "clock", text: attrs.time || "—:—" }), el("div", { class: "schedule-name", text: name })]), toggle]), el("div", { class: "days schedule-days" }, DAYS.map(day => el("span", { class: `day${attrs.recurrence?.includes(day) ? " active" : ""}`, text: this.t(day) })))]);
       if (disabled) item.append(el("p", { class: "muted schedule-unavailable", text: this.t("unavailable") }));
-      item.append(el("div", { class: "row spread schedule-footer" }, [el("span", { class: "muted schedule-face", text: attrs.face ? this.t(attrs.face) : "" }), this._button(this.t("edit"), () => this._openForm("alarm", { ...attrs, event_id: alarm.eventId, enabled: alarm.state?.state === "on" }, alarm.entityId), "subtle", disabled)]));
-      fragment.append(item);
+      item.append(el("div", { class: "row spread schedule-footer" }, [el("span", { class: "muted schedule-face", text: attrs.face ? this.t(attrs.face) : "" }), test, this._button(this.t("edit"), () => this._openForm("alarm", { ...attrs, event_id: alarm.eventId, enabled: alarm.state?.state === "on" }, alarm.entityId), "subtle schedule-edit", disabled)]));
+      if (confirmation) item.append(confirmation);
+      panel.append(item);
     });
-    fragment.append(this._button(`+ ${this.t("addAlarm")}`, () => this._openForm("alarm"), compact ? "primary full schedule-add" : "primary full")); return fragment;
+    panel.append(this._button(`+ ${this.t("addAlarm")}`, () => this._openForm("alarm"), compact ? "primary full schedule-add" : "primary full")); return fragment;
   }
   _recurrenceLabel(recurrence) {
     if (!Array.isArray(recurrence) || recurrence.some(day => !DAYS.includes(day))) return this.t("unknown");
@@ -1085,7 +1159,7 @@ export class UrbanhelloRemiCard extends (globalThis.HTMLElement || class {}) {
     if (alarmEntityId && !id) return;
     const create = !id, dirty = new Set(), inputs = new Map();
     const form = el("form"), context = { kind, id, alarmEntityId, remiId: device.remiId, deviceId: device.id, generation: this._generation, element: form, dirty, inputs };
-    this._form = context; this._message = null;
+    this._form = context; this._confirm = null; this._message = null;
     form.append(el("div", { class: "form-head" }, [el("div", {}, [el("h3", { text: this.t(create ? kind === "alarm" ? "addAlarm" : "addNap" : "edit") }), el("p", { class: "muted", text: device.name })]), this._button("×", () => { this._form = null; this._render(); }, "subtle")]));
     const add = (key, type, initial, min, max, parent = form, required = false) => {
       const input = type === "face" ? el("select") : el("input", { type, ...(min != null ? { min } : {}), ...(max != null ? { max } : {}) });

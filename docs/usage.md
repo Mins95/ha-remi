@@ -4,7 +4,7 @@
 
 This guide covers the public Mins95 integration, its Home Assistant actions and changes from earlier versions. It requires an UrbanHello account and internet access. Example entity IDs and alarm IDs are placeholders: use the IDs from your own installation.
 
-**Stable 0.5.6 requires Home Assistant 2026.11.0 or newer.** Pre-release versions do not need to be enabled. Start with the [included dashboard card](card.md) for a visual interface to the features below.
+**Stable 0.6.0 requires Home Assistant 2026.11.0 or newer.** Start with the [included dashboard card](card.md) for a visual interface to the features below.
 
 ## Installation
 
@@ -17,7 +17,7 @@ You need a REMI already configured in the official app, its UrbanHello account c
 1. Open **Settings → Marketplace → Add from link**.
 2. Enter `https://github.com/Mins95/ha-remi`.
 3. Connect your GitHub account if Marketplace requests it for custom repositories.
-4. Open **Remi (Mins95)** and install stable **0.5.6** or newer.
+4. Open **Remi (Mins95)** and install stable **0.6.0** or newer.
 5. Restart Home Assistant, then configure the integration below.
 
 See the [official Marketplace instructions](https://www.home-assistant.io/integrations/marketplace/#custom-repositories).
@@ -26,7 +26,7 @@ See the [official Marketplace instructions](https://www.home-assistant.io/integr
 
 [Open this repository in HACS](https://my.home-assistant.io/redirect/hacs_repository/?owner=Mins95&repository=ha-remi&category=integration).
 
-Add `https://github.com/Mins95/ha-remi` under **Custom repositories**, choose **Integration**, install stable **0.5.6** or newer and restart Home Assistant. **Show beta versions** is not required. The same Home Assistant 2026.11.0 minimum applies.
+Add `https://github.com/Mins95/ha-remi` under **Custom repositories**, choose **Integration**, install stable **0.6.0** or newer and restart Home Assistant. **Show beta versions** is not required. The same Home Assistant 2026.11.0 minimum applies.
 
 ### Manual installation
 
@@ -199,7 +199,7 @@ data:
   time: "07:30:00"
 ```
 
-The three integration actions below are available in **Developer tools → Actions**, scripts and automations.
+The alarm actions below are available in **Developer tools → Actions**, scripts and automations.
 
 ### Time and repeat conventions
 
@@ -272,6 +272,17 @@ action: urbanhello_remi_unofficial.update_alarm
 data:
   event_id: "YOUR_ALARM_ID"
   time: "08:00"
+```
+
+### Test an alarm on REMI
+
+Use the test control in the card, or run the following action on a connected REMI. It immediately applies the face, nightlight brightness and volume set on that alarm, and can start its track. The schedule keeps its time, repeat days and enabled state. Use the media player to stop playback or the usual controls to restore your previous settings. The scheduled playback duration applies only when the actual schedule runs.
+
+```yaml
+action: urbanhello_remi_unofficial.test_alarm
+data:
+  remi_id: "YOUR_REMI_ID"
+  event_id: "YOUR_ALARM_ID"
 ```
 
 ### Delete an alarm
@@ -421,6 +432,10 @@ To edit a profile, get its `nap_id` with `list_naps` and supply only the fields 
 ## Upgrading
 
 <a id="upgrading-from-030"></a>
+
+### 0.6.0
+
+Keep the existing integration and dashboard card. After updating, restart Home Assistant and reload the dashboard or Companion app. Open **Schedules** to see the next wake-up and bedtime or expand the list in Compact. The sleep archive defaults to 30 nights. A temperature sensor selected in the card editor shows its last report time below the reading.
 
 ### 0.5.6: consistent sliders and a shorter Normal layout
 
