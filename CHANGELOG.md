@@ -1,3 +1,11 @@
+## 0.6.0 — Horaires repliables et test sur le Rémi (2026-11-27)
+
+- Dans **Horaires**, le volet indique combien d’horaires sont actifs. Il s’ouvre sur demande en mode Compact et s’affiche ouvert au départ en mode Normal. Le prochain réveil et le prochain coucher restent visibles lorsque leurs heures sont connues.
+- **Tester le réveil** demande confirmation avant d’appliquer les réglages de l’horaire au Rémi. La piste associée peut démarrer immédiatement. Le test conserve la programmation et nécessite une connexion au cloud. Le volet et le test s’inspirent de la [carte communautaire Rémi](https://github.com/homeassistant-fr-ecosystem/remi-card).
+- Cette stable intègre les deux bêtas 0.6.0. Home Assistant conserve les nuits reçues (30 par défaut), leurs courbes même en l’absence de score, et la dernière programmation confirmée. La carte peut utiliser une sonde de chambre et affiche l’heure de réception sous la température au format « Update : HH:mm ».
+
+Installer 0.6.0 depuis Marketplace, redémarrer Home Assistant puis recharger le tableau de bord ou l’application Companion. Les cartes et les entités existantes sont conservées.
+
 ## 0.6.0-beta.2 — Heure de mise à jour de la température
 
 - Sous la température, la carte affiche uniquement « Update : HH:mm » dans le fuseau de Home Assistant. Ce libellé s’applique au thermomètre du Rémi et aux sondes de chambre, dans les formats normal et compact.
